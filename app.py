@@ -227,6 +227,21 @@ def dashboard():
     if 'user' not in session:
         return redirect(url_for('login'))
     return render_template("dashboard.html", user=session['user'])
+
+
+@app.route("/init_project_code_column")
+def init_project_code_column():
+    conn = get_db()
+    cur = conn.cursor()
+    cur.execute("PRAGMA table_info(projects)")
+    columns = [col[1] for col in cur.fetchall()]
+    if "project_code" not in columns:
+        cur.execute("ALTER TABLE projects ADD COLUMN project_code TEXT")
+        conn.commit()
+    conn.close()
+    return "Project code column checked/added."
+
+
 @app.route('/vendor_registration', methods=['GET', 'POST'])
 def vendor_registration():
     if request.method == 'POST':
