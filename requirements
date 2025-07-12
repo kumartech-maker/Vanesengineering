@@ -1,0 +1,8 @@
+Flask
+pandas
+reportlab
+num2words
+openpyxl
+gunicorn
+flask-cors
+python-dotenv
