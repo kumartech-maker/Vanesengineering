@@ -53,9 +53,12 @@
               <input name="project_name" class="form-control" required>
             </div>
             <div class="col-md-6">
-              <label>Enquiry No</label>
-              <input name="enquiry_no" class="form-control" required>
+              <label>Project ID</label>
+              <input name="project_code" class="form-control" value="{{ auto_project_code }}" readonly>
             </div>
+
+
+
             <div class="col-md-6">
               <label>Start Date</label>
               <input name="start_date" type="date" class="form-control" required>
@@ -105,82 +108,15 @@
     </div>
   </div>
 
-  <!-- Edit Duct Entry Modal -->
-  {% if edit_entry %}
-  <div class="modal fade show" id="editDuctModal" tabindex="-1" style="display:block;" aria-modal="true" role="dialog">
-    <div class="modal-dialog modal-lg">
-      <form action="{{ url_for('delete_duct', entry_id=duct.id) }}" method="POST" style="display:inline-block;">
-        <div class="modal-content">
-          <div class="modal-header bg-warning text-dark">
-            <h5 class="modal-title">✏️ Edit Duct Entry</h5>
-            <a href="/project/{{ project.id }}" class="btn-close"></a>
-          </div>
-          <div class="modal-body row g-3">
-            <input type="hidden" name="project_id" value="{{ project.id }}">
-            <div class="col-md-6">
-              <label>Duct No</label>
-              <input name="duct_no" class="form-control" value="{{ edit_entry.duct_no }}" required>
-            </div>
-            <div class="col-md-6">
-              <label>Type</label>
-              <select name="duct_type" class="form-select" id="ductTypeModal" required>
-                {% set types = ['ST', 'RED', 'OFFSET', 'SHOE', 'ELB', 'VANES', 'DUM'] %}
-                {% for type in types %}
-                <option value="{{ type }}" {% if edit_entry.duct_type == type %}selected{% endif %}>{{ type }}</option>
-                {% endfor %}
-              </select>
-            </div>
-            <div class="col-md-6">
-              <label>W1</label>
-              <input name="width1" type="number" step="any" class="form-control" value="{{ edit_entry.width1 }}" required>
-            </div>
-            <div class="col-md-6">
-              <label>H1</label>
-              <input name="height1" type="number" step="any" class="form-control" value="{{ edit_entry.height1 }}" required>
-            </div>
-            <div class="col-md-6">
-              <label>W2</label>
-              <input name="width2" type="number" step="any" class="form-control" value="{{ edit_entry.width2 }}">
-            </div>
-            <div class="col-md-6">
-              <label>H2</label>
-              <input name="height2" type="number" step="any" class="form-control" value="{{ edit_entry.height2 }}">
-            </div>
-            <div class="col-md-6">
-              <label>Qty</label>
-              <input name="quantity" type="number" step="1" class="form-control" value="{{ edit_entry.quantity }}" required>
-            </div>
-            <div class="col-md-6">
-              <label>Length/Radius</label>
-              <input name="length_or_radius" type="number" step="any" class="form-control" value="{{ edit_entry.length_or_radius }}" required>
-            </div>
-            <div class="col-md-6">
-              <label>Deg/Offset</label>
-              <input name="degree_or_offset" type="number" step="any" class="form-control" value="{{ edit_entry.degree_or_offset }}">
-            </div>
-            <div class="col-md-6 factor-field-modal d-none">
-              <label>Factor</label>
-              <input name="factor" id="factorModal" type="number" step="0.01" class="form-control" value="{{ edit_entry.factor or 1.0 }}">
-            </div>
-          </div>
-          <div class="modal-footer">
-            <button type="submit" class="btn btn-warning">💾 Update</button>
-            <a href="/project/{{ project.id }}" class="btn btn-secondary">❌ Cancel</a>
-          </div>
-        </div>
-      </form>
-    </div>
-  </div>
-  {% endif %}
 
   <!-- Project Table -->
   <div class="table-responsive mb-4">
     <table class="table table-bordered table-hover bg-white">
       <thead class="table-light">
         <tr>
+          <th>Project ID</th>
           <th>Project Name</th>
           <th>Vendor</th>
-          <th>Enquiry No</th>
           <th>Start</th>
           <th>End</th>
           <th>Status</th>
@@ -190,9 +126,9 @@
       <tbody>
         {% for project in projects %}
         <tr>
+          <td>{{ project.project_code }}</td>
           <td>{{ project.project_name }}</td>
           <td>{{ project.vendor_name }}</td>
-          <td>{{ project.enquiry_no }}</td>
           <td>{{ project.start_date }}</td>
           <td>{{ project.end_date }}</td>
           <td>{{ project.status }}</td>
@@ -209,31 +145,12 @@
   <!-- Selected Project Info -->
   <div class="row bg-light p-3 rounded mb-3 border">
     <div class="col-md-3"><strong>📁 Project:</strong> {{ project.project_name }}</div>
-    <div class="col-md-3"><strong>🏷 Enquiry:</strong> {{ project.enquiry_no }}</div>
+    <div class="col-md-3"><strong>🆔 Project ID:</strong> {{ project.project_code }}</div>
     <div class="col-md-3"><strong>📅 Start:</strong> {{ project.start_date }}</div>
     <div class="col-md-3"><strong>📅 End:</strong> {{ project.end_date }}</div>
   </div>
 
-  <!-- Project Action Buttons -->
-  <div class="d-flex gap-2 mb-3 flex-wrap">
-    {% if project.status == 'new' %}
-    <form method="POST" action="/continue_to_measurement/{{ project.id }}">
-      <button type="submit" class="btn btn-warning">📋 Save & Continue to Measurement Sheet</button>
-    </form>
-    {% endif %}
-
-    {% if project.status == 'preparation' %}
-    <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#measurementSheetModal">
-      📐 Measurement Sheet
-    </button>
-    {% endif %}
-
-    <form method="POST" action="/submit_for_review/{{ project.id }}">
-      <button class="btn btn-secondary">🚧 Submit for Review</button>
-    </form>
-  </div>
-
-  <!-- Duct Entry Form and Duct Entries Table -->
+  <!-- Duct Entry Form -->
   <div class="row">
     <div class="col-md-5">
       <form method="POST" action="/add_duct">
@@ -305,7 +222,7 @@
       </form>
     </div>
 
-    <div class="col-md-7">
+<div class="col-md-7">
       <div class="card shadow-sm">
         <div class="card-header bg-secondary text-white">📊 Duct Entries</div>
         <div class="card-body table-responsive p-0" style="max-height: 520px; overflow-y: auto;">
@@ -313,12 +230,16 @@
             <thead class="table-light sticky-top">
               <tr>
                 <th>Duct</th><th>Type</th><th>W1</th><th>H1</th><th>W2</th><th>H2</th>
-                <th>Qty</th><th>Len</th><th>Deg</th><th>Factor</th>
-                <th>Gauge</th><th>Area</th><th>Nuts</th><th>Cleat</th><th>Gasket</th><th>Corner</th><th>Weight</th><th>🛠</th>
+                <th>Qty</th><th>Len</th><th>Deg</th><th>Factor</th><th>Gauge</th>
+                <th>24G Area</th><th>22G Area</th><th>20G Area</th><th>18G Area</th>
+                <th>Nuts</th><th>Cleat</th><th>Gasket</th><th>Corner</th><th>Weight</th><th>🛠</th>
               </tr>
             </thead>
             <tbody>
-              {% set total_area = 0 %}
+              {% set total_24g = 0 %}
+              {% set total_22g = 0 %}
+              {% set total_20g = 0 %}
+              {% set total_18g = 0 %}
               {% set total_nuts = 0 %}
               {% set total_cleat = 0 %}
               {% set total_gasket = 0 %}
@@ -337,7 +258,13 @@
                 <td>{{ entry.degree_or_offset }}</td>
                 <td>{{ entry.factor }}</td>
                 <td>{{ entry.gauge }}</td>
-                <td>{{ "%.2f"|format(entry.area|float) }}</td>
+
+                {% set area = entry.area|float %}
+                <td>{{ "%.2f"|format(area if entry.gauge == '24g' else 0) }}</td>
+                <td>{{ "%.2f"|format(area if entry.gauge == '22g' else 0) }}</td>
+                <td>{{ "%.2f"|format(area if entry.gauge == '20g' else 0) }}</td>
+                <td>{{ "%.2f"|format(area if entry.gauge == '18g' else 0) }}</td>
+
                 <td>{{ "%.2f"|format(entry.nuts_bolts|float) }}</td>
                 <td>{{ "%.2f"|format(entry.cleat|float) }}</td>
                 <td>{{ "%.2f"|format(entry.gasket|float) }}</td>
@@ -350,7 +277,10 @@
                   </form>
                 </td>
               </tr>
-              {% set total_area = total_area + (entry.area|float) %}
+              {% set total_24g = total_24g + (area if entry.gauge == '24g' else 0) %}
+              {% set total_22g = total_22g + (area if entry.gauge == '22g' else 0) %}
+              {% set total_20g = total_20g + (area if entry.gauge == '20g' else 0) %}
+              {% set total_18g = total_18g + (area if entry.gauge == '18g' else 0) %}
               {% set total_nuts = total_nuts + (entry.nuts_bolts|float) %}
               {% set total_cleat = total_cleat + (entry.cleat|float) %}
               {% set total_gasket = total_gasket + (entry.gasket|float) %}
@@ -359,16 +289,19 @@
               {% endfor %}
             </tbody>
             <tfoot class="table-light fw-bold">
-  <tr>
-    <td colspan="11" class="text-end">TOTAL:</td>
-    <td id="totalArea">{{ "%.2f"|format(total_area) }}</td>
-    <td id="totalNuts">{{ "%.2f"|format(total_nuts) }}</td>
-    <td id="totalCleat">{{ "%.2f"|format(total_cleat) }}</td>
-    <td id="totalGasket">{{ "%.2f"|format(total_gasket) }}</td>
-    <td id="totalCorner">{{ "%.2f"|format(total_corner) }}</td>
-    <td id="totalWeight">{{ "%.2f"|format(total_weight) }}</td>
-    <td></td>
-  </tr>
+              <tr>
+                <td colspan="11" class="text-end">TOTAL:</td>
+                <td>{{ "%.2f"|format(total_24g) }}</td>
+                <td>{{ "%.2f"|format(total_22g) }}</td>
+                <td>{{ "%.2f"|format(total_20g) }}</td>
+                <td>{{ "%.2f"|format(total_18g) }}</td>
+                <td>{{ "%.2f"|format(total_nuts) }}</td>
+                <td>{{ "%.2f"|format(total_cleat) }}</td>
+                <td>{{ "%.2f"|format(total_gasket) }}</td>
+                <td>{{ "%.2f"|format(total_corner) }}</td>
+                <td>{{ "%.2f"|format(total_weight) }}</td>
+                <td></td>
+              </tr>
             </tfoot>
           </table>
         </div>
@@ -460,9 +393,9 @@
       <button class="btn btn-success">📨 Submit All & Move to Production</button>
     </form>
   </div>
-{% endif %}
+  {% endif %}
 </div> <!-- End container -->
-  
+
 <!-- Auto Calculation Script -->
 <script>
 function setupAutoCalculation(prefix = '') {
@@ -497,18 +430,18 @@ function setupAutoCalculation(prefix = '') {
 
     set('area', area.toFixed(2));
 
-    let gauge = '18g';
-    if (w1 <= 751 && h1 <= 751) gauge = '24g';
-    else if (w1 <= 1201 && h1 <= 1201) gauge = '22g';
-    else if (w1 <= 1800 && h1 <= 1800) gauge = '20g';
+    let gauge = '18G';
+    if (w1 <= 751 && h1 <= 751) gauge = '24G';
+    else if (w1 <= 1201 && h1 <= 1201) gauge = '22G';
+    else if (w1 <= 1800 && h1 <= 1800) gauge = '20G';
     set('gauge', gauge);
 
     set('nuts_bolts', (qty * 4).toFixed(2));
 
     let cleat = 12;
-    if (gauge === '24g') cleat = 4;
-    else if (gauge === '22g') cleat = 8;
-    else if (gauge === '20g') cleat = 10;
+    if (gauge === '24G') cleat = 4;
+    else if (gauge === '22G') cleat = 8;
+    else if (gauge === '20G') cleat = 10;
     set('cleat', (qty * cleat).toFixed(2));
 
     const gasket = (w1 + h1 + w2 + h2) / 1000 * qty;
@@ -552,32 +485,30 @@ function setupVendorAutoFill() {
   if (vendorSelect && gstInput && addrInput) {
     vendorSelect.addEventListener('change', function () {
       const selected = this.options[this.selectedIndex];
-      const gst = selected.getAttribute('data-gst') || '';
-      const addr = selected.getAttribute('data-address') || '';
-      gstInput.value = gst;
-      addrInput.value = addr;
+      gstInput.value = selected.getAttribute('data-gst') || '';
+      addrInput.value = selected.getAttribute('data-address') || '';
     });
   }
 }
 
 document.addEventListener('DOMContentLoaded', function () {
   setupAutoCalculation('');
-  setupAutoCalculation('Modal'); // for edit modal
+  setupAutoCalculation('Modal');
   setupFactorField('ductType', '.factor-field');
   setupFactorField('ductTypeModal', '.factor-field-modal');
   setupVendorAutoFill();
 });
 </script>
 
-
-  <script>
+<!-- Totals Calculation -->
+<script>
 function recalculateTotals() {
   let totalArea = 0, totalNuts = 0, totalCleat = 0, totalGasket = 0, totalCorner = 0, totalWeight = 0;
 
   const rows = document.querySelectorAll("table tbody tr");
   rows.forEach(row => {
     const cells = row.querySelectorAll("td");
-    if (cells.length < 17) return; // skip malformed rows
+    if (cells.length < 17) return;
 
     totalArea += parseFloat(cells[11].innerText) || 0;
     totalNuts += parseFloat(cells[12].innerText) || 0;
@@ -595,15 +526,15 @@ function recalculateTotals() {
   document.getElementById("totalWeight").innerText = totalWeight.toFixed(2);
 }
 
-document.addEventListener("DOMContentLoaded", function () {
-  recalculateTotals();
-});
-  </script>
+document.addEventListener("DOMContentLoaded", recalculateTotals);
+</script>
 
-  <!-- Bootstrap & jQuery JS -->
+<!-- Bootstrap & jQuery -->
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-
-</body>
-</html>
   
+<>
+<>
+    
+
+            
