@@ -299,61 +299,65 @@ def projects():
 
 
 def generate_project_code():
-    conn = get_db()
-    cur = conn.cursor()
-    cur.execute("SELECT COUNT(*) AS total FROM projects")
-    count = cur.fetchone()["total"] + 1
+conn = get_db()
+cur = conn.cursor()
+cur.execute("SELECT COUNT(*) AS total FROM projects")
+count = cur.fetchone()["total"] + 1
 
-    year_code = "2526"  # Or make dynamic
-    sequence = f"E{count:03d}"  # E001, E002...
-    return f"VE/TN/{year_code}/{sequence}"
+year_code = "2526"  # Or make dynamic  
+sequence = f"E{count:03d}"  # E001, E002...  
+return f"VE/TN/{year_code}/{sequence}"
 
 @app.route('/create_project', methods=['POST'])
 def create_project():
-    if 'user' not in session:
-        return redirect(url_for('login'))
+if 'user' not in session:
+return redirect(url_for('login'))
 
-    try:
-        vendor_id = request.form['vendor_id']
-        project_name = request.form['project_name']
-        enquiry_no = request.form['enquiry_no']
-        start_date = request.form['start_date']
-        end_date = request.form['end_date']
-        incharge = request.form['incharge']
-        notes = request.form['notes']
-        file = request.files.get('drawing_file')
-        file_name = None
+try:  
+    vendor_id = request.form['vendor_id']  
+    project_name = request.form['project_name']  
+    enquiry_no = request.form['enquiry_no']  
+    start_date = request.form['start_date']  
+    end_date = request.form['end_date']  
+    incharge = request.form['incharge']  
+    notes = request.form['notes']  
+    file = request.files.get('drawing_file')  
+    file_name = None  
 
-        if file and file.filename != '':
-            uploads_dir = os.path.join('static', 'uploads')
-            os.makedirs(uploads_dir, exist_ok=True)
-            file_name = file.filename
-            file.save(os.path.join(uploads_dir, file_name))
+    if file and file.filename != '':  
+        uploads_dir = os.path.join('static', 'uploads')  
+        os.makedirs(uploads_dir, exist_ok=True)  
+        file_name = file.filename  
+        file.save(os.path.join(uploads_dir, file_name))  
 
-        project_code = generate_project_code()
+    project_code = generate_project_code()  
 
-        conn = get_db()
-        cur = conn.cursor()
-        cur.execute('''
-            INSERT INTO projects (
-                vendor_id, quotation_ro, start_date, end_date,
-                location, incharge, notes, file_name,
-                enquiry_id, client_name, project_code
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-        ''', (
-            vendor_id, '', start_date, end_date,
-            '', incharge, notes, file_name,
-            enquiry_no, project_name, project_code
-        ))
+    conn = get_db()  
+    cur = conn.cursor()  
+    cur.execute('''  
+        INSERT INTO projects (  
+            vendor_id, quotation_ro, start_date, end_date,  
+            location, incharge, notes, file_name,  
+            enquiry_id, client_name, project_code  
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)  
+    ''', (  
+        vendor_id, '', start_date, end_date,  
+        '', incharge, notes, file_name,  
+        enquiry_no, project_name, project_code  
+    ))  
 
-        conn.commit()
-        conn.close()
-        flash("✅ Project added successfully!", "success")
-        return redirect(url_for('projects'))
+    conn.commit()  
+    conn.close()  
+    flash("✅ Project added successfully!", "success")  
+    return redirect(url_for('projects'))  
 
-    except Exception as e:
-        print("❌ Error while creating project:", e)
-        return "Bad Request", 400
+except Exception as e:  
+    print("❌ Error while creating project:", e)  
+    return "Bad Request", 400
+
+
+
+
 
 @app.route('/add_measurement', methods=['POST'])
 def add_measurement():
