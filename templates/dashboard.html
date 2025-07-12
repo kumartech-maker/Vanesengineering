@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Dashboard | Ducting ERP</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <style>
+    body {
+      background-color: #f8f9fa;
+    }
+    .card {
+      border-radius: 12px;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+      transition: transform 0.2s ease;
+    }
+    .card:hover {
+      transform: translateY(-5px);
+    }
+    .card h5 {
+      font-weight: 600;
+    }
+  </style>
+</head>
+<body>
+
+<div class="container py-5">
+  <h2 class="mb-4 text-center">Welcome to Ducting ERP Dashboard</h2>
+  <div class="row g-4">
+
+    <!-- Projects -->
+    <div class="col-md-4">
+      <a href="/projects" class="text-decoration-none text-dark">
+        <div class="card p-4 text-center bg-light">
+          <h5>📁 Projects</h5>
+          <p class="text-muted">Manage Projects, Measurement Sheets & Status Flow</p>
+        </div>
+      </a>
+    </div>
+
+    <!-- Vendors -->
+    <div class="col-md-4">
+      <a href="/vendor_registration" class="text-decoration-none text-dark">
+        <div class="card p-4 text-center bg-light">
+          <h5>🏭 Vendors</h5>
+          <p class="text-muted">Add, View & Manage Vendor Information</p>
+        </div>
+      </a>
+    </div>
+
+    <!-- Employees -->
+<div class="col-md-4">
+  <a href="/register_employee" class="text-decoration-none text-dark">
+    <div class="card p-4 text-center bg-light">
+      <h5>👷 Register Employee</h5>
+      <p class="text-muted">Register New Employee and Create Login</p>
+    </div>
+  </a>
+</div>
+
+    <!-- Production -->
+    <div class="col-md-4">
+      <a href="/production_overview" class="text-decoration-none text-dark">
+        <div class="card p-4 text-center bg-light">
+          <h5>🏗️ Production</h5>
+          <p class="text-muted">Track Sheet Cutting, Fabrication & Assembly</p>
+        </div>
+      </a>
+    </div>
+
+    <!-- Summary -->
+    <div class="col-md-4">
+      <a href="/summary" class="text-decoration-none text-dark">
+        <div class="card p-4 text-center bg-light">
+          <h5>📊 Summary</h5>
+          <p class="text-muted">View Overall Progress & Metrics</p>
+        </div>
+      </a>
+    </div>
+
+    <!-- Logout -->
+    <div class="col-md-4">
+      <a href="/logout" class="text-decoration-none text-dark">
+        <div class="card p-4 text-center bg-light">
+          <h5>🚪 Logout</h5>
+          <p class="text-muted">Sign out of the ERP system</p>
+        </div>
+      </a>
+    </div>
+
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
+
