@@ -137,7 +137,7 @@ def setup_database():
 print("🔧 Initializing DB...")
 init_db()
 
----------- ✅ Login ----------
+#---------- ✅ Login ----------
 
 @app.route('/', methods=['GET', 'POST'])
 def login():
@@ -161,7 +161,7 @@ conn = get_db()
 
 return render_template("login.html")
 
----------- ✅ Logout ----------
+#---------- ✅ Logout ----------
 
 @app.route('/logout')
 def logout():
@@ -223,7 +223,7 @@ return render_template(
     total_corner=total_corner  
 )
 
----------- ✅ Dashboard ----------
+#---------- ✅ Dashboard ----------
 
 @app.route('/dashboard')
 def dashboard():
@@ -839,7 +839,7 @@ conn.commit()
 conn.close()  
 return redirect(url_for('production', project_id=project_id))
 
----------- ✅ View All Projects in Production ----------
+#---------- ✅ View All Projects in Production ----------
 
 @app.route("/production_overview")
 def production_overview():
@@ -850,13 +850,13 @@ projects = cur.fetchall()
 conn.close()
 return render_template("production_overview.html", projects=projects)
 
----------- ✅ Summary Placeholder ----------
+#---------- ✅ Summary Placeholder ----------
 
 @app.route('/summary')
 def summary():
 return "<h2>Summary Coming Soon...</h2>"
 
----------- ✅ Submit Full Project and Move to Production ----------
+#---------- ✅ Submit Full Project and Move to Production ----------
 
 @app.route('/submit_all/<project_id>', methods=['POST'])
 def submit_all(project_id):
@@ -875,7 +875,7 @@ conn.close()
 flash("✅ Project submitted and moved to production.", "success")  
 return redirect(url_for('production', project_id=project_id))
 
----------- ✅ Delete Project ----------
+#---------- ✅ Delete Project ----------
 
 @app.route('/project/int:project_id/delete', methods=['POST'])
 def delete_project(project_id):
@@ -893,7 +893,7 @@ conn.close()
 flash("🗑️ Project deleted successfully!", "success")  
 return redirect(url_for('projects'))
 
----------- ✅ Run App ----------
+#---------- ✅ Run App ----------
 
 if name == 'main':
 app.run(host='0.0.0.0', port=int(os.environ.get("PORT", 5000)))
