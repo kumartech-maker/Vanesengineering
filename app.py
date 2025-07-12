@@ -300,10 +300,10 @@ def projects():
 
 @app.route('/create_project', methods=['POST'])
 def create_project():
-if 'user' not in session:
-return redirect(url_for('login'))
+  if 'user' not in session:
+  return redirect(url_for('login'))
 
-try:  
+  try:  
     vendor_id = request.form['vendor_id']  
     project_name = request.form['project_name']  
     enquiry_no = request.form['enquiry_no']  
