@@ -17,7 +17,7 @@
 <body>
 <div class="container py-4">
 
- {% with messages = get_flashed_messages(with_categories=true) %}
+  {% with messages = get_flashed_messages(with_categories=true) %}
     {% if messages %}
       <div class="toast-container">
         {% for category, message in messages %}
@@ -39,12 +39,12 @@
   </button>
 
   <!-- Add Project Modal -->
-  <div class="modal fade" id="addProjectModal" tabindex="-1" aria-hidden="true">
+  <div class="modal fade" id="addProjectModal" tabindex="-1" aria-labelledby="addProjectModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-lg">
       <form method="POST" action="/create_project" enctype="multipart/form-data">
         <div class="modal-content">
           <div class="modal-header bg-success text-white">
-            <h5 class="modal-title">➕ Add New Project</h5>
+            <h5 class="modal-title" id="addProjectModalLabel">➕ Add New Project</h5>
             <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
           </div>
           <div class="modal-body row g-3">
@@ -164,7 +164,8 @@
       <button class="btn btn-secondary">🚧 Submit for Review</button>
     </form>
   </div>
-<!-- Duct Entry Form -->
+
+  <!-- Duct Entry Form and Duct Entries Table -->
   <div class="row">
     <div class="col-md-5">
       <form method="POST" action="/add_duct">
@@ -307,6 +308,7 @@
     </div>
   </div> <!-- End row -->
 
+  <!-- Final Action Buttons -->
   <div class="mt-3 d-flex flex-wrap gap-2">
     <a href="/export_excel/{{ project.id }}" class="btn btn-outline-primary">📤 Export Excel</a>
     <a href="/export_pdf/{{ project.id }}" class="btn btn-outline-secondary">🧾 Export PDF</a>
@@ -315,7 +317,10 @@
       <button class="btn btn-success">📨 Submit All & Move to Production</button>
     </form>
   </div>
+  {% endif %}
 </div> <!-- End container -->
+
+<!-- Auto Calculation Script -->
 <script>
 function setupAutoCalculation(prefix = '') {
   const get = (id) => parseFloat(document.getElementById(prefix + id)?.value || 0);
@@ -419,15 +424,13 @@ document.addEventListener('DOMContentLoaded', function () {
   setupFactorField('ductTypeModal', '.factor-field-modal');
   setupVendorAutoFill();
 });
-    </script>
+</script>
 
-  <!-- jQuery and Bootstrap Bundle (with Popper) -->
-<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<!-- Bootstrap & jQuery JS -->
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
-  {% endif %}
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 
-</div> <!-- End main container -->
 </body>
 </html>
-  
+
   
