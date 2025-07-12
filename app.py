@@ -167,6 +167,49 @@ def logout():
     flash("🔒 You have been logged out.", "success")
     return redirect(url_for('login'))
 
+
+@app.route('/project/<int:project_id>')
+def open_project(project_id):
+    conn = get_db()
+    cur = conn.cursor()
+
+    # Fetch project info
+    cur.execute("SELECT * FROM projects WHERE id = ?", (project_id,))
+    project = cur.fetchone()
+
+    if not project:
+        flash("Project not found.", "danger")
+        return redirect(url_for('projects'))  # fallback to projects list
+
+    # Fetch all vendors (for dropdowns if needed)
+    cur.execute("SELECT * FROM vendors")
+    vendors = cur.fetchall()
+
+    # Fetch duct entries for this project
+    cur.execute("SELECT * FROM duct_entries WHERE project_id = ?", (project_id,))
+    ducts = cur.fetchall()
+
+    # Calculate totals
+    total_area = sum(d['area'] for d in ducts)
+    total_nuts = sum(d['nuts_bolts'] for d in ducts)
+    total_cleat = sum(d['cleat'] for d in ducts)
+    total_gasket = sum(d['gasket'] for d in ducts)
+    total_corner = sum(d['corner_pieces'] for d in ducts)
+
+    conn.close()
+
+    return render_template(
+        "project_detail.html",
+        project=project,
+        vendors=vendors,
+        ducts=ducts,
+        total_area=round(total_area, 2),
+        total_nuts=round(total_nuts, 2),
+        total_cleat=round(total_cleat, 2),
+        total_gasket=round(total_gasket, 2),
+        total_corner=round(total_corner, 2)
+    )
+
 # ---------- ✅ Dashboard ----------
 @app.route('/dashboard')
 def dashboard():
