@@ -304,79 +304,84 @@ def add_measurement():
     return '', 200
 @app.route('/add_duct', methods=['POST'])
 def add_duct():
-    import math
-    project_id = request.form['project_id']
-    duct_no = request.form['duct_no']
-    duct_type = request.form['duct_type'].upper()
-    w1 = float(request.form.get('width1') or 0)
-    h1 = float(request.form.get('height1') or 0)
-    w2 = float(request.form.get('width2') or 0)
-    h2 = float(request.form.get('height2') or 0)
-    qty = int(request.form.get('quantity') or 0)
-    length = float(request.form.get('length_or_radius') or 0)
-    deg = float(request.form.get('degree_or_offset') or 0)
-    factor = float(request.form.get('factor') or 1.0)
+    try:
+        import math
+        project_id = request.form['project_id']
+        duct_no = request.form['duct_no']
+        duct_type = request.form['duct_type'].upper()
+        w1 = float(request.form.get('width1') or 0)
+        h1 = float(request.form.get('height1') or 0)
+        w2 = float(request.form.get('width2') or 0)
+        h2 = float(request.form.get('height2') or 0)
+        qty = int(request.form.get('quantity') or 0)
+        length = float(request.form.get('length_or_radius') or 0)
+        deg = float(request.form.get('degree_or_offset') or 0)
+        factor = float(request.form.get('factor') or 1.0)
 
-    # Calculate area based on type
-    area = 0
-    if duct_type == 'ST':
-        area = 2 * (w1 + h1) / 1000 * (length / 1000) * qty
-    elif duct_type == 'RED':
-        area = (w1 + h1 + w2 + h2) / 1000 * (length / 1000) * qty * factor
-    elif duct_type == 'DUM':
-        area = (w1 * h1) / 1000000 * qty
-    elif duct_type == 'OFFSET':
-        area = (w1 + h1 + w2 + h2) / 1000 * ((length + deg) / 1000) * qty * factor
-    elif duct_type == 'SHOE':
-        area = (w1 + h1) * 2 / 1000 * (length / 1000) * qty * factor
-    elif duct_type == 'VANES':
-        area = w1 / 1000 * (2 * math.pi * (w1 / 1000) / 4) * qty
-    elif duct_type == 'ELB':
-        area = 2 * (w1 + h1) / 1000 * ((h1 / 2 / 1000) + (length / 1000) * (math.pi * (deg / 180))) * qty * factor
+        # Area calculation...
+        area = 0
+        if duct_type == 'ST':
+            area = 2 * (w1 + h1) / 1000 * (length / 1000) * qty
+        elif duct_type == 'RED':
+            area = (w1 + h1 + w2 + h2) / 1000 * (length / 1000) * qty * factor
+        elif duct_type == 'DUM':
+            area = (w1 * h1) / 1000000 * qty
+        elif duct_type == 'OFFSET':
+            area = (w1 + h1 + w2 + h2) / 1000 * ((length + deg) / 1000) * qty * factor
+        elif duct_type == 'SHOE':
+            area = (w1 + h1) * 2 / 1000 * (length / 1000) * qty * factor
+        elif duct_type == 'VANES':
+            area = w1 / 1000 * (2 * math.pi * (w1 / 1000) / 4) * qty
+        elif duct_type == 'ELB':
+            area = 2 * (w1 + h1) / 1000 * ((h1 / 2 / 1000) + (length / 1000) * (math.pi * (deg / 180))) * qty * factor
 
-    # Gauge logic
-    gauge = '18g'
-    if w1 <= 751 and h1 <= 751:
-        gauge = '24g'
-    elif w1 <= 1201 and h1 <= 1201:
-        gauge = '22g'
-    elif w1 <= 1800 and h1 <= 1800:
-        gauge = '20g'
+        gauge = '18g'
+        if w1 <= 751 and h1 <= 751:
+            gauge = '24g'
+        elif w1 <= 1201 and h1 <= 1201:
+            gauge = '22g'
+        elif w1 <= 1800 and h1 <= 1800:
+            gauge = '20g'
 
-    nuts_bolts = qty * 4
+        nuts_bolts = qty * 4
 
-    cleat_factor = 12
-    if gauge == '24g':
-        cleat_factor = 4
-    elif gauge == '22g':
-        cleat_factor = 8
-    elif gauge == '20g':
-        cleat_factor = 10
-    cleat = qty * cleat_factor
+        cleat_factor = 12
+        if gauge == '24g':
+            cleat_factor = 4
+        elif gauge == '22g':
+            cleat_factor = 8
+        elif gauge == '20g':
+            cleat_factor = 10
+        cleat = qty * cleat_factor
 
-    gasket = (w1 + h1 + w2 + h2) / 1000 * qty
-    corner_pieces = 0 if duct_type == 'DUM' else qty * 8
+        gasket = (w1 + h1 + w2 + h2) / 1000 * qty
+        corner_pieces = 0 if duct_type == 'DUM' else qty * 8
 
-    conn = get_db()
-    cur = conn.cursor()
-    cur.execute('''
-        INSERT INTO duct_entries (
-            project_id, duct_no, duct_type, width1, height1, width2, height2,
-            quantity, length_or_radius, degree_or_offset, factor,
-            area, gauge, nuts_bolts, cleat, gasket, corner_pieces
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-    ''', (
-        project_id, duct_no, duct_type, w1, h1, w2, h2,
-        qty, length, deg, factor,
-        round(area, 2), gauge, round(nuts_bolts, 2), round(cleat, 2),
-        round(gasket, 2), round(corner_pieces, 2)
-    ))
-    conn.commit()
-    conn.close()
+        conn = get_db()
+        cur = conn.cursor()
+        cur.execute('''
+            INSERT INTO duct_entries (
+                project_id, duct_no, duct_type, width1, height1, width2, height2,
+                quantity, length_or_radius, degree_or_offset, factor,
+                area, gauge, nuts_bolts, cleat, gasket, corner_pieces
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        ''', (
+            project_id, duct_no, duct_type, w1, h1, w2, h2,
+            qty, length, deg, factor,
+            round(area, 2), gauge, round(nuts_bolts, 2), round(cleat, 2),
+            round(gasket, 2), round(corner_pieces, 2)
+        ))
+        conn.commit()
+        conn.close()
 
-    flash("Duct entry added successfully!", "success")
-    return redirect(url_for('open_project', project_id=project_id))
-
+        flash("Duct entry added successfully!", "success")
+        return redirect(url_for('open_project', project_id=project_id))
+    
+    except Exception as e:
+        import traceback
+        print(traceback.format_exc())  # Will print in Render logs
+        flash(f"Internal Server Error: {str(e)}", "danger")
+        return redirect(request.referrer or '/')
 
 @app.route("/edit_duct/<int:entry_id>", methods=["GET", "POST"])
 def edit_duct(entry_id):
