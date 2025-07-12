@@ -15,15 +15,15 @@ app = Flask(name)
 app.secret_key = 'secretkey'
 
 def get_db():
-conn = sqlite3.connect("database.db")
-conn.row_factory = sqlite3.Row
-return conn
+ conn = sqlite3.connect("database.db")
+ conn.row_factory = sqlite3.Row
+ return conn
 
 def init_db():
-conn = get_db()
-cur = conn.cursor()
+ conn = get_db()
+ cur = conn.cursor()
 
-cur.execute('''  
+ cur.execute('''  
     CREATE TABLE IF NOT EXISTS projects (  
         id INTEGER PRIMARY KEY AUTOINCREMENT,  
         vendor_id INTEGER,  
@@ -45,7 +45,7 @@ cur.execute('''
     )  
 ''')  
 
-cur.execute('''  
+ cur.execute('''  
     CREATE TABLE IF NOT EXISTS duct_entries (  
         id INTEGER PRIMARY KEY AUTOINCREMENT,  
         project_id INTEGER,  
@@ -70,7 +70,7 @@ cur.execute('''
     )  
 ''')  
 
-cur.execute('''  
+ cur.execute('''  
     CREATE TABLE IF NOT EXISTS vendors (  
         id INTEGER PRIMARY KEY AUTOINCREMENT,  
         name TEXT,  
@@ -82,7 +82,7 @@ cur.execute('''
     )  
 ''')  
 
-cur.execute('''  
+ cur.execute('''  
     CREATE TABLE IF NOT EXISTS vendor_contacts (  
         id INTEGER PRIMARY KEY AUTOINCREMENT,  
         vendor_id INTEGER,  
@@ -93,7 +93,7 @@ cur.execute('''
     )  
 ''')  
 
-cur.execute('''  
+ cur.execute('''  
     CREATE TABLE IF NOT EXISTS users (  
         id INTEGER PRIMARY KEY AUTOINCREMENT,  
         name TEXT,  
@@ -104,7 +104,7 @@ cur.execute('''
     )  
 ''')  
 
-cur.execute('''  
+ cur.execute('''  
     CREATE TABLE IF NOT EXISTS production_progress (  
         id INTEGER PRIMARY KEY AUTOINCREMENT,  
         project_id INTEGER,  
@@ -114,38 +114,38 @@ cur.execute('''
     )  
 ''')  
 
-cur.execute('''  
+ cur.execute('''  
     INSERT OR IGNORE INTO users (email, name, role, contact, password)  
     VALUES (?, ?, ?, ?, ?)  
 ''', ("admin@ducting.com", "Admin", "Admin", "9999999999", "admin123"))  
 
-cur.execute('''  
+ cur.execute('''  
     INSERT OR IGNORE INTO vendors (id, name, gst, address, bank_name, account_number, ifsc)  
     VALUES (?, ?, ?, ?, ?, ?, ?)  
 ''', (1, "Dummy Vendor Pvt Ltd", "29ABCDE1234F2Z5", "123 Main Street, City", "Axis Bank", "1234567890", "UTIB0000123"))  
 
-cur.execute('''  
+ cur.execute('''  
     INSERT OR IGNORE INTO vendor_contacts (vendor_id, name, phone, email)  
     VALUES (?, ?, ?, ?)  
 ''', (1, "Mr. Dummy", "9876543210", "dummy@vendor.com"))  
 
-conn.commit()  
-conn.close()
+ conn.commit()  
+ conn.close()
 
 @app.before_request
 def setup_database():
-print("🔧 Initializing DB...")
-init_db()
+ print("🔧 Initializing DB...")
+ init_db()
 
 #---------- ✅ Login ----------
 
 @app.route('/', methods=['GET', 'POST'])
 def login():
-if request.method == 'POST':
-email = request.form['email']
-password = request.form['password']
+ if request.method == 'POST':
+ email = request.form['email']
+ password = request.form['password']
 
-conn = get_db()  
+ conn = get_db()  
     cur = conn.cursor()  
     cur.execute("SELECT * FROM users WHERE email = ? AND password = ?", (email, password))  
     user = cur.fetchone()  
@@ -165,20 +165,20 @@ return render_template("login.html")
 
 @app.route('/logout')
 def logout():
-session.clear()
-flash("🔒 You have been logged out.", "success")
-return redirect(url_for('login'))
+ session.clear()
+ flash("🔒 You have been logged out.", "success")
+ return redirect(url_for('login'))
 
 @app.route('/project/int:project_id')
 def open_project(project_id):
-conn = get_db()
-cur = conn.cursor()
+ conn = get_db()
+ cur = conn.cursor()
 
 # Fetch project info  
-cur.execute("SELECT * FROM projects WHERE id = ?", (project_id,))  
-project = cur.fetchone()  
+ cur.execute("SELECT * FROM projects WHERE id = ?", (project_id,))  
+ project = cur.fetchone()  
 
-if not project:  
+ if not project:  
     flash("Project not found.", "danger")  
     return redirect(url_for('projects'))  
 
@@ -227,21 +227,21 @@ return render_template(
 
 @app.route('/dashboard')
 def dashboard():
-if 'user' not in session:
-return redirect(url_for('login'))
-return render_template("dashboard.html", user=session['user'])
+ if 'user' not in session:
+ return redirect(url_for('login'))
+ return render_template("dashboard.html", user=session['user'])
 
 @app.route('/vendor_registration', methods=['GET', 'POST'])
 def vendor_registration():
-if request.method == 'POST':
-vendor_name = request.form['vendor_name']
-gst = request.form['gst']
-address = request.form['address']
-bank_name = request.form['bank_name']
-account_number = request.form['account_number']
-ifsc = request.form['ifsc']
+ if request.method == 'POST':
+ vendor_name = request.form['vendor_name']
+ gst = request.form['gst']
+ address = request.form['address']
+ bank_name = request.form['bank_name']
+ account_number = request.form['account_number']
+ ifsc = request.form['ifsc']
 
-contacts = []  
+ contacts = []  
     for i in range(len(request.form.getlist('contact_name'))):  
         contacts.append({  
             'name': request.form.getlist('contact_name')[i],  
@@ -267,28 +267,29 @@ return render_template('vendor_registration.html')
 
 @app.route('/api/vendor/int:vendor_id')
 def get_vendor_info(vendor_id):
-conn = get_db()
-cur = conn.cursor()
-cur.execute("SELECT gst, address FROM vendors WHERE id = ?", (vendor_id,))
-vendor = cur.fetchone()
-if vendor:
-return {'gst': vendor['gst'], 'address': vendor['address']}
-else:
-return {}, 404
+ conn = get_db()
+ cur = conn.cursor()
+ cur.execute("SELECT gst, address FROM vendors WHERE id = ?", (vendor_id,))
+ vendor = cur.fetchone()
+ 
+ if vendor:
+ return {'gst': vendor['gst'], 'address': vendor['address']}
+ else:
+ return {}, 404
 
 @app.route('/projects')
 def projects():
-conn = get_db()
-cur = conn.cursor()
-cur.execute("SELECT * FROM projects ORDER BY id DESC")
-projects = cur.fetchall()
-cur.execute("SELECT * FROM vendors ORDER BY id DESC")
-vendors = cur.fetchall()
-conn.close()
+ conn = get_db()
+ cur = conn.cursor()
+ cur.execute("SELECT * FROM projects ORDER BY id DESC")
+ projects = cur.fetchall()
+ cur.execute("SELECT * FROM vendors ORDER BY id DESC")
+ vendors = cur.fetchall()
+ conn.close()
 
-project = projects[0] if projects else None  
+ project = projects[0] if projects else None  
 
-return render_template('projects.html',  
+ return render_template('projects.html',  
                        projects=projects,  
                        vendors=vendors,  
                        project=project,  
@@ -296,10 +297,10 @@ return render_template('projects.html',
 
 @app.route('/create_project', methods=['POST'])
 def create_project():
-if 'user' not in session:
-return redirect(url_for('login'))
+ if 'user' not in session:
+ return redirect(url_for('login'))
 
-try:    
+ try:    
     vendor_id = request.form['vendor_id']    
     project_name = request.form['project_name']    
     enquiry_no = request.form['enquiry_no']    
@@ -335,79 +336,79 @@ try:
     flash("✅ Project added successfully!", "success")    
     return redirect(url_for('projects'))    
 
-except Exception as e:    
+ except Exception as e:    
     print("❌ Error while creating project:", e)    
     return "Bad Request", 400
 
 @app.route('/add_measurement', methods=['POST'])
 def add_measurement():
-project_id = request.form['project_id']
-client_name = request.form['client_name']
-site_location = request.form['site_location']
-engineer_name = request.form['engineer_name']
-mobile = request.form['mobile']
+ project_id = request.form['project_id']
+ client_name = request.form['client_name']
+ site_location = request.form['site_location']
+ engineer_name = request.form['engineer_name']
+ mobile = request.form['mobile']
 
-conn = get_db()  
-cur = conn.cursor()  
-cur.execute('''  
+ conn = get_db()  
+ cur = conn.cursor()  
+ cur.execute('''  
     UPDATE projects SET  
     client_name = ?, site_location = ?, engineer_name = ?, mobile = ?, status = ?  
     WHERE id = ?  
 ''', (client_name, site_location, engineer_name, mobile, 'preparation', project_id))  
-conn.commit()  
-return '', 200
+ conn.commit()  
+ return '', 200
 
 @app.route('/add_duct', methods=['POST'])
 def add_duct():
-import math
-project_id = request.form['project_id']
-duct_no = request.form['duct_no']
-duct_type = request.form['duct_type'].upper()
-w1 = float(request.form.get('width1') or 0)
-h1 = float(request.form.get('height1') or 0)
-w2 = float(request.form.get('width2') or 0)
-h2 = float(request.form.get('height2') or 0)
-qty = int(request.form.get('quantity') or 0)
-length = float(request.form.get('length_or_radius') or 0)
-deg = float(request.form.get('degree_or_offset') or 0)
-factor = float(request.form.get('factor') or 1.0)
+ import math
+ project_id = request.form['project_id']
+ duct_no = request.form['duct_no']
+ duct_type = request.form['duct_type'].upper()
+ w1 = float(request.form.get('width1') or 0)
+ h1 = float(request.form.get('height1') or 0)
+ w2 = float(request.form.get('width2') or 0)
+ h2 = float(request.form.get('height2') or 0)
+ qty = int(request.form.get('quantity') or 0)
+ length = float(request.form.get('length_or_radius') or 0)
+ deg = float(request.form.get('degree_or_offset') or 0)
+ factor = float(request.form.get('factor') or 1.0)
 
 # Calculate area based on type  
-area = 0  
-if duct_type == 'ST':  
+ area = 0  
+ if duct_type == 'ST':  
     area = 2 * (w1 + h1) / 1000 * (length / 1000) * qty  
-elif duct_type == 'RED':  
+ elif duct_type == 'RED':  
     area = (w1 + h1 + w2 + h2) / 1000 * (length / 1000) * qty * factor  
-elif duct_type == 'DUM':  
+ elif duct_type == 'DUM':  
     area = (w1 * h1) / 1000000 * qty  
-elif duct_type == 'OFFSET':  
+ elif duct_type == 'OFFSET':  
     area = (w1 + h1 + w2 + h2) / 1000 * ((length + deg) / 1000) * qty * factor  
-elif duct_type == 'SHOE':  
+ elif duct_type == 'SHOE':  
     area = (w1 + h1) * 2 / 1000 * (length / 1000) * qty * factor  
-elif duct_type == 'VANES':  
+ elif duct_type == 'VANES':  
     area = w1 / 1000 * (2 * math.pi * (w1 / 1000) / 4) * qty  
-elif duct_type == 'ELB':  
+ elif duct_type == 'ELB':  
     area = 2 * (w1 + h1) / 1000 * ((h1 / 2 / 1000) + (length / 1000) * (math.pi * (deg / 180))) * qty * factor  
 
 # Gauge logic  
-gauge = '18g'  
-if w1 <= 751 and h1 <= 751:  
+ gauge = '18g'  
+ if w1 <= 751 and h1 <= 751:  
     gauge = '24g'  
-elif w1 <= 1201 and h1 <= 1201:  
+ elif w1 <= 1201 and h1 <= 1201:  
     gauge = '22g'  
-elif w1 <= 1800 and h1 <= 1800:  
+ elif w1 <= 1800 and h1 <= 1800:  
     gauge = '20g'  
 
-nuts_bolts = qty * 4  
+ nuts_bolts = qty * 4  
 
-cleat_factor = 12  
-if gauge == '24g':  
+ cleat_factor = 12  
+ if gauge == '24g':  
     cleat_factor = 4  
-elif gauge == '22g':  
+ elif gauge == '22g':  
     cleat_factor = 8  
-elif gauge == '20g':  
+ elif gauge == '20g':  
     cleat_factor = 10  
-cleat = qty * cleat_factor  
+ cleat = qty * cleat_factor  
 
 gasket = (w1 + h1 + w2 + h2) / 1000 * qty  
 corner_pieces = 0 if duct_type == 'DUM' else qty * 8  
@@ -427,16 +428,16 @@ cur.execute('''
     round(gasket, 2), round(corner_pieces, 2)  
 ))  
 conn.commit()  
-conn.close()  
+ conn.close()  
 
-flash("Duct entry added successfully!", "success")  
-return redirect(url_for('open_project', project_id=project_id))  # ✅ redirect to your actual project list page
+ flash("Duct entry added successfully!", "success")  
+ return redirect(url_for('open_project', project_id=project_id))  # ✅ redirect to your actual project list page
 
 @app.route("/edit_duct/int:entry_id", methods=["GET", "POST"])
 def edit_duct(entry_id):
-conn = get_db()
-conn.row_factory = sqlite3.Row
-cur = conn.cursor()
+ conn = get_db()
+ conn.row_factory = sqlite3.Row
+ cur = conn.cursor()
 
 # Fetch the specific entry  
 cur.execute("SELECT * FROM duct_entries WHERE id = ?", (entry_id,))  
@@ -510,11 +511,11 @@ entries = cur.fetchall()
 # Safely calculate totals  
 def safe_float(val): return float(val) if val else 0  
 
-total_area = sum(safe_float(d['area']) for d in entries)  
-total_nuts = sum(safe_float(d['nuts_bolts']) for d in entries)  
-total_cleat = sum(safe_float(d['cleat']) for d in entries)  
-total_gasket = sum(safe_float(d['gasket']) for d in entries)  
-total_corner = sum(safe_float(d['corner_pieces']) for d in entries)  
+  total_area = sum(safe_float(d['area']) for d in entries)  
+ total_nuts = sum(safe_float(d['nuts_bolts']) for d in entries)  
+ total_cleat = sum(safe_float(d['cleat']) for d in entries)  
+ total_gasket = sum(safe_float(d['gasket']) for d in entries)  
+ total_corner = sum(safe_float(d['corner_pieces']) for d in entries)  
 
 conn.close()  
 return render_template(  
@@ -532,12 +533,12 @@ return render_template(
 
 @app.route("/delete_duct/int:entry_id", methods=["POST"])
 def delete_duct(entry_id):
-conn = get_db()
-cur = conn.cursor()
+ conn = get_db()
+ cur = conn.cursor()
 
-cur.execute("SELECT project_id FROM duct_entries WHERE id = ?", (entry_id,))  
-result = cur.fetchone()  
-
+ cur.execute("SELECT project_id FROM duct_entries WHERE id = ?", (entry_id,))  
+ result = cur.fetchone()  
+ 
 if result:  
     project_id = result[0]  
     cur.execute("DELETE FROM duct_entries WHERE id = ?", (entry_id,))  
@@ -546,24 +547,24 @@ if result:
 else:  
     flash("Entry not found", "danger")  
 
-conn.close()  
-return redirect(url_for("open_project", project_id=project_id))
-
+ conn.close()  
+ return redirect(url_for("open_project", project_id=project_id))
+ 
 @app.route('/update_duct/int:entry_id', methods=['POST'])
 def update_duct(entry_id):
-import math
-form = request.form
+ import math
+ form = request.form
 
-duct_no = form['duct_no']  
-duct_type = form['duct_type'].upper()  
-w1 = float(form.get('width1') or 0)  
-h1 = float(form.get('height1') or 0)  
-w2 = float(form.get('width2') or 0)  
-h2 = float(form.get('height2') or 0)  
-qty = int(form.get('quantity') or 0)  
-length = float(form.get('length_or_radius') or 0)  
-deg = float(form.get('degree_or_offset') or 0)  
-factor = float(form.get('factor') or 1.0)  
+ duct_no = form['duct_no']  
+ duct_type = form['duct_type'].upper()  
+ w1 = float(form.get('width1') or 0)  
+ h1 = float(form.get('height1') or 0)  
+ w2 = float(form.get('width2') or 0)  
+ h2 = float(form.get('height2') or 0)  
+ qty = int(form.get('quantity') or 0)  
+ length = float(form.get('length_or_radius') or 0)  
+ deg = float(form.get('degree_or_offset') or 0)  
+ factor = float(form.get('factor') or 1.0)  
 
 # Recalculate fields (same as add_duct)  
 area = 0  
@@ -623,13 +624,13 @@ return redirect('/project/' + str(form.get('project_id')))
 
 @app.route('/export_pdf/int:project_id')
 def export_pdf(project_id):
-from reportlab.pdfgen import canvas
-from reportlab.lib.pagesizes import A4
-from reportlab.platypus import Table, TableStyle
-from reportlab.lib import colors
-from io import BytesIO
-from num2words import num2words
-import os
+ from reportlab.pdfgen import canvas
+ from reportlab.lib.pagesizes import A4
+ from reportlab.platypus import Table, TableStyle
+ from reportlab.lib import colors
+ from io import BytesIO
+ from num2words import num2words
+ import os
 
 buffer = BytesIO()  
 p = canvas.Canvas(buffer, pagesize=A4)  
@@ -729,11 +730,11 @@ return send_file(buffer, as_attachment=True,
 
 @app.route("/export_excel/int:project_id")
 def export_excel(project_id):
-try:
+ try:
 conn = sqlite3.connect("database.db")
-query = "SELECT * FROM duct_entries WHERE project_id = ?"
-df = pd.read_sql_query(query, conn, params=(project_id,))
-conn.close()
+ query = "SELECT * FROM duct_entries WHERE project_id = ?"
+ df = pd.read_sql_query(query, conn, params=(project_id,))
+ conn.close()
 
 if df.empty:  
         return "No data available for this project.", 404  
@@ -752,9 +753,9 @@ finally:
 
 @app.route("/production/int:project_id")
 def production(project_id):
-conn = get_db()
-conn.row_factory = sqlite3.Row
-cur = conn.cursor()
+ conn = get_db()
+ conn.row_factory = sqlite3.Row
+ cur = conn.cursor()
 
 # Fetch project  
 cur.execute("SELECT * FROM projects WHERE id = ?", (project_id,))  
@@ -824,9 +825,9 @@ return render_template("production.html",
 
 @app.route("/update_production/int:project_id", methods=["POST"])
 def update_production(project_id):
-sheet_cutting = float(request.form.get("sheet_cutting") or 0)
-plasma_fabrication = float(request.form.get("plasma_fabrication") or 0)
-boxing_assembly = float(request.form.get("boxing_assembly") or 0)
+ sheet_cutting = float(request.form.get("sheet_cutting") or 0)
+ plasma_fabrication = float(request.form.get("plasma_fabrication") or 0)
+ boxing_assembly = float(request.form.get("boxing_assembly") or 0)
 
 conn = get_db()  
 cur = conn.cursor()  
@@ -843,25 +844,25 @@ return redirect(url_for('production', project_id=project_id))
 
 @app.route("/production_overview")
 def production_overview():
-conn = get_db()
-cur = conn.cursor()
-cur.execute("SELECT * FROM projects")
-projects = cur.fetchall()
-conn.close()
-return render_template("production_overview.html", projects=projects)
+ conn = get_db()
+ cur = conn.cursor()
+ cur.execute("SELECT * FROM projects")
+ projects = cur.fetchall()
+ conn.close()
+ return render_template("production_overview.html", projects=projects)
 
 #---------- ✅ Summary Placeholder ----------
 
 @app.route('/summary')
 def summary():
-return "<h2>Summary Coming Soon...</h2>"
+ return "<h2>Summary Coming Soon...</h2>"
 
 #---------- ✅ Submit Full Project and Move to Production ----------
 
 @app.route('/submit_all/<project_id>', methods=['POST'])
 def submit_all(project_id):
-conn = get_db()
-cur = conn.cursor()
+ conn = get_db()
+ cur = conn.cursor()
 
 # ✅ Mark project as submitted  
 cur.execute("UPDATE projects SET status = 'submitted' WHERE id = ?", (project_id,))  
@@ -874,13 +875,13 @@ conn.close()
 
 flash("✅ Project submitted and moved to production.", "success")  
 return redirect(url_for('production', project_id=project_id))
-
+ 
 #---------- ✅ Delete Project ----------
 
 @app.route('/project/int:project_id/delete', methods=['POST'])
 def delete_project(project_id):
-conn = get_db()
-cur = conn.cursor()
+ conn = get_db()
+ cur = conn.cursor()
 
 # Delete related ducts and project  
 cur.execute("DELETE FROM duct_entries WHERE project_id = ?", (project_id,))  
