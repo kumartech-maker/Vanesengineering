@@ -1,143 +1,114 @@
-<!DOCTYPE html>  <html lang="en">  
-<head>  
-  <meta charset="UTF-8">  
-  <title>Production Module</title>  
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">  
-  <style>  
-    .readonly-input {  
-      background-color: #f9f9f9;  
-      border: 1px solid #ccc;  
-    }  
-  </style>  
-</head>  
-<body>  
-<div class="container mt-4">  
-  <h3>Production Progress</h3>  
-  <hr>    <!-- ✅ Project Info -->    <div class="card mb-4">  
-    <div class="card-body">  
-      <h5>Project: {{ project.vendor_name }} | Location: {{ project.location }}</h5>  
-      <p>  
-        Enquiry ID: <strong>{{ project.enquiry_id }}</strong> <br>  
-        Total Area (sqm): <strong>{{ project.total_sqm }}</strong>  
-      </p>  
-    </div>  
-  </div>    <!-- ✅ Production Entry Table -->    <form method="POST" action="/update_production/{{ project.id }}">  
-    <table class="table table-bordered">  
-      <thead class="table-light">  
-        <tr>  
-          <th>Phase</th>  
-          <th>Sq.m Completed</th>  
-          <th>% Completed</th>  
-        </tr>  
-      </thead>  
-      <tbody>  
-        {% set total = project.total_sqm or 0 %}  
-        <tr>  
-          <td>Sheet Cutting</td>  
-          <td><input type="number" name="sheet_cutting" step="0.01" value="{{ progress.sheet_cutting_sqm }}" class="form-control"></td>  
-          <td>  
-            {% if total > 0 %}  
-              {{ "%.2f"|format((progress.sheet_cutting_sqm / total) * 100) }}%  
-            {% else %} 0%  
-            {% endif %}  
-          </td>  
-        </tr>  
-        <tr>  
-          <td>Plasma Fabrication</td>  
-          <td><input type="number" name="plasma_fabrication" step="0.01" value="{{ progress.plasma_fabrication_sqm }}" class="form-control"></td>  
-          <td>  
-            {% if total > 0 %}  
-              {{ "%.2f"|format((progress.plasma_fabrication_sqm / total) * 100) }}%  
-            {% else %} 0%  
-            {% endif %}  
-          </td>  
-        </tr>  
-        <tr>  
-          <td>Boxing & Assembly</td>  
-          <td><input type="number" name="boxing_assembly" step="0.01" value="{{ progress.boxing_assembly_sqm }}" class="form-control"></td>  
-          <td>  
-            {% if total > 0 %}  
-              {{ "%.2f"|format((progress.boxing_assembly_sqm / total) * 100) }}%  
-            {% else %} 0%  
-            {% endif %}  
-          </td>  
-        </tr>  <!-- ✅ Overall Phase Summary -->  
-    <tr class="table-info">  
-      <td colspan="2"><strong>Overall Progress</strong></td>  
-      <td>  
-        {% if total > 0 %}  
-          {{ "%.2f"|format(((progress.sheet_cutting_sqm + progress.plasma_fabrication_sqm + progress.boxing_assembly_sqm) / total) * 100) }}%  
-          <button type="button" class="btn btn-sm btn-secondary ms-2" data-bs-toggle="modal" data-bs-target="#detailsModal">  
-            View Details  
-          </button>  
-        {% else %} 0% {% endif %}  
-      </td>  
-    </tr>  
-  </tbody>  
-</table>  
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Production Module</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  <style>
+    body { font-family: 'Segoe UI', sans-serif; background-color: #f5f5f5; }
+    .readonly-table td { background-color: #fdfdfd; }
+    .table thead th.sticky-top { position: sticky; top: 0; background: #f8f9fa; z-index: 2; }
+    .summary-row { font-weight: bold; background-color: #e9ecef; }
+    .card-header { font-weight: 500; font-size: 1.1rem; }
+    .section-title { font-size: 1.5rem; color: #0d6efd; margin-bottom: 1rem; }
+  </style>
+</head>
+<body>
+<div class="container py-4">
+  <h2 class="section-title">🛠️ Production View: {{ project.project_name }}</h2>
 
-<div class="text-end">  
-  <button type="submit" class="btn btn-success">Update Production</button>  
-</div>
+  <!-- Duct Entries Summary Table -->
+  <div class="card shadow-sm mb-4">
+    <div class="card-header bg-secondary text-white">📊 Duct Entries Summary (Read-Only)</div>
+    <div class="card-body table-responsive p-0" style="max-height: 550px; overflow-y: auto;">
+      <table class="table table-sm table-bordered table-striped readonly-table m-0">
+        <thead class="table-light sticky-top">
+          <tr>
+            <th>Duct</th><th>Type</th><th>W1</th><th>H1</th><th>W2</th><th>H2</th>
+            <th>Qty</th><th>Len</th><th>Deg</th><th>Factor</th>
+            <th>Gauge</th><th>Area</th><th>Nuts</th><th>Cleat</th><th>Gasket</th><th>Corner</th><th>Weight</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% set total_area = 0 %}
+          {% set total_nuts = 0 %}
+          {% set total_cleat = 0 %}
+          {% set total_gasket = 0 %}
+          {% set total_corner = 0 %}
+          {% set total_weight = 0 %}
+          {% for entry in ducts %}
+          <tr>
+            <td>{{ entry.duct_no }}</td>
+            <td>{{ entry.duct_type }}</td>
+            <td>{{ entry.width1 }}</td>
+            <td>{{ entry.height1 }}</td>
+            <td>{{ entry.width2 }}</td>
+            <td>{{ entry.height2 }}</td>
+            <td>{{ entry.quantity }}</td>
+            <td>{{ entry.length_or_radius }}</td>
+            <td>{{ entry.degree_or_offset }}</td>
+            <td>{{ entry.factor }}</td>
+            <td>{{ entry.gauge }}</td>
+            <td>{{ "%.2f"|format(entry.area|float) }}</td>
+            <td>{{ "%.2f"|format(entry.nuts_bolts|float) }}</td>
+            <td>{{ "%.2f"|format(entry.cleat|float) }}</td>
+            <td>{{ "%.2f"|format(entry.gasket|float) }}</td>
+            <td>{{ "%.2f"|format(entry.corner_pieces|float) }}</td>
+            <td>{{ "%.2f"|format(entry.weight|float) }}</td>
+          </tr>
+          {% set total_area = total_area + (entry.area|float) %}
+          {% set total_nuts = total_nuts + (entry.nuts_bolts|float) %}
+          {% set total_cleat = total_cleat + (entry.cleat|float) %}
+          {% set total_gasket = total_gasket + (entry.gasket|float) %}
+          {% set total_corner = total_corner + (entry.corner_pieces|float) %}
+          {% set total_weight = total_weight + (entry.weight|float) %}
+          {% endfor %}
+        </tbody>
+        <tfoot class="summary-row">
+          <tr>
+            <td colspan="11" class="text-end">TOTAL:</td>
+            <td>{{ "%.2f"|format(total_area) }}</td>
+            <td>{{ "%.2f"|format(total_nuts) }}</td>
+            <td>{{ "%.2f"|format(total_cleat) }}</td>
+            <td>{{ "%.2f"|format(total_gasket) }}</td>
+            <td>{{ "%.2f"|format(total_corner) }}</td>
+            <td>{{ "%.2f"|format(total_weight) }}</td>
+          </tr>
+        </tfoot>
+      </table>
+    </div>
+  </div>
+<!-- Production Progress Section -->
+  <div class="card shadow-sm mb-4">
+    <div class="card-header bg-primary text-white">📦 Production Progress</div>
+    <div class="card-body row g-3">
+      <div class="col-md-4">
+        <label>Sheet Cutting (sqm)</label>
+        <input type="number" step="0.01" class="form-control readonly-input" value="{{ progress.sheet_cutting_sqm }}" readonly>
+      </div>
+      <div class="col-md-4">
+        <label>Plasma Fabrication (sqm)</label>
+        <input type="number" step="0.01" class="form-control readonly-input" value="{{ progress.plasma_fabrication_sqm }}" readonly>
+      </div>
+      <div class="col-md-4">
+        <label>Boxing & Assembly (sqm)</label>
+        <input type="number" step="0.01" class="form-control readonly-input" value="{{ progress.boxing_assembly_sqm }}" readonly>
+      </div>
+    </div>
+  </div>
 
-  </form>    <!-- ✅ Total Area & Weight Summary -->    <div class="alert alert-info mt-5">  
-    <strong>Total Duct Area:</strong> {{ "%.2f"|format(total_area or 0) }} sq.m |  
-    <strong>Total Weight:</strong> {{ "%.2f"|format(total_weight or 0) }} kg  
-  </div>    <!-- ✅ Duct Entry Table -->    <h4 class="mt-4">Duct Entries Summary</h4>  
-  <table class="table table-striped table-bordered mt-3">  
-    <thead class="table-light">  
-      <tr>  
-        <th>Duct No</th>  
-        <th>Type</th>  
-        <th>Width</th>  
-        <th>Height</th>  
-        <th>Qty</th>  
-        <th>Area (sq.m)</th>  
-        <th>Weight (kg)</th>  
-        <th>Actions</th>  
-      </tr>  
-    </thead>  
-    <tbody>  
-      {% for duct in ducts %}  
-      <tr>  
-        <td>{{ duct.duct_no }}</td>  
-        <td>{{ duct.duct_type }}</td>  
-        <td>{{ duct.width1 }}</td>  
-        <td>{{ duct.height1 }}</td>  
-        <td>{{ duct.quantity }}</td>  
-        <td>{{ "%.2f"|format(duct.area or 0) }}</td>  
-        <td>{{ "%.2f"|format(duct.weight or 0) }}</td>  
-        <td>  
-          <a href="{{ url_for('edit_duct', entry_id=duct.id) }}" class="btn btn-sm btn-warning">Edit</a>
-          <form action="{{ url_for('delete_duct', id=duct.id) }}" method="POST" style="display:inline-block;">  
-            <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm('Delete this entry?')">Delete</button>  
-          </form>  
-        </td>  
-      </tr>  
-      {% endfor %}  
-    </tbody>  
-  </table>  
-</div>  <!-- ✅ Modal: Detailed % -->  <div class="modal fade" id="detailsModal" tabindex="-1" aria-labelledby="detailsModalLabel" aria-hidden="true">  
-  <div class="modal-dialog">  
-    <div class="modal-content">  
-      <div class="modal-header">  
-        <h5 class="modal-title" id="detailsModalLabel">Production Phase Details</h5>  
-        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>  
-      </div>  
-      <div class="modal-body">  
-        <ul class="list-group">  
-          <li class="list-group-item">Sheet Cutting:   
-            {{ "%.2f"|format((progress.sheet_cutting_sqm / total) * 100 if total > 0 else 0) }}%  
-          </li>  
-          <li class="list-group-item">Plasma Fabrication:   
-            {{ "%.2f"|format((progress.plasma_fabrication_sqm / total) * 100 if total > 0 else 0) }}%  
-          </li>  
-          <li class="list-group-item">Boxing & Assembly:   
-            {{ "%.2f"|format((progress.boxing_assembly_sqm / total) * 100 if total > 0 else 0) }}%  
-          </li>  
-        </ul>  
-      </div>  
-    </div>  
-  </div>  
-</div>  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>  </body>  
+  <!-- Footer Actions -->
+  <div class="d-flex flex-wrap gap-2 mb-5">
+    <a href="{{ url_for('projects') }}" class="btn btn-outline-secondary">🔙 Back to Projects</a>
+    <a href="/export_excel/{{ project.id }}" class="btn btn-outline-success">📤 Export Excel</a>
+    <a href="/export_pdf/{{ project.id }}" class="btn btn-outline-dark">🧾 Export PDF</a>
+    <button onclick="window.print()" class="btn btn-outline-primary">🖨️ Print</button>
+  </div>
+
+</div> <!-- End container -->
+
+<!-- Bootstrap JS -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+</body>
 </html>
+  
