@@ -1,397 +1,401 @@
-<!DOCTYPE html>  <html lang="en">  
-<head>  
-  <meta charset="UTF-8">  
-  <title>Projects | Ducting ERP</title>  
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">  
-  <style>  
-    body { background: #f9f9f9; font-family: 'Segoe UI', sans-serif; }  
-    .modal-header { background-color: #007bff; color: white; }  
-    .modal-footer button { min-width: 100px; }  
-    .table-responsive { max-height: 500px; overflow-y: auto; }  
-    .readonly-input { background-color: #f2f2f2; border: 1px solid #ccc; }  
-    .toast-container { position: fixed; top: 1rem; right: 1rem; z-index: 9999; }  
-  </style>  
-</head>  
-<body>  
-<div class="container py-4">  
-  {% with messages = get_flashed_messages(with_categories=true) %}  
-    {% if messages %}  
-      <div class="toast-container">  
-        {% for category, message in messages %}  
-          <div class="toast align-items-center text-white bg-{{ 'success' if category == 'success' else 'danger' }} border-0 show mb-2" role="alert">  
-            <div class="d-flex">  
-              <div class="toast-body">{{ message }}</div>  
-              <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>  
-            </div>  
-          </div>  
-        {% endfor %}  
-      </div>  
-    {% endif %}  
-  {% endwith %}  
-<h2 class="mb-4 text-primary">📁 Project Management</h2>    <button class="btn btn-primary mb-3" data-bs-toggle="modal" data-bs-target="#addProjectModal">  
-    ➕ Add New Project  
-  </button>    <!-- Add Project Modal -->    <div class="modal fade" id="addProjectModal" tabindex="-1" aria-hidden="true">  
-    <div class="modal-dialog modal-lg">  
-      <form method="POST" action="/create_project" enctype="multipart/form-data">  
-        <div class="modal-content">  
-          <div class="modal-header bg-success text-white">  
-            <h5 class="modal-title">➕ Add New Project</h5>  
-            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>  
-          </div>  
-          <div class="modal-body row g-3">  
-            <div class="col-md-6">  
-              <label>Project Name</label>  
-              <input name="project_name" class="form-control" required>  
-            </div>  
-            <div class="col-md-6">  
-              <label>Enquiry No</label>  
-              <input name="enquiry_no" class="form-control" required>  
-            </div>  
-            <div class="col-md-6">  
-              <label>Start Date</label>  
-              <input name="start_date" type="date" class="form-control" required>  
-            </div>  
-            <div class="col-md-6">  
-              <label>End Date</label>  
-              <input name="end_date" type="date" class="form-control" required>  
-            </div>  
-            <div class="col-md-12">  
-              <label>Vendor</label>  
-              <select name="vendor_id" class="form-select" id="vendorSelect" required>  
-                <option value="">-- Select Vendor --</option>  
-                {% for vendor in vendors %}  
-                <option value="{{ vendor.id }}" data-gst="{{ vendor.gst }}" data-address="{{ vendor.address }}">  
-                  {{ vendor.name }}  
-                </option>  
-                {% endfor %}  
-              </select>  
-            </div>  
-            <div class="col-md-6">  
-              <label>Vendor GST</label>  
-              <input type="text" class="form-control" id="vendorGst" readonly>  
-            </div>  
-            <div class="col-md-6">  
-              <label>Vendor Address</label>  
-              <input type="text" class="form-control" id="vendorAddress" readonly>  
-            </div>  
-            <div class="col-md-12">  
-              <label>Drawing File (Optional)</label>  
-              <input type="file" name="drawing_file" class="form-control">  
-            </div>  
-            <div class="col-md-12">  
-              <label>Notes</label>  
-              <textarea name="notes" class="form-control" rows="2"></textarea>  
-            </div>  
-            <div class="col-md-12">  
-              <label>Incharge</label>  
-              <input name="incharge" class="form-control" required>  
-            </div>  
-          </div>  
-          <div class="modal-footer">  
-            <button type="submit" class="btn btn-success">✅ Create</button>  
-            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">❌ Cancel</button>  
-          </div>  
-        </div>  
-      </form>  
-    </div>  
-  </div>    <!-- Project Table -->    <div class="table-responsive mb-4">  
-    <table class="table table-bordered table-hover bg-white">  
-      <thead class="table-light">  
-        <tr>  
-          <th>Project Name</th>  
-          <th>Vendor</th>  
-          <th>Enquiry No</th>  
-          <th>Start</th>  
-          <th>End</th>  
-          <th>Status</th>  
-          <th>Actions</th>  
-        </tr>  
-      </thead>  
-      <tbody>  
-        {% for project in projects %}  
-        <tr>  
-          <td>{{ project.project_name }}</td>  
-          <td>{{ project.vendor_name }}</td>  
-          <td>{{ project.enquiry_no }}</td>  
-          <td>{{ project.start_date }}</td>  
-          <td>{{ project.end_date }}</td>  
-          <td>{{ project.status }}</td>  
-          <td>  
-            <a href="/project/{{ project.id }}" class="btn btn-sm btn-info">Open</a>  
-          </td>  
-        </tr>  
-        {% endfor %}  
-      </tbody>  
-    </table>  
-  </div>    <!-- Selected Project Info -->  {% if project %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Projects | Ducting ERP</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  <style>
+    body { background: #f9f9f9; font-family: 'Segoe UI', sans-serif; }
+    .modal-header { background-color: #007bff; color: white; }
+    .modal-footer button { min-width: 100px; }
+    .table-responsive { max-height: 500px; overflow-y: auto; }
+    .readonly-input { background-color: #f2f2f2; border: 1px solid #ccc; }
+    .toast-container { position: fixed; top: 1rem; right: 1rem; z-index: 9999; }
+  </style>
+</head>
+<body>
+<div class="container py-4">
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+      <div class="toast-container">
+        {% for category, message in messages %}
+          <div class="toast align-items-center text-white bg-{{ 'success' if category == 'success' else 'danger' }} border-0 show mb-2" role="alert">
+            <div class="d-flex">
+              <div class="toast-body">{{ message }}</div>
+              <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+            </div>
+          </div>
+        {% endfor %}
+      </div>
+    {% endif %}
+  {% endwith %}
 
-  <div class="row bg-light p-3 rounded mb-3 border">  
-    <div class="col-md-3"><strong>📁 Project:</strong> {{ project.project_name }}</div>  
-    <div class="col-md-3"><strong>🏷 Enquiry:</strong> {{ project.enquiry_no }}</div>  
-    <div class="col-md-3"><strong>📅 Start:</strong> {{ project.start_date }}</div>  
-    <div class="col-md-3"><strong>📅 End:</strong> {{ project.end_date }}</div>  
-  </div>    <!-- Project Action Buttons -->    <div class="d-flex gap-2 mb-3 flex-wrap">  
-    {% if project.status == 'new' %}  
-    <form method="POST" action="/continue_to_measurement/{{ project.id }}">  
-      <button type="submit" class="btn btn-warning">📋 Save & Continue to Measurement Sheet</button>  
-    </form>  
-    {% endif %}  
-    {% if project.status == 'preparation' %}  
-    <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#measurementSheetModal">  
-      📐 Measurement Sheet  
-    </button>  
-    {% endif %}  
-    <form method="POST" action="/submit_for_review/{{ project.id }}">  
-      <button class="btn btn-secondary">🚧 Submit for Review</button>  
-    </form>  
-  </div>    <!-- Left Side: Limited Duct Entry Form -->    <!-- ✅ Duct Entry Form with Only Limited Editable Fields --><div class="col-md-5">    <form method="POST" action="/add_duct">  
-    <input type="hidden" name="project_id" value="{{ project.id }}">  
-    <div class="card shadow-sm mb-3">  
-      <div class="card-header bg-primary text-white">➕ Duct Entry</div>  
-      <div class="card-body row g-2">  
-        <div class="col-md-6">  
-          <label>Duct No</label>  
-          <input name="duct_no" class="form-control" required>  
-        </div>  
-        <div class="col-md-6">  
-          <label>Type</label>  
-          <select name="duct_type" id="ductType" class="form-select" required>  
-            <option value="">-- Select Type --</option>  
-            <option value="ST">ST</option>  
-            <option value="RED">RED</option>  
-            <option value="OFFSET">OFFSET</option>  
-            <option value="SHOE">SHOE</option>  
-            <option value="ELB">ELB</option>  
-            <option value="VANES">VANES</option>  
-            <option value="DUM">DUM</option>  
-          </select>  
-        </div><div class="col-md-6">  
-      <label>W1</label>  
-      <input name="width1" id="width1" type="number" step="any" class="form-control" required>  
-    </div>  
-    <div class="col-md-6">  
-      <label>H1</label>  
-      <input name="height1" id="height1" type="number" step="any" class="form-control" required>  
-    </div>  <div class="col-md-6">
+  <h2 class="mb-4 text-primary">📁 Project Management</h2>
+  <button class="btn btn-primary mb-3" data-bs-toggle="modal" data-bs-target="#addProjectModal">➕ Add New Project</button>
 
-<label>W2</label>
-<input name="width2" id="width2" type="number" step="any" class="form-control">
+  <!-- Add Project Modal -->
+  <div class="modal fade" id="addProjectModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+      <form method="POST" action="/create_project" enctype="multipart/form-data">
+        <div class="modal-content">
+          <div class="modal-header bg-success text-white">
+            <h5 class="modal-title">➕ Add New Project</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body row g-3">
+            <div class="col-md-6">
+              <label>Project Name</label>
+              <input name="project_name" class="form-control" required>
+            </div>
+            <div class="col-md-6">
+              <label>Enquiry No</label>
+              <input name="enquiry_no" class="form-control" required>
+            </div>
+            <div class="col-md-6">
+              <label>Start Date</label>
+              <input name="start_date" type="date" class="form-control" required>
+            </div>
+            <div class="col-md-6">
+              <label>End Date</label>
+              <input name="end_date" type="date" class="form-control" required>
+            </div>
+            <div class="col-md-12">
+              <label>Vendor</label>
+              <select name="vendor_id" class="form-select" id="vendorSelect" required>
+                <option value="">-- Select Vendor --</option>
+                {% for vendor in vendors %}
+                  <option value="{{ vendor.id }}" data-gst="{{ vendor.gst }}" data-address="{{ vendor.address }}">
+                    {{ vendor.name }}
+                  </option>
+                {% endfor %}
+              </select>
+            </div>
+            <div class="col-md-6">
+              <label>Vendor GST</label>
+              <input type="text" class="form-control" id="vendorGst" readonly>
+            </div>
+            <div class="col-md-6">
+              <label>Vendor Address</label>
+              <input type="text" class="form-control" id="vendorAddress" readonly>
+            </div>
+            <div class="col-md-12">
+              <label>Drawing File (Optional)</label>
+              <input type="file" name="drawing_file" class="form-control">
+            </div>
+            <div class="col-md-12">
+              <label>Notes</label>
+              <textarea name="notes" class="form-control" rows="2"></textarea>
+            </div>
+            <div class="col-md-12">
+              <label>Incharge</label>
+              <input name="incharge" class="form-control" required>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button type="submit" class="btn btn-success">✅ Create</button>
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">❌ Cancel</button>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
 
-</div>  
-<div class="col-md-6">  
-  <label>H2</label>  
-  <input name="height2" id="height2" type="number" step="any" class="form-control">  
-</div>  <div class="col-md-6">  
-  <label>Qty</label>  
-  <input name="quantity" id="quantity" type="number" step="1" class="form-control" required>  
-</div>  
-<div class="col-md-6">  
-  <label>Length/Radius</label>  
-  <input name="length_or_radius" id="length_or_radius" type="number" step="any" class="form-control" required>  
-</div>  
+  <!-- Project List Table -->
+  <div class="table-responsive mb-4">
+    <table class="table table-bordered table-hover bg-white">
+      <thead class="table-light">
+        <tr>
+          <th>Project Name</th>
+          <th>Vendor</th>
+          <th>Enquiry No</th>
+          <th>Start</th>
+          <th>End</th>
+          <th>Status</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for project in projects %}
+        <tr>
+          <td>{{ project.project_name }}</td>
+          <td>{{ project.vendor_name }}</td>
+          <td>{{ project.enquiry_no }}</td>
+          <td>{{ project.start_date }}</td>
+          <td>{{ project.end_date }}</td>
+          <td>{{ project.status }}</td>
+          <td>
+            <a href="/project/{{ project.id }}" class="btn btn-sm btn-info">Open</a>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
 
-<div class="col-md-6">  
-  <label>Deg/Offset</label>  
-  <input name="degree_or_offset" id="degree_or_offset" type="number" step="any" class="form-control">  
-</div>  
+{% if project %}
 
-<div class="col-md-6 factor-field d-none">  
-  <label>Factor</label>  
-  <input name="factor" id="factor" type="number" step="0.01" class="form-control" value="1.0">  
+
+  <!-- Selected Project Info -->
+<div class="row bg-light p-3 rounded mb-3 border">
+  <div class="col-md-3"><strong>📁 Project:</strong> {{ project.project_name }}</div>
+  <div class="col-md-3"><strong>🏷 Enquiry:</strong> {{ project.enquiry_no }}</div>
+  <div class="col-md-3"><strong>📅 Start:</strong> {{ project.start_date }}</div>
+  <div class="col-md-3"><strong>📅 End:</strong> {{ project.end_date }}</div>
 </div>
 
-  </div>  
-  <div class="card-footer text-end">  
-    <button type="submit" class="btn btn-success">➕ Add Entry</button>  
-  </div>  
-</div>    </form>  
-  </div>  <!-- Right Side: Auto-Calculated Duct Entries Table -->
-
-<div class="col-md-7">  
-  <div class="card shadow-sm">  
-    <div class="card-header bg-secondary text-white">📊 Duct Entries</div>  
-    <div class="card-body table-responsive p-0" style="max-height: 520px; overflow-y: auto;">  
-      <table class="table table-sm table-striped m-0">  
-        <thead class="table-light sticky-top">  
-          <tr>  
-            <th>Duct</th><th>Type</th><th>W1</th><th>H1</th><th>W2</th><th>H2</th>  
-            <th>Qty</th><th>Len</th><th>Deg</th><th>Factor</th>  
-            <th>Gauge</th><th>Area</th><th>Nuts</th><th>Cleat</th><th>Gasket</th><th>Corner</th><th>🛠</th>  
-          </tr>  
-        </thead>  
-        <tbody>  
-          {% set total_area = 0 %}  
-          {% set total_nuts = 0 %}  
-          {% set total_cleat = 0 %}  
-          {% set total_gasket = 0 %}  
-          {% set total_corner = 0 %}  
-          {% set total_weight = 0 %}  
-          {% set total = namespace(qty=0, area=0, nuts=0, cleat=0, gasket=0, corner=0) %}  
-          {% for entry in ducts %}
-          <tr>  
-            <td>{{ entry.duct_no }}</td>  
-            <td>{{ entry.duct_type }}</td>  
-            <td>{{ entry.width1 }}</td>  
-            <td>{{ entry.height1 }}</td>  
-            <td>{{ entry.width2 }}</td>  
-            <td>{{ entry.height2 }}</td>  
-            <td>{{ entry.quantity }}</td>  
-            <td>{{ entry.length_or_radius }}</td>  
-            <td>{{ entry.degree_or_offset }}</td>  
-            <td>{{ entry.factor }}</td>  
-            <td>{{ entry.gauge }}</td>  
-            <td>{{ "%.2f"|format(entry.nuts_bolts|float or 0) }}</td>  
-            <td>{{ "%.2f"|format(entry.cleat|float or 0) }}</td>  
-            <td>{{ "%.2f"|format(entry.gasket|float or 0) }}</td>  
-            <td>{{ "%.2f"|format(entry.corner_pieces|float or 0) }}</td>  
-            <td>{{ "%.2f"|format(entry.weight|float or 0) }}</td>  
-            <td>  
-              <a href="/edit_duct/{{ entry.id }}" class="btn btn-sm btn-warning">✏️</a>  
-              <form action="{{ url_for('delete_duct', entry_id=entry.id) }}" method="post" style="display:inline;">  
-                <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm('Are you sure?');">🗑️</button>  
-              </form>  
-            </td>  
-          </tr>  
-          {% set total_area = total_area + (entry.area|float or 0) %}  
-          {% set total_nuts = total_nuts + (entry.nuts_bolts|float or 0) %}  
-          {% set total_cleat = total_cleat + (entry.cleat|float or 0) %}  
-          {% set total_gasket = total_gasket + (entry.gasket|float or 0) %}  
-          {% set total_corner = total_corner + (entry.corner_pieces|float or 0) %}  
-          {% set total_weight = total_weight + (entry.weight|float or 0) %}  
-          {% endfor %}  
-        </tbody>  
-        <tfoot class="table-light fw-bold">  
-          <tr>  
-            <td colspan="6" class="text-end">TOTAL:</td>  
-            <td>{{ total.qty }}</td>  
-            <td colspan="3"></td>  
-            <td></td>  
-            <td>{{ "%.2f"|format(total.area) }}</td>  
-            <td>{{ "%.2f"|format(total.nuts) }}</td>  
-            <td>{{ "%.2f"|format(total.cleat) }}</td>  
-            <td>{{ "%.2f"|format(total.gasket) }}</td>  
-            <td>{{ "%.2f"|format(total.corner) }}</td>  
-            <td></td>  
-          </tr>  
-        </tfoot>  
-      </table>  
-    </div>  
-  </div>  
-</div>  <!-- Table Footer Actions -->  
-  <div class="mt-3 d-flex flex-wrap gap-2">  
-    <a href="/export_excel/{{ project.id }}" class="btn btn-outline-primary">📤 Export Excel</a>  
-    <a href="/export_pdf/{{ project.id }}" class="btn btn-outline-secondary">🧾 Export PDF</a>  
-    <button onclick="window.print()" class="btn btn-outline-dark">🖨️ Print</button>  
-    <form method="POST" action="/submit_all/{{ project.id }}">  
-      <button class="btn btn-success">📨 Submit All & Move to Production</button>  
-    </form>  
-  </div>  
+<!-- Action Buttons -->
+<div class="d-flex gap-2 mb-3 flex-wrap">
+  {% if project.status == 'new' %}
+  <form method="POST" action="/continue_to_measurement/{{ project.id }}">
+    <button type="submit" class="btn btn-warning">📋 Save & Continue to Measurement Sheet</button>
+  </form>
+  {% endif %}
+  {% if project.status == 'preparation' %}
+  <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#measurementSheetModal">
+    📐 Measurement Sheet
+  </button>
+  {% endif %}
+  <form method="POST" action="/submit_for_review/{{ project.id }}">
+    <button class="btn btn-secondary">🚧 Submit for Review</button>
+  </form>
 </div>
 
-  </div> <!-- row end -->  
-{% endif %} <!-- project if block -->    <!-- ✅ Auto Calculation & Vendor Details Autofill Script -->   <script>  
-function setupAutoCalculation(prefix = '') {  
-  const get = (id) => parseFloat(document.getElementById(prefix + id)?.value || 0);  
-  const set = (id, val) => {  
-    const el = document.getElementById(prefix + id);  
-    if (el) el.value = val;  
-  };  
+<div class="row">
+  <!-- ✅ Left Side: Duct Entry Form -->
+  <div class="col-md-5">
+    <form method="POST" action="/add_duct">
+      <input type="hidden" name="project_id" value="{{ project.id }}">
+      <div class="card shadow-sm mb-3">
+        <div class="card-header bg-primary text-white">➕ Duct Entry</div>
+        <div class="card-body row g-2">
+          <div class="col-md-6">
+            <label>Duct No</label>
+            <input name="duct_no" class="form-control" required>
+          </div>
+          <div class="col-md-6">
+            <label>Type</label>
+            <select name="duct_type" id="ductType" class="form-select" required>
+              <option value="">-- Select Type --</option>
+              <option value="ST">ST</option>
+              <option value="RED">RED</option>
+              <option value="OFFSET">OFFSET</option>
+              <option value="SHOE">SHOE</option>
+              <option value="ELB">ELB</option>
+              <option value="VANES">VANES</option>
+              <option value="DUM">DUM</option>
+            </select>
+          </div>
+          <div class="col-md-6"><label>W1</label><input name="width1" id="width1" type="number" step="any" class="form-control" required></div>
+          <div class="col-md-6"><label>H1</label><input name="height1" id="height1" type="number" step="any" class="form-control" required></div>
+          <div class="col-md-6"><label>W2</label><input name="width2" id="width2" type="number" step="any" class="form-control"></div>
+          <div class="col-md-6"><label>H2</label><input name="height2" id="height2" type="number" step="any" class="form-control"></div>
+          <div class="col-md-6"><label>Qty</label><input name="quantity" id="quantity" type="number" step="1" class="form-control" required></div>
+          <div class="col-md-6"><label>Length/Radius</label><input name="length_or_radius" id="length_or_radius" type="number" step="any" class="form-control" required></div>
+          <div class="col-md-6"><label>Deg/Offset</label><input name="degree_or_offset" id="degree_or_offset" type="number" step="any" class="form-control"></div>
+          <div class="col-md-6 factor-field d-none"><label>Factor</label><input name="factor" id="factor" type="number" step="0.01" class="form-control" value="1.0"></div>
+          <input type="hidden" name="gauge" id="gauge">
+          <input type="hidden" name="area" id="area">
+          <input type="hidden" name="nuts_bolts" id="nuts_bolts">
+          <input type="hidden" name="cleat" id="cleat">
+          <input type="hidden" name="gasket" id="gasket">
+          <input type="hidden" name="corner_pieces" id="corner_pieces">
+        </div>
+        <div class="card-footer text-end">
+          <button type="submit" class="btn btn-success">➕ Add Entry</button>
+        </div>
+      </div>
+    </form>
+  </div>
+
+  <!-- ✅ Right Side: Duct Entries Table -->
+  <div class="col-md-7">
+    <div class="card shadow-sm">
+      <div class="card-header bg-secondary text-white">📊 Duct Entries</div>
+      <div class="card-body table-responsive p-0" style="max-height: 520px; overflow-y: auto;">
+        <table class="table table-sm table-striped m-0">
+          <thead class="table-light sticky-top">
+            <tr>
+              <th>Duct</th><th>Type</th><th>W1</th><th>H1</th><th>W2</th><th>H2</th>
+              <th>Qty</th><th>Len</th><th>Deg</th><th>Factor</th>
+              <th>Gauge</th><th>Area</th><th>Nuts</th><th>Cleat</th><th>Gasket</th><th>Corner</th><th>🛠</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% set total_area = 0 %}
+            {% set total_nuts = 0 %}
+            {% set total_cleat = 0 %}
+            {% set total_gasket = 0 %}
+            {% set total_corner = 0 %}
+            {% for entry in ducts %}
+            <tr>
+              <td>{{ entry.duct_no }}</td>
+              <td>{{ entry.duct_type }}</td>
+              <td>{{ entry.width1 }}</td>
+              <td>{{ entry.height1 }}</td>
+              <td>{{ entry.width2 }}</td>
+              <td>{{ entry.height2 }}</td>
+              <td>{{ entry.quantity }}</td>
+              <td>{{ entry.length_or_radius }}</td>
+              <td>{{ entry.degree_or_offset }}</td>
+              <td>{{ entry.factor }}</td>
+              <td>{{ entry.gauge }}</td>
+              <td>{{ "%.2f"|format(entry.area|float) }}</td>
+              <td>{{ "%.2f"|format(entry.nuts_bolts|float) }}</td>
+              <td>{{ "%.2f"|format(entry.cleat|float) }}</td>
+              <td>{{ "%.2f"|format(entry.gasket|float) }}</td>
+              <td>{{ "%.2f"|format(entry.corner_pieces|float) }}</td>
+              <td>
+                <a href="/edit_duct/{{ entry.id }}" class="btn btn-sm btn-warning">✏️</a>
+                <form action="{{ url_for('delete_duct', entry_id=entry.id) }}" method="post" style="display:inline;">
+                  <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm('Are you sure?');">🗑️</button>
+                </form>
+              </td>
+            </tr>
+            {% set total_area = total_area + (entry.area|float) %}
+            {% set total_nuts = total_nuts + (entry.nuts_bolts|float) %}
+            {% set total_cleat = total_cleat + (entry.cleat|float) %}
+            {% set total_gasket = total_gasket + (entry.gasket|float) %}
+            {% set total_corner = total_corner + (entry.corner_pieces|float) %}
+            {% endfor %}
+          </tbody>
+          <tfoot class="table-light fw-bold">
+            <tr>
+              <td colspan="11" class="text-end">TOTAL:</td>
+              <td>{{ "%.2f"|format(total_area) }}</td>
+              <td>{{ "%.2f"|format(total_nuts) }}</td>
+              <td>{{ "%.2f"|format(total_cleat) }}</td>
+              <td>{{ "%.2f"|format(total_gasket) }}</td>
+              <td>{{ "%.2f"|format(total_corner) }}</td>
+              <td></td>
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="mt-3 d-flex flex-wrap gap-2">
+  <a href="/export_excel/{{ project.id }}" class="btn btn-outline-primary">📤 Export Excel</a>
+  <a href="/export_pdf/{{ project.id }}" class="btn btn-outline-secondary">🧾 Export PDF</a>
+  <button onclick="window.print()" class="btn btn-outline-dark">🖨️ Print</button>
+  <form method="POST" action="/submit_all/{{ project.id }}">
+    <button class="btn btn-success">📨 Submit All & Move to Production</button>
+  </form>
+</div>
+
+{% endif %}
+
   
-  function calculate() {  
-    const type = (document.getElementById(prefix + 'ductType')?.value || '').toUpperCase();  
-    const w1 = get('width1'), h1 = get('height1'), w2 = get('width2'), h2 = get('height2');  
-    const len = get('length_or_radius'), qty = get('quantity'), deg = get('degree_or_offset');  
-    const factor = get('factor') || 1;  
+<!-- ✅ Auto Calculation & Vendor Details Autofill Script -->
+<script>
+function setupAutoCalculation(prefix = '') {
+  const get = (id) => parseFloat(document.getElementById(prefix + id)?.value || 0);
+  const set = (id, val) => {
+    const el = document.getElementById(prefix + id);
+    if (el) el.value = val;
+  };
+
+  function calculate() {
+    const type = (document.getElementById(prefix + 'ductType')?.value || '').toUpperCase();
+    const w1 = get('width1'), h1 = get('height1'), w2 = get('width2'), h2 = get('height2');
+    const len = get('length_or_radius'), qty = get('quantity'), deg = get('degree_or_offset');
+    const factor = get('factor') || 1;
+
+    let area = 0;
+    if (type === 'ST') {
+      area = 2 * (w1 + h1) / 1000 * (len / 1000) * qty;
+    } else if (type === 'RED') {
+      area = (w1 + h1 + w2 + h2) / 1000 * (len / 1000) * qty * factor;
+    } else if (type === 'DUM') {
+      area = (w1 * h1) / 1000000 * qty;
+    } else if (type === 'OFFSET') {
+      area = (w1 + h1 + w2 + h2) / 1000 * ((len + deg) / 1000) * qty * factor;
+    } else if (type === 'SHOE') {
+      area = (w1 + h1) * 2 / 1000 * (len / 1000) * qty * factor;
+    } else if (type === 'VANES') {
+      area = w1 / 1000 * (2 * Math.PI * (w1 / 1000) / 4) * qty;
+    } else if (type === 'ELB') {
+      area = 2 * (w1 + h1) / 1000 * ((h1 / 2 / 1000) + (len / 1000) * (Math.PI * (deg / 180))) * qty * factor;
+    }
+
+    set('area', area.toFixed(2));
+
+    let gauge = '18g';
+    if (w1 <= 751 && h1 <= 751) gauge = '24g';
+    else if (w1 <= 1201 && h1 <= 1201) gauge = '22g';
+    else if (w1 <= 1800 && h1 <= 1800) gauge = '20g';
+    set('gauge', gauge);
+
+    set('nuts_bolts', (qty * 4).toFixed(2));
+
+    let cleat = 12;
+    if (gauge === '24g') cleat = 4;
+    else if (gauge === '22g') cleat = 8;
+    else if (gauge === '20g') cleat = 10;
+    set('cleat', (qty * cleat).toFixed(2));
+
+    const gasket = (w1 + h1 + w2 + h2) / 1000 * qty;
+    set('gasket', gasket.toFixed(2));
+
+    const corners = (type === 'DUM') ? 0 : qty * 8;
+    set('corner_pieces', corners.toFixed(2));
+  }
+
+  const fields = ['ductType', 'width1', 'height1', 'width2', 'height2', 'length_or_radius', 'quantity', 'degree_or_offset', 'factor'];
+  fields.forEach(id => {
+    const el = document.getElementById(prefix + id);
+    if (el) el.addEventListener('input', calculate);
+  });
+
+  calculate();
+}
+
+function setupFactorField(typeId, fieldClass) {
+  const ductTypeSelect = document.getElementById(typeId);
+  const factorField = document.querySelector(fieldClass);
+
+  function update() {
+    const value = ductTypeSelect?.value;
+    const show = ['RED', 'OFFSET', 'SHOE', 'ELB'].includes(value);
+    if (show) factorField?.classList.remove('d-none');
+    else factorField?.classList.add('d-none');
+  }
+
+  if (ductTypeSelect) {
+    ductTypeSelect.addEventListener('change', update);
+    update();
+  }
+}
+
+function setupVendorAutoFill() {
+  const vendorSelect = document.getElementById('vendorSelect');
+  const gstInput = document.getElementById('vendorGst');
+  const addrInput = document.getElementById('vendorAddress');
+
+  if (vendorSelect && gstInput && addrInput) {
+    vendorSelect.addEventListener('change', function () {
+      const selected = this.options[this.selectedIndex];
+      const gst = selected.getAttribute('data-gst') || '';
+      const addr = selected.getAttribute('data-address') || '';
+      gstInput.value = gst;
+      addrInput.value = addr;
+    });
+  }
+}
+
+document.addEventListener('DOMContentLoaded', function () {
+  setupAutoCalculation('');
+  setupFactorField('ductType', '.factor-field');
+  setupVendorAutoFill();
+});
+</script>
+
+  <!-- ✅ jQuery and Bootstrap Bundle (Popper included) -->
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+
+</div> <!-- End main container -->
+</body>
+</html>
   
-    let area = 0;  
-    if (type === 'ST') {  
-      area = 2 * (w1 + h1) / 1000 * (len / 1000) * qty;  
-    } else if (type === 'RED') {  
-      area = (w1 + h1 + w2 + h2) / 1000 * (len / 1000) * qty * factor;  
-    } else if (type === 'DUM') {  
-      area = (w1 * h1) / 1000000 * qty;  
-    } else if (type === 'OFFSET') {  
-      area = (w1 + h1 + w2 + h2) / 1000 * ((len + deg) / 1000) * qty * factor;  
-    } else if (type === 'SHOE') {  
-      area = (w1 + h1) * 2 / 1000 * (len / 1000) * qty * factor;  
-    } else if (type === 'VANES') {  
-      area = w1 / 1000 * (2 * Math.PI * (w1 / 1000) / 4) * qty;  
-    } else if (type === 'ELB') {  
-      area = 2 * (w1 + h1) / 1000 * ((h1 / 2 / 1000) + (len / 1000) * (Math.PI * (deg / 180))) * qty * factor;  
-    }  
-  
-    set('area', area.toFixed(2));  
-  
-    let gauge = '18g';  
-    if (w1 <= 751 && h1 <= 751) gauge = '24g';  
-    else if (w1 <= 1201 && h1 <= 1201) gauge = '22g';  
-    else if (w1 <= 1800 && h1 <= 1800) gauge = '20g';  
-    set('gauge', gauge);  
-  
-    set('nuts_bolts', (qty * 4).toFixed(2));  
-  
-    let cleat = 12;  
-    if (gauge === '24g') cleat = 4;  
-    else if (gauge === '22g') cleat = 8;  
-    else if (gauge === '20g') cleat = 10;  
-    set('cleat', (qty * cleat).toFixed(2));  
-  
-    const gasket = (w1 + h1 + w2 + h2) / 1000 * qty;  
-    set('gasket', gasket.toFixed(2));  
-  
-    const corners = (type === 'DUM') ? 0 : qty * 8;  
-    set('corner_pieces', corners.toFixed(2));  
-  }  
-  
-  const fields = ['ductType', 'width1', 'height1', 'width2', 'height2', 'length_or_radius', 'quantity', 'degree_or_offset', 'factor'];  
-  fields.forEach(id => {  
-    const el = document.getElementById(prefix + id);  
-    if (el) el.addEventListener('input', calculate);  
-  });  
-  
-  calculate();  
-}  
-  
-function setupFactorField(typeId, fieldClass) {  
-  const ductTypeSelect = document.getElementById(typeId);  
-  const factorField = document.querySelector(fieldClass);  
-  
-  function update() {  
-    const value = ductTypeSelect?.value;  
-    const show = ['RED', 'OFFSET', 'SHOE', 'ELB'].includes(value);  
-    if (show) factorField?.classList.remove('d-none');  
-    else factorField?.classList.add('d-none');  
-  }  
-  
-  if (ductTypeSelect) {  
-    ductTypeSelect.addEventListener('change', update);  
-    update();  
-  }  
-}  
-  
-function setupVendorAutoFill() {  
-  const vendorSelect = document.getElementById('vendorSelect');  
-  const gstInput = document.getElementById('vendorGst');  
-  const addrInput = document.getElementById('vendorAddress');  
-  
-  if (vendorSelect && gstInput && addrInput) {  
-    vendorSelect.addEventListener('change', function () {  
-      const selected = this.options[this.selectedIndex];  
-      const gst = selected.getAttribute('data-gst') || '';  
-      const addr = selected.getAttribute('data-address') || '';  
-      gstInput.value = gst;  
-      addrInput.value = addr;  
-    });  
-  }  
-}  
-  
-document.addEventListener('DOMContentLoaded', function () {  
-  setupAutoCalculation('');  
-  setupAutoCalculation('Modal');  
-  setupFactorField('ductType', '.factor-field');  
-  setupFactorField('ductTypeModal', '.factor-field-modal');  
-  setupVendorAutoFill();  
-});  
- </script>    <!-- ✅ jQuery and Bootstrap Bundle (Popper included) -->  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>  </div> <!-- End main container -->  
-</body>  
-</html>  
