@@ -26,6 +26,7 @@ def init_db():
     cur.execute('''
         CREATE TABLE IF NOT EXISTS projects (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
+            project_code TEXT,
             vendor_id INTEGER,
             quotation_ro TEXT,
             start_date TEXT,
@@ -114,11 +115,13 @@ def init_db():
         )
     ''')
 
+    # Default admin user
     cur.execute('''
         INSERT OR IGNORE INTO users (email, name, role, contact, password)
         VALUES (?, ?, ?, ?, ?)
     ''', ("admin@ducting.com", "Admin", "Admin", "9999999999", "admin123"))
 
+    # Dummy vendor and contact
     cur.execute('''
         INSERT OR IGNORE INTO vendors (id, name, gst, address, bank_name, account_number, ifsc)
         VALUES (?, ?, ?, ?, ?, ?, ?)
@@ -134,103 +137,56 @@ def init_db():
 
 @app.before_request
 def setup_database():
-    print("🔧 Initializing DB...")
     init_db()
-
-# ---------- ✅ Login ----------
-@app.route('/', methods=['GET', 'POST'])
+@app.route("/", methods=["GET", "POST"])
 def login():
-    if request.method == 'POST':
-        email = request.form['email']
-        password = request.form['password']
+    if request.method == "POST":
+        email = request.form["email"]
+        password = request.form["password"]
 
         conn = get_db()
         cur = conn.cursor()
         cur.execute("SELECT * FROM users WHERE email = ? AND password = ?", (email, password))
         user = cur.fetchone()
+        conn.close()
 
         if user:
-            session['user'] = user['name']
-            session['role'] = user['role']
-            flash("✅ Login successful!", "success")
-            return redirect(url_for('dashboard'))
+            session["user_id"] = user["id"]
+            session["user_name"] = user["name"]
+            session["user_role"] = user["role"]
+            flash("Login successful!", "success")
+            return redirect(url_for("dashboard"))
         else:
-            flash("❌ Invalid credentials!", "danger")
-            return redirect(url_for('login'))
+            flash("Invalid credentials", "danger")
 
     return render_template("login.html")
 
-# ---------- ✅ Logout ----------
-@app.route('/logout')
+@app.route("/logout")
 def logout():
     session.clear()
-    flash("🔒 You have been logged out.", "success")
-    return redirect(url_for('login'))
+    flash("Logged out successfully.", "success")
+    return redirect(url_for("login"))
 
-@app.route('/project/<int:project_id>')
-def open_project(project_id):
+@app.route("/dashboard")
+def dashboard():
+    if "user_id" not in session:
+        return redirect(url_for("login"))
+
     conn = get_db()
     cur = conn.cursor()
+    cur.execute("SELECT COUNT(*) FROM projects")
+    total_projects = cur.fetchone()[0]
 
-    # Fetch project info
-    cur.execute("SELECT * FROM projects WHERE id = ?", (project_id,))
-    project = cur.fetchone()
+    cur.execute("SELECT COUNT(*) FROM vendors")
+    total_vendors = cur.fetchone()[0]
 
-    if not project:
-        flash("Project not found.", "danger")
-        return redirect(url_for('projects'))
-
-    # Fetch vendors
-    cur.execute("SELECT * FROM vendors")
-    vendors = cur.fetchall()
-
-    # Fetch duct entries
-    cur.execute("SELECT * FROM duct_entries WHERE project_id = ?", (project_id,))
-    duct_rows = cur.fetchall()
-
-    # Convert rows to dictionaries and cast numeric values
-    ducts = []
-    for row in duct_rows:
-        d = dict(row)  # Convert sqlite3.Row to dict
-        d['area'] = float(d.get('area') or 0)
-        d['nuts_bolts'] = float(d.get('nuts_bolts') or 0)
-        d['cleat'] = float(d.get('cleat') or 0)
-        d['gasket'] = float(d.get('gasket') or 0)
-        d['corner_pieces'] = float(d.get('corner_pieces') or 0)
-        d['weight'] = float(d.get('weight') or 0)
-        ducts.append(d)
-
-    # Totals
-    total_area = sum(d['area'] for d in ducts)
-    total_nuts = sum(d['nuts_bolts'] for d in ducts)
-    total_cleat = sum(d['cleat'] for d in ducts)
-    total_gasket = sum(d['gasket'] for d in ducts)
-    total_corner = sum(d['corner_pieces'] for d in ducts)
+    cur.execute("SELECT COUNT(*) FROM users")
+    total_users = cur.fetchone()[0]
 
     conn.close()
 
-    return render_template(
-        "projects.html",
-        project=project,
-        vendors=vendors,
-        ducts=ducts,
-        total_area=total_area,
-        total_nuts=total_nuts,
-        total_cleat=total_cleat,
-        total_gasket=total_gasket,
-        total_corner=total_corner
-    )
-
-# ---------- ✅ Dashboard ----------
-@app.route('/dashboard')
-def dashboard():
-    if 'user' not in session:
-        return redirect(url_for('login'))
-    return render_template("dashboard.html", user=session['user'])
-
-
-
-
+    return render_template("dashboard.html", total_projects=total_projects,
+                           total_vendors=total_vendors, total_users=total_users)
 
 @app.route('/vendor_registration', methods=['GET', 'POST'])
 def vendor_registration():
@@ -261,6 +217,7 @@ def vendor_registration():
                         (vendor_id, contact['name'], contact['phone'], contact['email']))
 
         conn.commit()
+        conn.close()
         flash("✅ Vendor registered successfully!", "success")
         return redirect(url_for('vendor_registration'))
 
@@ -273,6 +230,7 @@ def get_vendor_info(vendor_id):
     cur = conn.cursor()
     cur.execute("SELECT gst, address FROM vendors WHERE id = ?", (vendor_id,))
     vendor = cur.fetchone()
+    conn.close()
     if vendor:
         return {'gst': vendor['gst'], 'address': vendor['address']}
     else:
@@ -300,268 +258,86 @@ def projects():
 
 @app.route('/create_project', methods=['POST'])
 def create_project():
-    if 'user' not in session:
-        return redirect(url_for('login'))
-
-    try:  
-        vendor_id = request.form['vendor_id']  
-        project_name = request.form['project_name']  
-        enquiry_no = request.form['enquiry_no']  
-        start_date = request.form['start_date']  
-        end_date = request.form['end_date']  
-        incharge = request.form['incharge']  
-        notes = request.form['notes']  
-        file = request.files.get('drawing_file')  
-        file_name = None  
-
-        if file and file.filename != '':  
-            uploads_dir = os.path.join('static', 'uploads')  
-            os.makedirs(uploads_dir, exist_ok=True)  
-            file_name = file.filename  
-            file.save(os.path.join(uploads_dir, file_name))  
-
-        conn = get_db()  
-        cur = conn.cursor()  
-        cur.execute('''  
-            INSERT INTO projects (  
-                vendor_id, quotation_ro, start_date, end_date,  
-                location, incharge, notes, file_name,  
-                enquiry_id, client_name  
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)  
-        ''', (  
-            vendor_id, '', start_date, end_date,  
-            '', incharge, notes, file_name,  
-            enquiry_no, project_name  
-        ))  
-
-        conn.commit()  
-        conn.close()  
-        flash("✅ Project added successfully!", "success")  
-        return redirect(url_for('projects'))  
-
-    except Exception as e:  
-        print("❌ Error while creating project:", e)  
-        return "Bad Request", 400
-
-
-
-@app.route('/add_measurement', methods=['POST'])
-def add_measurement():
-    project_id = request.form['project_id']
     client_name = request.form['client_name']
     site_location = request.form['site_location']
     engineer_name = request.form['engineer_name']
     mobile = request.form['mobile']
+    start_date = request.form['start_date']
+    end_date = request.form['end_date']
+    vendor_id = request.form['vendor_id']
 
     conn = get_db()
     cur = conn.cursor()
     cur.execute('''
-        UPDATE projects SET
-        client_name = ?, site_location = ?, engineer_name = ?, mobile = ?, status = ?
-        WHERE id = ?
-    ''', (client_name, site_location, engineer_name, mobile, 'preparation', project_id))
-    conn.commit()
-    return '', 200
-@app.route('/add_duct', methods=['POST'])
-def add_duct():
-    import math
-    project_id = request.form['project_id']
-    duct_no = request.form['duct_no']
-    duct_type = request.form['duct_type'].upper()
-    w1 = float(request.form.get('width1') or 0)
-    h1 = float(request.form.get('height1') or 0)
-    w2 = float(request.form.get('width2') or 0)
-    h2 = float(request.form.get('height2') or 0)
-    qty = int(request.form.get('quantity') or 0)
-    length = float(request.form.get('length_or_radius') or 0)
-    deg = float(request.form.get('degree_or_offset') or 0)
-    factor = float(request.form.get('factor') or 1.0)
-
-    # Calculate area based on type
-    area = 0
-    if duct_type == 'ST':
-        area = 2 * (w1 + h1) / 1000 * (length / 1000) * qty
-    elif duct_type == 'RED':
-        area = (w1 + h1 + w2 + h2) / 1000 * (length / 1000) * qty * factor
-    elif duct_type == 'DUM':
-        area = (w1 * h1) / 1000000 * qty
-    elif duct_type == 'OFFSET':
-        area = (w1 + h1 + w2 + h2) / 1000 * ((length + deg) / 1000) * qty * factor
-    elif duct_type == 'SHOE':
-        area = (w1 + h1) * 2 / 1000 * (length / 1000) * qty * factor
-    elif duct_type == 'VANES':
-        area = w1 / 1000 * (2 * math.pi * (w1 / 1000) / 4) * qty
-    elif duct_type == 'ELB':
-        area = 2 * (w1 + h1) / 1000 * ((h1 / 2 / 1000) + (length / 1000) * (math.pi * (deg / 180))) * qty * factor
-
-    # Gauge logic
-    gauge = '18g'
-    if w1 <= 751 and h1 <= 751:
-        gauge = '24g'
-    elif w1 <= 1201 and h1 <= 1201:
-        gauge = '22g'
-    elif w1 <= 1800 and h1 <= 1800:
-        gauge = '20g'
-
-    nuts_bolts = qty * 4
-
-    cleat_factor = 12
-    if gauge == '24g':
-        cleat_factor = 4
-    elif gauge == '22g':
-        cleat_factor = 8
-    elif gauge == '20g':
-        cleat_factor = 10
-    cleat = qty * cleat_factor
-
-    gasket = (w1 + h1 + w2 + h2) / 1000 * qty
-    corner_pieces = 0 if duct_type == 'DUM' else qty * 8
-
-    conn = get_db()
-    cur = conn.cursor()
-    cur.execute('''
-        INSERT INTO duct_entries (
-            project_id, duct_no, duct_type, width1, height1, width2, height2,
-            quantity, length_or_radius, degree_or_offset, factor,
-            area, gauge, nuts_bolts, cleat, gasket, corner_pieces
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-    ''', (
-        project_id, duct_no, duct_type, w1, h1, w2, h2,
-        qty, length, deg, factor,
-        round(area, 2), gauge, round(nuts_bolts, 2), round(cleat, 2),
-        round(gasket, 2), round(corner_pieces, 2)
-    ))
+        INSERT INTO projects (client_name, site_location, engineer_name, mobile, start_date, end_date, vendor_id)
+        VALUES (?, ?, ?, ?, ?, ?, ?)
+    ''', (client_name, site_location, engineer_name, mobile, start_date, end_date, vendor_id))
     conn.commit()
     conn.close()
 
-    flash("Duct entry added successfully!", "success")
-    return redirect(url_for('open_project', project_id=project_id))  # ✅ redirect to your actual project list page
+    flash("✅ Project created successfully!", "success")
+    return redirect(url_for('projects'))
 
 
-@app.route("/edit_duct/<int:entry_id>", methods=["GET", "POST"])
-def edit_duct(entry_id):
+@app.route('/project/<int:project_id>')
+def open_project(project_id):
     conn = get_db()
     conn.row_factory = sqlite3.Row
     cur = conn.cursor()
 
-    # Fetch the specific entry
-    cur.execute("SELECT * FROM duct_entries WHERE id = ?", (entry_id,))
-    entry = cur.fetchone()
-
-    if not entry:
-        flash("Entry not found", "danger")
-        return redirect(url_for("projects"))
-
-    project_id = entry["project_id"]
-
-    if request.method == "POST":
-        data = {
-            "duct_no": request.form.get("duct_no"),
-            "duct_type": request.form.get("duct_type"),
-            "width1": request.form.get("width1"),
-            "height1": request.form.get("height1"),
-            "width2": request.form.get("width2"),
-            "height2": request.form.get("height2"),
-            "length_or_radius": request.form.get("length_or_radius"),
-            "degree_or_offset": request.form.get("degree_or_offset"),
-            "quantity": request.form.get("quantity"),
-            "gauge": request.form.get("gauge"),
-            "factor": request.form.get("factor"),
-            "area": request.form.get("area"),
-            "nuts_bolts": request.form.get("nuts_bolts"),
-            "cleat": request.form.get("cleat"),
-            "gasket": request.form.get("gasket"),
-            "corner_pieces": request.form.get("corner_pieces")
-        }
-
-        cur.execute("""
-            UPDATE duct_entries SET
-              duct_no = :duct_no,
-              duct_type = :duct_type,
-              width1 = :width1,
-              height1 = :height1,
-              width2 = :width2,
-              height2 = :height2,
-              length_or_radius = :length_or_radius,
-              degree_or_offset = :degree_or_offset,
-              quantity = :quantity,
-              gauge = :gauge,
-              factor = :factor,
-              area = :area,
-              nuts_bolts = :nuts_bolts,
-              cleat = :cleat,
-              gasket = :gasket,
-              corner_pieces = :corner_pieces
-            WHERE id = :entry_id
-        """, {**data, "entry_id": entry_id})
-
-        conn.commit()
-        conn.close()
-        flash("Entry updated successfully", "success")
-        return redirect(url_for('open_project', project_id=project_id))
-
-    # Otherwise → Render the `projects.html` with entry in edit mode
-    # Get project
     cur.execute("SELECT * FROM projects WHERE id = ?", (project_id,))
     project = cur.fetchone()
 
-    # Get all vendors
     cur.execute("SELECT * FROM vendors")
     vendors = cur.fetchall()
 
-    # Get all duct entries for this project
     cur.execute("SELECT * FROM duct_entries WHERE project_id = ?", (project_id,))
     entries = cur.fetchall()
 
-    # Safely calculate totals
-    def safe_float(val): return float(val) if val else 0
+    # Totals by gauge
+    totals_by_gauge = {
+        '24g': {'area': 0, 'qty': 0},
+        '22g': {'area': 0, 'qty': 0},
+        '20g': {'area': 0, 'qty': 0},
+        '18g': {'area': 0, 'qty': 0},
+    }
 
-    total_area = sum(safe_float(d['area']) for d in entries)
-    total_nuts = sum(safe_float(d['nuts_bolts']) for d in entries)
-    total_cleat = sum(safe_float(d['cleat']) for d in entries)
-    total_gasket = sum(safe_float(d['gasket']) for d in entries)
-    total_corner = sum(safe_float(d['corner_pieces']) for d in entries)
+    # Overall totals
+    total_area = total_nuts = total_cleat = total_gasket = total_corner = 0
 
-    conn.close()
-    return render_template(
-        "projects.html",
-        project=project,
-        vendors=vendors,
-        entries=entries,
-        edit_entry=entry,  # 🔁 Important for conditional form rendering
-        total_area=round(total_area, 2),
-        total_nuts=round(total_nuts, 2),
-        total_cleat=round(total_cleat, 2),
-        total_gasket=round(total_gasket, 2),
-        total_corner=round(total_corner, 2)
-    )
+    for d in entries:
+        gauge = d['gauge']
+        area = float(d['area'] or 0)
+        qty = int(d['quantity'] or 0)
 
+        if gauge in totals_by_gauge:
+            totals_by_gauge[gauge]['area'] += area
+            totals_by_gauge[gauge]['qty'] += qty
 
-@app.route("/delete_duct/<int:entry_id>", methods=["POST"])
-def delete_duct(entry_id):
-    conn = get_db()
-    cur = conn.cursor()
-
-    cur.execute("SELECT project_id FROM duct_entries WHERE id = ?", (entry_id,))
-    result = cur.fetchone()
-
-    if result:
-        project_id = result[0]
-        cur.execute("DELETE FROM duct_entries WHERE id = ?", (entry_id,))
-        conn.commit()
-        flash("Entry deleted successfully", "success")
-    else:
-        flash("Entry not found", "danger")
+        total_area += area
+        total_nuts += float(d['nuts_bolts'] or 0)
+        total_cleat += float(d['cleat'] or 0)
+        total_gasket += float(d['gasket'] or 0)
+        total_corner += float(d['corner_pieces'] or 0)
 
     conn.close()
-    return redirect(url_for("open_project", project_id=project_id))
+    return render_template("projects.html",
+                           project=project,
+                           vendors=vendors,
+                           entries=entries,
+                           total_area=round(total_area, 2),
+                           total_nuts=round(total_nuts, 2),
+                           total_cleat=round(total_cleat, 2),
+                           total_gasket=round(total_gasket, 2),
+                           total_corner=round(total_corner, 2),
+                           totals_by_gauge=totals_by_gauge)
 
-@app.route('/update_duct/<int:entry_id>', methods=['POST'])
-def update_duct(entry_id):
+
+@app.route('/add_duct/<int:project_id>', methods=['POST'])
+def add_duct(project_id):
     import math
-    form = request.form
 
-    duct_no = form['duct_no']
+    form = request.form
     duct_type = form['duct_type'].upper()
     w1 = float(form.get('width1') or 0)
     h1 = float(form.get('height1') or 0)
@@ -570,9 +346,16 @@ def update_duct(entry_id):
     qty = int(form.get('quantity') or 0)
     length = float(form.get('length_or_radius') or 0)
     deg = float(form.get('degree_or_offset') or 0)
-    factor = float(form.get('factor') or 1.0)
+    factor = float(form.get('factor') or 1)
 
-    # Recalculate fields (same as add_duct)
+    # Generate ID: VE/TN/2526/EXXX
+    conn = get_db()
+    cur = conn.cursor()
+    cur.execute("SELECT COUNT(*) FROM duct_entries WHERE project_id = ?", (project_id,))
+    count = cur.fetchone()[0] + 1
+    duct_no = f"VE/TN/2526/E{count:03d}"
+
+    # Area calculation
     area = 0
     if duct_type == 'ST':
         area = 2 * (w1 + h1) / 1000 * (length / 1000) * qty
@@ -607,206 +390,135 @@ def update_duct(entry_id):
     gasket = (w1 + h1 + w2 + h2) / 1000 * qty
     corner_pieces = 0 if duct_type == 'DUM' else qty * 8
 
-    conn = get_db()
-    cur = conn.cursor()
-
     cur.execute('''
-        UPDATE duct_entries SET
-            duct_no = ?, duct_type = ?, width1 = ?, height1 = ?, width2 = ?, height2 = ?,
-            quantity = ?, length_or_radius = ?, degree_or_offset = ?, factor = ?,
-            area = ?, gauge = ?, nuts_bolts = ?, cleat = ?, gasket = ?, corner_pieces = ?
-        WHERE id = ?
+        INSERT INTO duct_entries (
+            project_id, duct_no, duct_type, width1, height1, width2, height2,
+            length_or_radius, degree_or_offset, quantity, gauge, factor, area,
+            nuts_bolts, cleat, gasket, corner_pieces
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     ''', (
-        duct_no, duct_type, w1, h1, w2, h2, qty, length, deg, factor,
-        round(area, 2), gauge, round(nuts_bolts, 2), round(cleat, 2),
-        round(gasket, 2), round(corner_pieces, 2), entry_id
+        project_id, duct_no, duct_type, w1, h1, w2, h2,
+        length, deg, qty, gauge, factor, round(area, 2),
+        round(nuts_bolts, 2), round(cleat, 2), round(gasket, 2), round(corner_pieces, 2)
     ))
 
     conn.commit()
     conn.close()
+    flash("✅ Duct entry added!", "success")
+    return redirect(url_for('open_project', project_id=project_id))
 
-    flash("Duct entry updated successfully!", "success")
-    return redirect('/project/' + str(form.get('project_id')))
 
-@app.route('/export_pdf/<int:project_id>')
-def export_pdf(project_id):
-    from reportlab.pdfgen import canvas
-    from reportlab.lib.pagesizes import A4
-    from reportlab.platypus import Table, TableStyle
-    from reportlab.lib import colors
-    from io import BytesIO
-    from num2words import num2words
-    import os
+@app.route("/project/<int:project_id>")
+def open_project(project_id):
+    conn = get_db()
+    conn.row_factory = sqlite3.Row
+    cur = conn.cursor()
 
-    buffer = BytesIO()
-    p = canvas.Canvas(buffer, pagesize=A4)
-    width, height = A4
+    cur.execute("SELECT * FROM projects WHERE id = ?", (project_id,))
+    project = cur.fetchone()
 
-    conn = sqlite3.connect('database.db')
-    c = conn.cursor()
-    c.execute("""
-        SELECT client_name, site_location, engineer_name, mobile, start_date, end_date
-        FROM projects WHERE id = ?
-    """, (project_id,))
-    proj = c.fetchone()
-    client_name = proj[0] if proj else "Project"
-    site_location = proj[1] if proj else ""
-    engineer_name = proj[2] if proj else ""
-    mobile = proj[3] if proj else ""
-    start_date = proj[4] if proj else ""
-    end_date = proj[5] if proj else ""
+    if not project:
+        flash("Project not found", "danger")
+        return redirect(url_for("projects"))
 
-    logo_path = os.path.join("static", "logo.png")
-    if os.path.exists(logo_path):
-        p.drawImage(logo_path, 50, height - 80, width=80, preserveAspectRatio=True, mask='auto')
+    cur.execute("SELECT * FROM vendors")
+    vendors = cur.fetchall()
 
-    p.setFont("Helvetica-Bold", 16)
-    p.drawString(200, height - 50, "Vanes Engineering Pvt Ltd")
-    p.setFont("Helvetica", 10)
-    p.drawString(200, height - 65, "No. 23, Industrial Estate, Chennai")
-    p.drawString(200, height - 78, "Email: info@vanesengineering.com | Phone: +91-98765-43210")
+    cur.execute("SELECT * FROM duct_entries WHERE project_id = ?", (project_id,))
+    entries = cur.fetchall()
 
-    p.setFont("Helvetica-Bold", 12)
-    p.drawString(50, height - 110, f"Client: {client_name}")
-    p.drawString(300, height - 110, f"Site: {site_location}")
-    p.drawString(50, height - 125, f"Engineer: {engineer_name}")
-    p.drawString(300, height - 125, f"Mobile: {mobile}")
-    p.drawString(50, height - 140, f"Duration: {start_date} to {end_date}")
+    # Helper
+    def safe(val): return float(val) if val else 0
 
-    c.execute("""
-        SELECT duct_no, duct_type, width1, height1, quantity, area, weight
-        FROM duct_entries WHERE project_id = ?
-    """, (project_id,))
-    entries = c.fetchall()
+    # Totals
+    total_area = total_nuts = total_cleat = total_gasket = total_corner = 0
+    total_24g = total_22g = total_20g = total_18g = 0
+
+    for entry in entries:
+        area = safe(entry["area"])
+        nuts = safe(entry["nuts_bolts"])
+        cleat = safe(entry["cleat"])
+        gasket = safe(entry["gasket"])
+        corner = safe(entry["corner_pieces"])
+        gauge = entry["gauge"]
+
+        total_area += area
+        total_nuts += nuts
+        total_cleat += cleat
+        total_gasket += gasket
+        total_corner += corner
+
+        if gauge == '24g':
+            total_24g += area
+        elif gauge == '22g':
+            total_22g += area
+        elif gauge == '20g':
+            total_20g += area
+        elif gauge == '18g':
+            total_18g += area
+
     conn.close()
 
-    data = [["Duct No", "Type", "Width", "Height", "Qty", "Area", "Weight"]]
-    total_qty = total_area = total_weight = 0
-
-    for row in entries:
-        w = float(row[2]) if row[2] else 0
-        h = float(row[3]) if row[3] else 0
-        qty = float(row[4]) if row[4] else 0
-        area = float(row[5]) if row[5] else 0
-        weight = float(row[6]) if row[6] else 0
-        data.append([row[0], row[1], w, h, qty, area, weight])
-        total_qty += qty
-        total_area += area
-        total_weight += weight
-
-    data.append(["", "", "", "Total", total_qty, round(total_area, 2), round(total_weight, 2)])
-
-    table = Table(data, colWidths=[60, 55, 50, 50, 50, 60, 60])
-    table.setStyle(TableStyle([
-        ('BACKGROUND', (0, 0), (-1, 0), colors.lightgrey),
-        ('GRID', (0, 0), (-1, -1), 1, colors.black),
-        ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
-        ('FONTNAME', (0, -1), (-1, -1), 'Helvetica-Bold'),
-        ('ALIGN', (0, 0), (-1, -1), 'CENTER')
-    ]))
-    table.wrapOn(p, width, height)
-    table.drawOn(p, 50, height - 190 - 25 * len(data))
-
-    def convert_to_words(value):
-        try:
-            int_part = int(value)
-            decimal_part = int(round((value - int_part) * 100))
-            return f"{num2words(int_part).capitalize()} point {num2words(decimal_part)}"
-        except:
-            return "Not available"
-
-    area_words = convert_to_words(round(total_area, 2))
-    weight_words = convert_to_words(round(total_weight, 2))
-
-    p.setFont("Helvetica-Bold", 10)
-    p.drawString(50, height - 210 - 25 * len(data), f"Total Area in Words: {area_words} sq.m")
-    p.drawString(50, height - 225 - 25 * len(data), f"Total Weight in Words: {weight_words} kg")
-
-    p.setFont("Helvetica", 10)
-    p.drawString(50, 80, "Engineer Signature: __________________")
-    p.drawString(300, 80, "Client Signature: __________________")
-
-    p.showPage()
-    p.save()
-    buffer.seek(0)
-
-    return send_file(buffer, as_attachment=True,
-                     download_name=f"{client_name}_duct_sheet.pdf",
-                     mimetype='application/pdf')
-
-
-@app.route("/export_excel/<int:project_id>")
-def export_excel(project_id):
-    try:
-        conn = sqlite3.connect("database.db")
-        query = "SELECT * FROM duct_entries WHERE project_id = ?"
-        df = pd.read_sql_query(query, conn, params=(project_id,))
-        conn.close()
-
-        if df.empty:
-            return "No data available for this project.", 404
-
-        file_path = f"project_{project_id}_entries.xlsx"
-        df.to_excel(file_path, index=False)
-
-        return send_file(file_path, as_attachment=True)
-
-    except Exception as e:
-        return f"Error exporting data: {e}", 500
-
-    finally:
-        if 'file_path' in locals() and os.path.exists(file_path):
-            os.remove(file_path)
-
-
+    return render_template("projects.html",
+        project=project,
+        vendors=vendors,
+        entries=entries,
+        total_area=round(total_area, 2),
+        total_nuts=round(total_nuts, 2),
+        total_cleat=round(total_cleat, 2),
+        total_gasket=round(total_gasket, 2),
+        total_corner=round(total_corner, 2),
+        total_24g=round(total_24g, 2),
+        total_22g=round(total_22g, 2),
+        total_20g=round(total_20g, 2),
+        total_18g=round(total_18g, 2)
+                          )
 @app.route("/production/<int:project_id>")
 def production(project_id):
     conn = get_db()
     conn.row_factory = sqlite3.Row
     cur = conn.cursor()
 
-    # Fetch project
     cur.execute("SELECT * FROM projects WHERE id = ?", (project_id,))
     project = cur.fetchone()
     if not project:
         flash("Project not found", "danger")
         return redirect(url_for('projects'))
 
-    # Fetch duct entries
     cur.execute("SELECT * FROM duct_entries WHERE project_id = ?", (project_id,))
     ducts = cur.fetchall()
 
-    # Initialize all totals
-    total_area = 0
-    total_nuts = 0
-    total_cleat = 0
-    total_gasket = 0
-    total_corner = 0
-    total_weight = 0
+    total_area = total_nuts = total_cleat = total_gasket = total_corner = total_weight = 0
+    total_24g = total_22g = total_20g = total_18g = 0
 
     for duct in ducts:
-        try:
-            area = float(duct["area"] or 0)
-            nuts = float(duct["nuts_bolts"] or 0)
-            cleat = float(duct["cleat"] or 0)
-            gasket = float(duct["gasket"] or 0)
-            corner = float(duct["corner_pieces"] or 0)
-            weight = float(duct["weight"] or 0)
+        area = float(duct["area"] or 0)
+        nuts = float(duct["nuts_bolts"] or 0)
+        cleat = float(duct["cleat"] or 0)
+        gasket = float(duct["gasket"] or 0)
+        corner = float(duct["corner_pieces"] or 0)
+        weight = float(duct["weight"] or 0)
+        gauge = duct["gauge"]
 
-            total_area += area
-            total_nuts += nuts
-            total_cleat += cleat
-            total_gasket += gasket
-            total_corner += corner
-            total_weight += weight
-        except Exception as e:
-            print("❌ Error calculating totals:", e)
+        total_area += area
+        total_nuts += nuts
+        total_cleat += cleat
+        total_gasket += gasket
+        total_corner += corner
+        total_weight += weight
 
-    # Save back total area to project
+        if gauge == '24g':
+            total_24g += area
+        elif gauge == '22g':
+            total_22g += area
+        elif gauge == '20g':
+            total_20g += area
+        elif gauge == '18g':
+            total_18g += area
+
     cur.execute("UPDATE projects SET total_sqm = ? WHERE id = ?", (total_area, project_id))
     conn.commit()
 
-    # Handle progress tracking
     cur.execute("SELECT * FROM production_progress WHERE project_id = ?", (project_id,))
     progress = cur.fetchone()
     if not progress:
@@ -821,16 +533,20 @@ def production(project_id):
     conn.close()
 
     return render_template("production.html",
-                           project=project,
-                           ducts=ducts,
-                           progress=progress,
-                           total_area=total_area,
-                           total_nuts=total_nuts,
-                           total_cleat=total_cleat,
-                           total_gasket=total_gasket,
-                           total_corner=total_corner,
-                           total_weight=total_weight)
-
+        project=project,
+        ducts=ducts,
+        progress=progress,
+        total_area=round(total_area, 2),
+        total_nuts=round(total_nuts, 2),
+        total_cleat=round(total_cleat, 2),
+        total_gasket=round(total_gasket, 2),
+        total_corner=round(total_corner, 2),
+        total_weight=round(total_weight, 2),
+        total_24g=round(total_24g, 2),
+        total_22g=round(total_22g, 2),
+        total_20g=round(total_20g, 2),
+        total_18g=round(total_18g, 2)
+                          )
 
 @app.route("/update_production/<int:project_id>", methods=["POST"])
 def update_production(project_id):
@@ -849,7 +565,7 @@ def update_production(project_id):
     conn.close()
     return redirect(url_for('production', project_id=project_id))
 
-# ---------- ✅ View All Projects in Production ----------
+
 @app.route("/production_overview")
 def production_overview():
     conn = get_db()
@@ -860,22 +576,19 @@ def production_overview():
     return render_template("production_overview.html", projects=projects)
 
 
-# ---------- ✅ Summary Placeholder ----------
 @app.route('/summary')
 def summary():
     return "<h2>Summary Coming Soon...</h2>"
 
 
-# ---------- ✅ Submit Full Project and Move to Production ----------
 @app.route('/submit_all/<project_id>', methods=['POST'])
 def submit_all(project_id):
     conn = get_db()
     cur = conn.cursor()
 
-    # ✅ Mark project as submitted
     cur.execute("UPDATE projects SET status = 'submitted' WHERE id = ?", (project_id,))
 
-    # Optional: Lock duct entries (commented for now)
+    # Optional lock logic:
     # cur.execute("UPDATE duct_entries SET status = 'locked' WHERE project_id = ?", (project_id,))
 
     conn.commit()
@@ -885,13 +598,11 @@ def submit_all(project_id):
     return redirect(url_for('production', project_id=project_id))
 
 
-# ---------- ✅ Delete Project ----------
 @app.route('/project/<int:project_id>/delete', methods=['POST'])
 def delete_project(project_id):
     conn = get_db()
     cur = conn.cursor()
     
-    # Delete related ducts and project
     cur.execute("DELETE FROM duct_entries WHERE project_id = ?", (project_id,))
     cur.execute("DELETE FROM production_progress WHERE project_id = ?", (project_id,))
     cur.execute("DELETE FROM projects WHERE id = ?", (project_id,))
@@ -901,7 +612,6 @@ def delete_project(project_id):
     
     flash("🗑️ Project deleted successfully!", "success")
     return redirect(url_for('projects'))
-
 
 # ---------- ✅ Run App ----------
 if __name__ == '__main__':
