@@ -38,68 +38,56 @@
   </div>
 
   <!-- Duct Entries Table -->
-  <div class="card shadow-sm mb-4">
-    <div class="card-header bg-secondary text-white">📊 Duct Entries</div>
-    <div class="card-body p-0 table-responsive">
-      <table class="table table-sm table-bordered table-striped m-0">
-        <thead class="table-light sticky-top">
-          <tr>
-            <th>Duct</th><th>Type</th><th>W1</th><th>H1</th><th>W2</th><th>H2</th>
-            <th>Qty</th><th>Len</th><th>Deg</th><th>Factor</th>
-            <th>Gauge</th><th>Area</th><th>Nuts</th><th>Cleat</th>
-            <th>Gasket</th><th>Corner</th><th>Weight</th>
-          </tr>
-        </thead>
-        <tbody>
-          {% set total_area = 0 %}
-          {% set total_nuts = 0 %}
-          {% set total_cleat = 0 %}
-          {% set total_gasket = 0 %}
-          {% set total_corner = 0 %}
-          {% set total_weight = 0 %}
-          {% for entry in ducts %}
-          <tr>
-            <td>{{ entry.duct_no }}</td>
-            <td>{{ entry.duct_type }}</td>
-            <td>{{ entry.width1 }}</td>
-            <td>{{ entry.height1 }}</td>
-            <td>{{ entry.width2 }}</td>
-            <td>{{ entry.height2 }}</td>
-            <td>{{ entry.quantity }}</td>
-            <td>{{ entry.length_or_radius }}</td>
-            <td>{{ entry.degree_or_offset }}</td>
-            <td>{{ entry.factor }}</td>
-            <td>{{ entry.gauge }}</td>
-            <td>{{ "%.2f"|format(entry.area|float) }}</td>
-            <td>{{ "%.2f"|format(entry.nuts_bolts|float) }}</td>
-            <td>{{ "%.2f"|format(entry.cleat|float) }}</td>
-            <td>{{ "%.2f"|format(entry.gasket|float) }}</td>
-            <td>{{ "%.2f"|format(entry.corner_pieces|float) }}</td>
-            <td>{{ "%.2f"|format(entry.weight|float) }}</td>
-          </tr>
-          {% set total_area = total_area + (entry.area|float) %}
-          {% set total_nuts = total_nuts + (entry.nuts_bolts|float) %}
-          {% set total_cleat = total_cleat + (entry.cleat|float) %}
-          {% set total_gasket = total_gasket + (entry.gasket|float) %}
-          {% set total_corner = total_corner + (entry.corner_pieces|float) %}
-          {% set total_weight = total_weight + (entry.weight|float) %}
-          {% endfor %}
-        </tbody>
-        <tfoot class="table-light fw-bold">
-          <tr>
-            <td colspan="11" class="text-end">TOTAL:</td>
-            <td>{{ "%.2f"|format(total_area) }}</td>
-            <td>{{ "%.2f"|format(total_nuts) }}</td>
-            <td>{{ "%.2f"|format(total_cleat) }}</td>
-            <td>{{ "%.2f"|format(total_gasket) }}</td>
-            <td>{{ "%.2f"|format(total_corner) }}</td>
-            <td>{{ "%.2f"|format(total_weight) }}</td>
-          </tr>
-        </tfoot>
-      </table>
-    </div>
+  <div class="card shadow-sm">
+  <div class="card-header bg-secondary text-white">📊 Duct Entries</div>
+  <div class="card-body table-responsive p-0" style="max-height: 520px; overflow-y: auto;">
+    <table class="table table-sm table-striped m-0">
+      <thead class="table-light sticky-top">
+        <tr>
+          <th>Duct</th><th>Type</th><th>W1</th><th>H1</th><th>W2</th><th>H2</th>
+          <th>Qty</th><th>Len</th><th>Deg</th><th>Factor</th>
+          <th>Gauge</th><th>Area</th><th>Nuts</th><th>Cleat</th><th>Gasket</th><th>Corner</th><th>Weight</th><th>🛠</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for duct in ducts %}
+        <tr>
+          <td>{{ duct.duct_no }}</td>
+          <td>{{ duct.duct_type }}</td>
+          <td>{{ duct.width1 }}</td>
+          <td>{{ duct.height1 }}</td>
+          <td>{{ duct.width2 }}</td>
+          <td>{{ duct.height2 }}</td>
+          <td>{{ duct.quantity }}</td>
+          <td>{{ duct.length_or_radius }}</td>
+          <td>{{ duct.degree_or_offset }}</td>
+          <td>{{ duct.factor }}</td>
+          <td>{{ duct.gauge }}</td>
+          <td>{{ "%.2f"|format(duct.area|float) }}</td>
+          <td>{{ "%.2f"|format(duct.nuts_bolts|float) }}</td>
+          <td>{{ "%.2f"|format(duct.cleat|float) }}</td>
+          <td>{{ "%.2f"|format(duct.gasket|float) }}</td>
+          <td>{{ "%.2f"|format(duct.corner_pieces|float) }}</td>
+          <td>{{ "%.2f"|format(duct.weight|float) }}</td>
+          <td><span class="text-muted">--</span></td>
+        </tr>
+        {% endfor %}
+      </tbody>
+      <tfoot class="table-light fw-bold">
+        <tr>
+          <td colspan="11" class="text-end">TOTAL:</td>
+          <td>{{ "%.2f"|format(total_area) }}</td>
+          <td>{{ "%.2f"|format(total_nuts) }}</td>
+          <td>{{ "%.2f"|format(total_cleat) }}</td>
+          <td>{{ "%.2f"|format(total_gasket) }}</td>
+          <td>{{ "%.2f"|format(total_corner) }}</td>
+          <td>{{ "%.2f"|format(total_weight) }}</td>
+          <td></td>
+        </tr>
+      </tfoot>
+    </table>
   </div>
-
+  </div>
   <!-- Progress Info -->
   <div class="card shadow-sm mb-4">
     <div class="card-header bg-primary text-white">📈 Production Progress</div>
