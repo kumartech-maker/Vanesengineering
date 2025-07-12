@@ -759,43 +759,50 @@ def production(project_id):
     conn.row_factory = sqlite3.Row
     cur = conn.cursor()
 
+    # Fetch project
     cur.execute("SELECT * FROM projects WHERE id = ?", (project_id,))
     project = cur.fetchone()
     if not project:
         flash("Project not found", "danger")
         return redirect(url_for('projects'))
 
+    # Fetch duct entries
     cur.execute("SELECT * FROM duct_entries WHERE project_id = ?", (project_id,))
     ducts = cur.fetchall()
 
+    # Initialize all totals
     total_area = 0
+    total_nuts = 0
+    total_cleat = 0
+    total_gasket = 0
+    total_corner = 0
     total_weight = 0
 
     for duct in ducts:
         try:
-            width = float(duct["width1"])
-            height = float(duct["height1"])
-            qty = int(duct["quantity"])
-            area = round(width * height * qty, 2)
-            weight = round(area * 0.035, 2)
-
-            cur.execute("""
-                UPDATE duct_entries
-                SET area = ?, weight = ?
-                WHERE id = ?
-            """, (area, weight, duct["id"]))
+            area = float(duct["area"] or 0)
+            nuts = float(duct["nuts_bolts"] or 0)
+            cleat = float(duct["cleat"] or 0)
+            gasket = float(duct["gasket"] or 0)
+            corner = float(duct["corner_pieces"] or 0)
+            weight = float(duct["weight"] or 0)
 
             total_area += area
+            total_nuts += nuts
+            total_cleat += cleat
+            total_gasket += gasket
+            total_corner += corner
             total_weight += weight
         except Exception as e:
-            print("Calculation error:", e)
+            print("❌ Error calculating totals:", e)
 
+    # Save back total area to project
     cur.execute("UPDATE projects SET total_sqm = ? WHERE id = ?", (total_area, project_id))
     conn.commit()
 
+    # Handle progress tracking
     cur.execute("SELECT * FROM production_progress WHERE project_id = ?", (project_id,))
     progress = cur.fetchone()
-
     if not progress:
         cur.execute("""
             INSERT INTO production_progress (project_id, sheet_cutting_sqm, plasma_fabrication_sqm, boxing_assembly_sqm)
@@ -812,6 +819,10 @@ def production(project_id):
                            ducts=ducts,
                            progress=progress,
                            total_area=total_area,
+                           total_nuts=total_nuts,
+                           total_cleat=total_cleat,
+                           total_gasket=total_gasket,
+                           total_corner=total_corner,
                            total_weight=total_weight)
 
 
