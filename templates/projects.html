@@ -359,16 +359,16 @@
               {% endfor %}
             </tbody>
             <tfoot class="table-light fw-bold">
-              <tr>
-                <td colspan="11" class="text-end">TOTAL:</td>
-                <td>{{ "%.2f"|format(total_area) }}</td>
-                <td>{{ "%.2f"|format(total_nuts) }}</td>
-                <td>{{ "%.2f"|format(total_cleat) }}</td>
-                <td>{{ "%.2f"|format(total_gasket) }}</td>
-                <td>{{ "%.2f"|format(total_corner) }}</td>
-                <td>{{ "%.2f"|format(total_weight) }}</td>
-                <td></td>
-              </tr>
+  <tr>
+    <td colspan="11" class="text-end">TOTAL:</td>
+    <td id="totalArea">{{ "%.2f"|format(total_area) }}</td>
+    <td id="totalNuts">{{ "%.2f"|format(total_nuts) }}</td>
+    <td id="totalCleat">{{ "%.2f"|format(total_cleat) }}</td>
+    <td id="totalGasket">{{ "%.2f"|format(total_gasket) }}</td>
+    <td id="totalCorner">{{ "%.2f"|format(total_corner) }}</td>
+    <td id="totalWeight">{{ "%.2f"|format(total_weight) }}</td>
+    <td></td>
+  </tr>
             </tfoot>
           </table>
         </div>
