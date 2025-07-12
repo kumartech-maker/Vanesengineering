@@ -431,11 +431,14 @@ def add_duct():
     flash("Duct entry added successfully!", "success")
     return redirect(url_for('open_project', project_id=project_id))  # ✅ redirect to your actual project list page
 
+
 @app.route("/edit_duct/<int:entry_id>", methods=["GET", "POST"])
 def edit_duct(entry_id):
     conn = get_db()
     conn.row_factory = sqlite3.Row
     cur = conn.cursor()
+
+    # Fetch the specific entry
     cur.execute("SELECT * FROM duct_entries WHERE id = ?", (entry_id,))
     entry = cur.fetchone()
 
@@ -485,13 +488,47 @@ def edit_duct(entry_id):
               corner_pieces = :corner_pieces
             WHERE id = :entry_id
         """, {**data, "entry_id": entry_id})
+
         conn.commit()
         conn.close()
         flash("Entry updated successfully", "success")
         return redirect(url_for('open_project', project_id=project_id))
 
+    # Otherwise → Render the `projects.html` with entry in edit mode
+    # Get project
+    cur.execute("SELECT * FROM projects WHERE id = ?", (project_id,))
+    project = cur.fetchone()
+
+    # Get all vendors
+    cur.execute("SELECT * FROM vendors")
+    vendors = cur.fetchall()
+
+    # Get all duct entries for this project
+    cur.execute("SELECT * FROM duct_entries WHERE project_id = ?", (project_id,))
+    entries = cur.fetchall()
+
+    # Safely calculate totals
+    def safe_float(val): return float(val) if val else 0
+
+    total_area = sum(safe_float(d['area']) for d in entries)
+    total_nuts = sum(safe_float(d['nuts_bolts']) for d in entries)
+    total_cleat = sum(safe_float(d['cleat']) for d in entries)
+    total_gasket = sum(safe_float(d['gasket']) for d in entries)
+    total_corner = sum(safe_float(d['corner_pieces']) for d in entries)
+
     conn.close()
-    return render_template("edit_duct_entry.html", entry=entry)
+    return render_template(
+        "projects.html",
+        project=project,
+        vendors=vendors,
+        entries=entries,
+        edit_entry=entry,  # 🔁 Important for conditional form rendering
+        total_area=round(total_area, 2),
+        total_nuts=round(total_nuts, 2),
+        total_cleat=round(total_cleat, 2),
+        total_gasket=round(total_gasket, 2),
+        total_corner=round(total_corner, 2)
+    )
 
 
 @app.route("/delete_duct/<int:entry_id>", methods=["POST"])
@@ -512,6 +549,78 @@ def delete_duct(entry_id):
 
     conn.close()
     return redirect(url_for("open_project", project_id=project_id))
+
+@app.route('/update_duct/<int:entry_id>', methods=['POST'])
+def update_duct(entry_id):
+    import math
+    form = request.form
+
+    duct_no = form['duct_no']
+    duct_type = form['duct_type'].upper()
+    w1 = float(form.get('width1') or 0)
+    h1 = float(form.get('height1') or 0)
+    w2 = float(form.get('width2') or 0)
+    h2 = float(form.get('height2') or 0)
+    qty = int(form.get('quantity') or 0)
+    length = float(form.get('length_or_radius') or 0)
+    deg = float(form.get('degree_or_offset') or 0)
+    factor = float(form.get('factor') or 1.0)
+
+    # Recalculate fields (same as add_duct)
+    area = 0
+    if duct_type == 'ST':
+        area = 2 * (w1 + h1) / 1000 * (length / 1000) * qty
+    elif duct_type == 'RED':
+        area = (w1 + h1 + w2 + h2) / 1000 * (length / 1000) * qty * factor
+    elif duct_type == 'DUM':
+        area = (w1 * h1) / 1000000 * qty
+    elif duct_type == 'OFFSET':
+        area = (w1 + h1 + w2 + h2) / 1000 * ((length + deg) / 1000) * qty * factor
+    elif duct_type == 'SHOE':
+        area = (w1 + h1) * 2 / 1000 * (length / 1000) * qty * factor
+    elif duct_type == 'VANES':
+        area = w1 / 1000 * (2 * math.pi * (w1 / 1000) / 4) * qty
+    elif duct_type == 'ELB':
+        area = 2 * (w1 + h1) / 1000 * ((h1 / 2 / 1000) + (length / 1000) * (math.pi * (deg / 180))) * qty * factor
+
+    # Gauge logic
+    gauge = '18g'
+    if w1 <= 751 and h1 <= 751:
+        gauge = '24g'
+    elif w1 <= 1201 and h1 <= 1201:
+        gauge = '22g'
+    elif w1 <= 1800 and h1 <= 1800:
+        gauge = '20g'
+
+    nuts_bolts = qty * 4
+    cleat_factor = 12
+    if gauge == '24g': cleat_factor = 4
+    elif gauge == '22g': cleat_factor = 8
+    elif gauge == '20g': cleat_factor = 10
+    cleat = qty * cleat_factor
+    gasket = (w1 + h1 + w2 + h2) / 1000 * qty
+    corner_pieces = 0 if duct_type == 'DUM' else qty * 8
+
+    conn = get_db()
+    cur = conn.cursor()
+
+    cur.execute('''
+        UPDATE duct_entries SET
+            duct_no = ?, duct_type = ?, width1 = ?, height1 = ?, width2 = ?, height2 = ?,
+            quantity = ?, length_or_radius = ?, degree_or_offset = ?, factor = ?,
+            area = ?, gauge = ?, nuts_bolts = ?, cleat = ?, gasket = ?, corner_pieces = ?
+        WHERE id = ?
+    ''', (
+        duct_no, duct_type, w1, h1, w2, h2, qty, length, deg, factor,
+        round(area, 2), gauge, round(nuts_bolts, 2), round(cleat, 2),
+        round(gasket, 2), round(corner_pieces, 2), entry_id
+    ))
+
+    conn.commit()
+    conn.close()
+
+    flash("Duct entry updated successfully!", "success")
+    return redirect('/project/' + str(form.get('project_id')))
 
 @app.route('/export_pdf/<int:project_id>')
 def export_pdf(project_id):
