@@ -1,0 +1,113 @@
+<!DOCTYPE html>  <html lang="en">  
+<head>  
+  <meta charset="UTF-8">  
+  <title>Duct Entry</title>  
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>  
+  <style>  
+    input[readonly] {  
+      background-color: #f5f5f5;  
+    }  
+    .form-section {  
+      display: flex;  
+      gap: 20px;  
+    }  
+    .form-left, .form-right {  
+      flex: 1;  
+    }  
+  </style>  
+</head>  
+<body>  <h2>Duct Entry for {{ project[1] }}</h2>  <form action="/add_duct" method="POST">  
+  <input type="hidden" name="project_id" value="{{ project_id }}">  
+  {% if edit_entry %}  
+    <input type="hidden" name="id" value="{{ edit_entry[0] }}">  
+  {% endif %}    <div class="form-section">  
+    <!-- Left Side Inputs -->  
+    <div class="form-left">  
+      <label>Duct No: <input type="text" name="duct_no" id="duct_no" value="{{ edit_entry[2] if edit_entry }}"></label><br>  
+      <label>Type:  
+        <select name="duct_type" id="duct_type">  
+          {% for type in ['ST', 'RED', 'DUM', 'OFFSET', 'SHOE', 'VANES', 'ELB'] %}  
+            <option value="{{ type }}" {% if edit_entry and edit_entry[3] == type %}selected{% endif %}>{{ type }}</option>  
+          {% endfor %}  
+        </select>  
+      </label><br>  
+      <label>Width 1: <input type="number" name="width1" id="width1" value="{{ edit_entry[4] if edit_entry }}"></label><br>  
+      <label>Height 1: <input type="number" name="height1" id="height1" value="{{ edit_entry[5] if edit_entry }}"></label><br>  
+      <label>Width 2: <input type="number" name="width2" id="width2" value="{{ edit_entry[6] if edit_entry }}"></label><br>  
+      <label>Height 2: <input type="number" name="height2" id="height2" value="{{ edit_entry[7] if edit_entry }}"></label><br>  
+      <label>Length/Radius: <input type="number" name="length_or_radius" id="length" value="{{ edit_entry[8] if edit_entry }}"></label><br>  
+      <label>Quantity: <input type="number" name="quantity" id="quantity" value="{{ edit_entry[9] if edit_entry }}"></label><br>  
+      <label>Degree/Offset: <input type="number" name="degree_or_offset" id="degree" value="{{ edit_entry[10] if edit_entry }}"></label><br>  
+      <label>Factor: <input type="number" step="0.1" name="factor" id="factor" value="{{ edit_entry[11] if edit_entry else 1 }}"></label><br>  
+    </div>  <!-- Right Side Live Calculations -->  
+<div class="form-right">  
+  <label>Gauge: <input type="text" name="gauge" id="gauge" readonly></label><br>  
+  <label>Area (m²): <input type="number" step="0.01" name="area" id="area" readonly></label><br>  
+  <label>Nuts & Bolts: <input type="number" name="nuts_bolts" id="nuts_bolts" readonly></label><br>  
+  <label>Cleat: <input type="number" name="cleat" id="cleat" readonly></label><br>  
+  <label>Gasket: <input type="number" step="0.01" name="gasket" id="gasket" readonly></label><br>  
+  <label>Corner Pieces: <input type="number" name="corner_pieces" id="corner_pieces" readonly></label><br>  
+</div>
+
+  </div>  <br><button type="submit">Save</button>
+
+</form>  <hr>  <!-- Live JavaScript Calculations -->  <script>  
+function calculate() {  
+  let type = $('#duct_type').val();  
+  let w1 = parseFloat($('#width1').val()) || 0;  
+  let h1 = parseFloat($('#height1').val()) || 0;  
+  let w2 = parseFloat($('#width2').val()) || 0;  
+  let h2 = parseFloat($('#height2').val()) || 0;  
+  let len = parseFloat($('#length').val()) || 0;  
+  let qty = parseInt($('#quantity').val()) || 0;  
+  let deg = parseFloat($('#degree').val()) || 0;  
+  let factor = parseFloat($('#factor').val()) || 1;  
+  
+  // Gauge  
+  let gauge = "18g";  
+  if (w1 <= 751 && h1 <= 751) gauge = "24g";  
+  else if (w1 <= 1201 && h1 <= 1201) gauge = "22g";  
+  else if (w1 <= 1800 && h1 <= 1800) gauge = "20g";  
+  $('#gauge').val(gauge);  
+  
+  // Area  
+  let area = 0;  
+  if (type === "ST") {  
+    area = 2 * (w1 + h1) / 1000 * (len / 1000) * qty;  
+  } else if (type === "RED") {  
+    area = (w1 + h1 + w2 + h2) / 1000 * (len / 1000) * qty * factor;  
+  } else if (type === "DUM") {  
+    area = (w1 * h1) / 1000000 * qty;  
+  } else if (type === "OFFSET") {  
+    area = (w1 + h1 + w2 + h2) / 1000 * ((len + deg) / 1000) * qty * factor;  
+  } else if (type === "SHOE") {  
+    area = (w1 + h1) * 2 / 1000 * (len / 1000) * qty * factor;  
+  } else if (type === "VANES") {  
+    area = w1 / 1000 * (2 * 3.14 * (w1 / 1000) / 4) * qty;  
+  } else if (type === "ELB") {  
+    area = 2 * (w1 + h1) / 1000 * ((h1 / 2 / 1000) + (len / 1000) * (3.14 * (deg / 180))) * qty * factor;  
+  }  
+  $('#area').val(area.toFixed(2));  
+  
+  // Nuts & Bolts  
+  $('#nuts_bolts').val(qty * 4);  
+  
+  // Cleat  
+  let cleat = 12;  
+  if (gauge === '24g') cleat = 4;  
+  else if (gauge === '22g') cleat = 8;  
+  else if (gauge === '20g') cleat = 10;  
+  $('#cleat').val(cleat * qty);  
+  
+  // Gasket  
+  let gasket = (w1 + h1 + w2 + h2) / 1000 * qty;  
+  $('#gasket').val(gasket.toFixed(2));  
+  
+  // Corner Pieces  
+  $('#corner_pieces').val(type === "DUM" ? 0 : qty * 8);  
+}  
+  
+$('input, select').on('input change', calculate);  
+$(document).ready(calculate);  
+</script>  </body>  
+</html>  
