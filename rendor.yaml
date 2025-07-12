@@ -1,10 +1,8 @@
+# .render.yaml
 services:
   - type: web
     name: ducting-erp
     env: python
-    buildCommand: pip install -r requirements.txt
-    startCommand: gunicorn app:app
-    envVars:
-      - key: FLASK_ENV
-        value: production
+    buildCommand: poetry install
+    startCommand: poetry run gunicorn app:app --bind 0.0.0.0:$PORT
     plan: free
