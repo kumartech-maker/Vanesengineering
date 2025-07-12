@@ -109,7 +109,7 @@
   {% if edit_entry %}
   <div class="modal fade show" id="editDuctModal" tabindex="-1" style="display:block;" aria-modal="true" role="dialog">
     <div class="modal-dialog modal-lg">
-      <form method="POST" action="/edit_duct/{{ edit_entry.id }}">
+      <form action="{{ url_for('delete_duct', entry_id=duct.id) }}" method="POST" style="display:inline-block;">
         <div class="modal-content">
           <div class="modal-header bg-warning text-dark">
             <h5 class="modal-title">✏️ Edit Duct Entry</h5>
