@@ -181,7 +181,7 @@ def open_project(project_id):
         flash("Project not found.", "danger")
         return redirect(url_for('projects'))  # fallback to projects list
 
-    # Fetch all vendors (for dropdowns if needed)
+    # Fetch all vendors
     cur.execute("SELECT * FROM vendors")
     vendors = cur.fetchall()
 
@@ -199,17 +199,16 @@ def open_project(project_id):
     conn.close()
 
     return render_template(
-        "project_detail.html",
+        "projects.html",
         project=project,
         vendors=vendors,
         ducts=ducts,
-        total_area=round(total_area, 2),
-        total_nuts=round(total_nuts, 2),
-        total_cleat=round(total_cleat, 2),
-        total_gasket=round(total_gasket, 2),
-        total_corner=round(total_corner, 2)
+        total_area=total_area,
+        total_nuts=total_nuts,
+        total_cleat=total_cleat,
+        total_gasket=total_gasket,
+        total_corner=total_corner
     )
-
 # ---------- ✅ Dashboard ----------
 @app.route('/dashboard')
 def dashboard():
