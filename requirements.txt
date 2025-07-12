@@ -9,3 +9,4 @@ Jinja2
 itsdangerous
 Werkzeug
 click
+num2words
