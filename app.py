@@ -167,7 +167,6 @@ def logout():
     flash("🔒 You have been logged out.", "success")
     return redirect(url_for('login'))
 
-
 @app.route('/project/<int:project_id>')
 def open_project(project_id):
     conn = get_db()
@@ -188,6 +187,15 @@ def open_project(project_id):
     # Fetch duct entries for this project
     cur.execute("SELECT * FROM duct_entries WHERE project_id = ?", (project_id,))
     ducts = cur.fetchall()
+
+    # Convert numeric fields to float for proper calculation
+    for d in ducts:
+        d['area'] = float(d['area'])
+        d['nuts_bolts'] = float(d['nuts_bolts'])
+        d['cleat'] = float(d['cleat'])
+        d['gasket'] = float(d['gasket'])
+        d['corner_pieces'] = float(d['corner_pieces'])
+        d['weight'] = float(d['weight']) if 'weight' in d and d['weight'] is not None else 0.0  # optional
 
     # Calculate totals
     total_area = sum(d['area'] for d in ducts)
