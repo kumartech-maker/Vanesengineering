@@ -293,6 +293,16 @@ def projects():
                            enquiry_id="ENQ" + str(datetime.now().timestamp()).replace(".", ""))
 
 
+def generate_project_code():
+    conn = get_db()
+    cur = conn.cursor()
+    cur.execute("SELECT COUNT(*) AS total FROM projects")
+    count = cur.fetchone()["total"] + 1
+
+    year_code = "2526"  # Or make dynamic
+    sequence = f"E{count:03d}"  # E001, E002...
+    return f"VE/TN/{year_code}/{sequence}"
+
 @app.route('/create_project', methods=['POST'])
 def create_project():
     if 'user' not in session:
@@ -315,18 +325,20 @@ def create_project():
             file_name = file.filename
             file.save(os.path.join(uploads_dir, file_name))
 
+        project_code = generate_project_code()
+
         conn = get_db()
         cur = conn.cursor()
         cur.execute('''
             INSERT INTO projects (
                 vendor_id, quotation_ro, start_date, end_date,
                 location, incharge, notes, file_name,
-                enquiry_id, client_name
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                enquiry_id, client_name, project_code
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         ''', (
             vendor_id, '', start_date, end_date,
             '', incharge, notes, file_name,
-            enquiry_no, project_name
+            enquiry_no, project_name, project_code
         ))
 
         conn.commit()
@@ -337,7 +349,6 @@ def create_project():
     except Exception as e:
         print("❌ Error while creating project:", e)
         return "Bad Request", 400
-
 
 @app.route('/add_measurement', methods=['POST'])
 def add_measurement():
