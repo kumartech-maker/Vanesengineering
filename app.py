@@ -178,26 +178,29 @@ def open_project(project_id):
 
     if not project:
         flash("Project not found.", "danger")
-        return redirect(url_for('projects'))  # fallback to projects list
+        return redirect(url_for('projects'))
 
-    # Fetch all vendors
+    # Fetch vendors
     cur.execute("SELECT * FROM vendors")
     vendors = cur.fetchall()
 
-    # Fetch duct entries for this project
+    # Fetch duct entries
     cur.execute("SELECT * FROM duct_entries WHERE project_id = ?", (project_id,))
-    ducts = cur.fetchall()
+    duct_rows = cur.fetchall()
 
-    # Convert numeric fields to float for proper calculation
-    for d in ducts:
-        d['area'] = float(d['area'])
-        d['nuts_bolts'] = float(d['nuts_bolts'])
-        d['cleat'] = float(d['cleat'])
-        d['gasket'] = float(d['gasket'])
-        d['corner_pieces'] = float(d['corner_pieces'])
-        d['weight'] = float(d['weight']) if 'weight' in d and d['weight'] is not None else 0.0  # optional
+    # Convert rows to dictionaries and cast numeric values
+    ducts = []
+    for row in duct_rows:
+        d = dict(row)  # Convert sqlite3.Row to dict
+        d['area'] = float(d.get('area') or 0)
+        d['nuts_bolts'] = float(d.get('nuts_bolts') or 0)
+        d['cleat'] = float(d.get('cleat') or 0)
+        d['gasket'] = float(d.get('gasket') or 0)
+        d['corner_pieces'] = float(d.get('corner_pieces') or 0)
+        d['weight'] = float(d.get('weight') or 0)
+        ducts.append(d)
 
-    # Calculate totals
+    # Totals
     total_area = sum(d['area'] for d in ducts)
     total_nuts = sum(d['nuts_bolts'] for d in ducts)
     total_cleat = sum(d['cleat'] for d in ducts)
@@ -217,6 +220,7 @@ def open_project(project_id):
         total_gasket=total_gasket,
         total_corner=total_corner
     )
+
 # ---------- ✅ Dashboard ----------
 @app.route('/dashboard')
 def dashboard():
