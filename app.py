@@ -417,7 +417,7 @@ def add_duct():
     conn.close()
 
     flash("Duct entry added successfully!", "success")
-    return redirect('/projects')  # ✅ redirect to your actual project list page
+    return redirect(url_for('open_project', project_id=project_id))  # ✅ redirect to your actual project list page
 
 @app.route("/edit_duct/<int:entry_id>", methods=["GET", "POST"])
 def edit_duct(entry_id):
