@@ -241,10 +241,18 @@ def get_vendor_info(vendor_id):
 def projects():
     conn = get_db()
     cur = conn.cursor()
+
     cur.execute("SELECT * FROM projects ORDER BY id DESC")
     projects = cur.fetchall()
+
     cur.execute("SELECT * FROM vendors ORDER BY id DESC")
     vendors = cur.fetchall()
+
+    # ✅ Generate Project ID (VE/TN/2526/E001 format)
+    cur.execute("SELECT COUNT(*) FROM projects")
+    count = cur.fetchone()[0] + 1
+    generated_id = f"VE/TN/2526/E{str(count).zfill(3)}"
+
     conn.close()
 
     project = projects[0] if projects else None
@@ -253,8 +261,8 @@ def projects():
                            projects=projects,
                            vendors=vendors,
                            project=project,
-                           enquiry_id="ENQ" + str(datetime.now().timestamp()).replace(".", ""))
-
+                           enquiry_id="ENQ" + str(datetime.now().timestamp()).replace(".", ""),
+                           generated_id=generated_id)
 
 @app.route('/create_project', methods=['POST'])
 def create_project():
@@ -268,16 +276,24 @@ def create_project():
 
     conn = get_db()
     cur = conn.cursor()
+
+    # Generate new project_id like VE/TN/2526/E001
+    cur.execute("SELECT COUNT(*) FROM projects")
+    count = cur.fetchone()[0] + 1
+    padded = str(count).zfill(3)
+    project_id = f"VE/TN/2526/E{padded}"
+
+    # Insert into DB
     cur.execute('''
-        INSERT INTO projects (client_name, site_location, engineer_name, mobile, start_date, end_date, vendor_id)
-        VALUES (?, ?, ?, ?, ?, ?, ?)
-    ''', (client_name, site_location, engineer_name, mobile, start_date, end_date, vendor_id))
+        INSERT INTO projects (project_id, client_name, site_location, engineer_name, mobile, start_date, end_date, vendor_id)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+    ''', (project_id, client_name, site_location, engineer_name, mobile, start_date, end_date, vendor_id))
+
     conn.commit()
     conn.close()
 
-    flash("✅ Project created successfully!", "success")
+    flash(f"✅ Project {project_id} created successfully!", "success")
     return redirect(url_for('projects'))
-
 
 @app.route('/project/<int:project_id>')
 def open_project(project_id):
