@@ -40,6 +40,7 @@ def init_db():
         department TEXT,
         designation TEXT,
         contact TEXT,
+        phone TEXT,  -- ✅ Add this line
         email TEXT,
         join_date TEXT,
         address TEXT,
