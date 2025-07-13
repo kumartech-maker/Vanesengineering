@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Attendance Records</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body>
+<div class="container mt-4">
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <h3>📅 Attendance Records</h3>
+    <a href="/attendance_register" class="btn btn-primary">+ Mark New Attendance</a>
+  </div>
+
+  <form method="GET" class="row g-2 mb-3">
+    <div class="col-md-3">
+      <input type="date" name="date" class="form-control" value="{{ request.args.get('date', '') }}">
+    </div>
+    <div class="col-md-3">
+      <input type="text" name="emp_id" placeholder="Employee ID" class="form-control" value="{{ request.args.get('emp_id', '') }}">
+    </div>
+    <div class="col-md-3">
+      <button class="btn btn-secondary">🔍 Filter</button>
+    </div>
+  </form>
+
+  <table class="table table-bordered table-striped">
+    <thead>
+      <tr>
+        <th>Date</th>
+        <th>Emp ID</th>
+        <th>Name</th>
+        <th>Status</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for record in attendance_records %}
+      <tr>
+        <td>{{ record.date }}</td>
+        <td>{{ record.emp_id }}</td>
+        <td>{{ record.name }}</td>
+        <td>{{ record.status }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+
+  <a href="javascript:history.back()" class="btn btn-secondary">🔙 Back</a>
+  <a href="/dashboard" class="btn btn-outline-dark">🏠 Dashboard</a>
+</div>
+</body>
+</html>
