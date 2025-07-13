@@ -44,7 +44,9 @@ def init_db():
             FOREIGN KEY(vendor_id) REFERENCES vendors(id)  
         )  
     ''')
+    
 
+    
     cur.execute('''  
         CREATE TABLE IF NOT EXISTS duct_entries (  
             id INTEGER PRIMARY KEY AUTOINCREMENT,  
@@ -253,6 +255,7 @@ def projects():
 
 # ---------- ✅ Create Project ----------
 
+
 @app.route('/create_project', methods=['POST'])
 def create_project():
     if 'user' not in session:
@@ -277,6 +280,8 @@ def create_project():
 
         conn = get_db()
         cur = conn.cursor()
+
+        # Step 1: Insert project temporarily (without formatted ID)
         cur.execute('''
             INSERT INTO projects (
                 vendor_id, quotation_ro, start_date, end_date,
@@ -289,9 +294,19 @@ def create_project():
             enquiry_no, project_name
         ))
 
+        project_id = cur.lastrowid
+
+        # Step 2: Generate formatted ID like VE/TN/2526/E001
+        year_code = datetime.now().strftime("%y") + str(int(datetime.now().strftime("%y")) + 1)  # 2526
+        formatted_id = f"VE/TN/{year_code}/E{str(project_id).zfill(3)}"
+
+        # Step 3: Update project row with formatted ID
+        cur.execute("UPDATE projects SET quotation_ro = ? WHERE id = ?", (formatted_id, project_id))
+
         conn.commit()
         conn.close()
-        flash("✅ Project added successfully!", "success")
+
+        flash(f"✅ Project created with ID: {formatted_id}", "success")
         return redirect(url_for('projects'))
 
     except Exception as e:
