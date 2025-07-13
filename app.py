@@ -980,77 +980,66 @@ def register_employee():
     if 'user' not in session:
         return redirect(url_for('login'))
 
-    conn = get_db()
-    cur = conn.cursor()
-
     if request.method == 'POST':
         try:
-            # --- Get form fields ---
-            name = request.form['name']
-            gender = request.form['gender']
-            dob = request.form['dob']
-            blood_group = request.form['blood_group']
-            department = request.form['department']
-            designation = request.form['designation']
-            contact = request.form['contact']
-            email = request.form['email']
-            join_date = request.form['join_date']
-            address = request.form['address']
-            role = request.form['role']
+            name = request.form.get('name', '').strip()
+            gender = request.form.get('gender', '')
+            dob = request.form.get('dob', '')
+            blood_group = request.form.get('blood_group', '')
+            department = request.form.get('department', '')
+            designation = request.form.get('designation', '')
+            email = request.form.get('email', '')
+            phone = request.form.get('phone', '')
+            join_date = request.form.get('join_date', '')
+            address = request.form.get('address', '')
+            role = request.form.get('role', 'Employee')
 
-            # --- Handle photo upload ---
-            photo_file = request.files.get('photo')
+            # Handle photo upload
+            photo = request.files.get('photo')
             photo_filename = None
-            if photo_file and photo_file.filename != '':
-                uploads_dir = os.path.join('static', 'photos')
-                os.makedirs(uploads_dir, exist_ok=True)
-                photo_filename = photo_file.filename
-                photo_path = os.path.join(uploads_dir, photo_filename)
-                photo_file.save(photo_path)
+            if photo and photo.filename != '':
+                photo_folder = os.path.join('static', 'employee_photos')
+                os.makedirs(photo_folder, exist_ok=True)
+                photo_filename = f"{uuid.uuid4().hex}_{photo.filename}"
+                photo.save(os.path.join(photo_folder, photo_filename))
 
-            # --- Auto-generate employee ID ---
+            # Generate employee ID (format: VE/EMP/0001)
+            conn = get_db()
+            cur = conn.cursor()
             cur.execute("SELECT COUNT(*) FROM employees")
-            count = cur.fetchone()[0] + 1
-            employee_id = f"VE/EMP/{str(count).zfill(4)}"
+            emp_count = cur.fetchone()[0] + 1
+            emp_id = f"VE/EMP/{str(emp_count).zfill(4)}"
 
-            # --- Generate credentials ---
-            username = email or employee_id
-            password = 'emp@123'
-            hashed_password = generate_password_hash(password)
+            # Hash the default password
+            default_password = generate_password_hash('emp@123')
 
-            # --- Insert employee ---
+            # Insert into database
             cur.execute('''
                 INSERT INTO employees (
-                    employee_id, name, gender, dob, blood_group,
-                    department, designation, contact, email,
-                    join_date, address, photo, role
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    emp_id, name, gender, dob, blood_group,
+                    department, designation, email, phone, join_date,
+                    address, role, photo_filename, password
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             ''', (
-                employee_id, name, gender, dob, blood_group,
-                department, designation, contact, email,
-                join_date, address, photo_filename, role
+                emp_id, name, gender, dob, blood_group,
+                department, designation, email, phone, join_date,
+                address, role, photo_filename, default_password
             ))
-
-            # --- Insert login credentials ---
-            cur.execute('''
-                INSERT INTO users (
-                    username, password, role
-                ) VALUES (?, ?, ?)
-            ''', (username, hashed_password, role))
-
             conn.commit()
-            flash('✅ Employee registered successfully!', 'success')
+            conn.close()
+
+            flash("✅ Employee registered successfully!", "success")
             return redirect(url_for('employee_list'))
 
         except Exception as e:
-            conn.rollback()
             import traceback
             traceback.print_exc()
-            flash(f'❌ Error: {str(e)}', 'danger')
+            flash(f"❌ Error: {str(e)}", "danger")
             return redirect(url_for('register_employee'))
 
-    # --- GET method: show the form ---
     return render_template('register_employee.html')
+    # --- GET method: show the form ---
+    
 @app.route('/employee_list')
 def employee_list():
     if 'user' not in session:
