@@ -517,25 +517,21 @@ document.addEventListener('DOMContentLoaded', function () {
 function recalculateTotals() {
   let totalArea = 0, totalNuts = 0, totalCleat = 0, totalGasket = 0, totalCorner = 0, totalWeight = 0;
 
-  const rows = document.querySelectorAll("table tbody tr");
-  rows.forEach(row => {
-    const cells = row.querySelectorAll("td");
-    if (cells.length < 17) return;
-
-    totalArea += parseFloat(cells[11].innerText) || 0;
-    totalNuts += parseFloat(cells[12].innerText) || 0;
-    totalCleat += parseFloat(cells[13].innerText) || 0;
-    totalGasket += parseFloat(cells[14].innerText) || 0;
-    totalCorner += parseFloat(cells[15].innerText) || 0;
-    totalWeight += parseFloat(cells[16].innerText) || 0;
+  document.querySelectorAll("#duct-table tbody tr").forEach(row => {
+    totalArea += parseFloat(row.querySelector('.area')?.textContent || 0);
+    totalNuts += parseFloat(row.querySelector('.nuts')?.textContent || 0);
+    totalCleat += parseFloat(row.querySelector('.cleat')?.textContent || 0);
+    totalGasket += parseFloat(row.querySelector('.gasket')?.textContent || 0);
+    totalCorner += parseFloat(row.querySelector('.corner')?.textContent || 0);
+    totalWeight += parseFloat(row.querySelector('.weight')?.textContent || 0);
   });
 
-  document.getElementById("totalArea").innerText = totalArea.toFixed(2);
-  document.getElementById("totalNuts").innerText = totalNuts.toFixed(2);
-  document.getElementById("totalCleat").innerText = totalCleat.toFixed(2);
-  document.getElementById("totalGasket").innerText = totalGasket.toFixed(2);
-  document.getElementById("totalCorner").innerText = totalCorner.toFixed(2);
-  document.getElementById("totalWeight").innerText = totalWeight.toFixed(2);
+  document.getElementById("totalArea").textContent = totalArea.toFixed(2);
+  document.getElementById("totalNuts").textContent = totalNuts.toFixed(2);
+  document.getElementById("totalCleat").textContent = totalCleat.toFixed(2);
+  document.getElementById("totalGasket").textContent = totalGasket.toFixed(2);
+  document.getElementById("totalCorner").textContent = totalCorner.toFixed(2);
+  document.getElementById("totalWeight").textContent = totalWeight.toFixed(2);
 }
 
 document.addEventListener("DOMContentLoaded", recalculateTotals);
