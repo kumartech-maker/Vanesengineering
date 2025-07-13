@@ -28,6 +28,23 @@ def init_db():
 
 
 
+    # Attendance table
+    cur.execute('''
+        CREATE TABLE IF NOT EXISTS attendance (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            emp_id TEXT NOT NULL,
+            date TEXT NOT NULL,
+            status TEXT DEFAULT 'Absent',
+            check_in TEXT,
+            check_out TEXT,
+            FOREIGN KEY (emp_id) REFERENCES employees(emp_id)
+        )
+    ''')
+
+    
+
+
+
 
 
     # Employee master table
@@ -1237,6 +1254,89 @@ def reset_password(username):
     flash("🔐 Password reset to 'emp@123'.", "info")
     return redirect(url_for('employee_list'))
 
+
+@app.route('/mark_attendance', methods=['GET', 'POST'])
+def mark_attendance():
+    if 'user' not in session:
+        return redirect(url_for('login'))
+
+    conn = get_db()
+    cur = conn.cursor()
+
+    if request.method == 'POST':
+        for emp_id in request.form.getlist('emp_id'):
+            status = request.form.get(f'status_{emp_id}', 'Absent')
+            check_in = request.form.get(f'check_in_{emp_id}', '')
+            check_out = request.form.get(f'check_out_{emp_id}', '')
+            date_today = datetime.today().strftime('%Y-%m-%d')
+
+            cur.execute('''
+                INSERT INTO attendance (emp_id, date, status, check_in, check_out)
+                VALUES (?, ?, ?, ?, ?)
+            ''', (emp_id, date_today, status, check_in, check_out))
+        
+        conn.commit()
+        conn.close()
+        flash("✅ Attendance marked successfully!", "success")
+        return redirect(url_for('mark_attendance'))
+
+    # GET method
+    cur.execute("SELECT emp_id, name FROM employees ORDER BY emp_id")
+    employees = cur.fetchall()
+    conn.close()
+    return render_template("attendance_form.html", employees=employees)
+
+
+@app.route('/attendance_list', methods=['GET'])
+def attendance_list():
+    if 'user' not in session:
+        return redirect(url_for('login'))
+
+    conn = get_db()
+    cur = conn.cursor()
+
+    # Filter by date
+    date_filter = request.args.get('date', '')
+    if date_filter:
+        cur.execute('''
+            SELECT a.*, e.name FROM attendance a
+            JOIN employees e ON a.emp_id = e.emp_id
+            WHERE date = ?
+            ORDER BY a.date DESC
+        ''', (date_filter,))
+    else:
+        cur.execute('''
+            SELECT a.*, e.name FROM attendance a
+            JOIN employees e ON a.emp_id = e.emp_id
+            ORDER BY a.date DESC LIMIT 50
+        ''')
+
+    records = cur.fetchall()
+    conn.close()
+    return render_template("attendance_list.html", records=records, selected_date=date_filter)
+
+
+
+@app.route('/export_attendance_excel')
+def export_attendance_excel():
+    import pandas as pd
+
+    conn = get_db()
+    cur = conn.cursor()
+    cur.execute('''
+        SELECT a.emp_id, e.name, a.date, a.status, a.check_in, a.check_out
+        FROM attendance a
+        JOIN employees e ON a.emp_id = e.emp_id
+        ORDER BY a.date DESC
+    ''')
+    data = cur.fetchall()
+    conn.close()
+
+    df = pd.DataFrame(data, columns=["Employee ID", "Name", "Date", "Status", "Check-In", "Check-Out"])
+    path = "/tmp/attendance_report.xlsx"
+    df.to_excel(path, index=False)
+
+    return send_file(path, as_attachment=True, download_name="Attendance_Report.xlsx")
 
 
 
