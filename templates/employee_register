@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Register Employee | Ducting ERP</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  <style>
+    body { background: #f8f9fa; }
+    .form-section { background: #fff; padding: 30px; border-radius: 10px; box-shadow: 0 0 5px rgba(0,0,0,0.1); }
+    .required::after { content: " *"; color: red; }
+    .photo-preview { width: 120px; height: 120px; border-radius: 8px; object-fit: cover; margin-top: 10px; }
+  </style>
+</head>
+<body>
+
+<div class="container mt-4">
+  <h3 class="mb-3">📝 Employee Registration</h3>
+
+  <!-- Flash Messages -->
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+      {% for category, message in messages %}
+        <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+          {{ message }}
+          <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+      {% endfor %}
+    {% endif %}
+  {% endwith %}
+
+  <form action="/register_employee" method="POST" enctype="multipart/form-data" class="form-section">
+    <div class="row g-3">
+      <div class="col-md-4">
+        <label class="form-label required">Employee ID</label>
+        <input type="text" name="employee_id" class="form-control" value="{{ new_employee_id }}" readonly>
+      </div>
+      <div class="col-md-4">
+        <label class="form-label required">Full Name</label>
+        <input type="text" name="full_name" class="form-control" required>
+      </div>
+      <div class="col-md-4">
+        <label class="form-label required">Gender</label>
+        <select name="gender" class="form-select" required>
+          <option value="">Select</option>
+          <option>Male</option>
+          <option>Female</option>
+          <option>Other</option>
+        </select>
+      </div>
+
+      <div class="col-md-4">
+        <label class="form-label required">Date of Birth</label>
+        <input type="date" name="dob" class="form-control" required>
+      </div>
+      <div class="col-md-4">
+        <label class="form-label required">Blood Group</label>
+        <select name="blood_group" class="form-select" required>
+          <option value="">Select</option>
+          <option>A+</option>
+          <option>A-</option>
+          <option>B+</option>
+          <option>B-</option>
+          <option>O+</option>
+          <option>O-</option>
+          <option>AB+</option>
+          <option>AB-</option>
+        </select>
+      </div>
+      <div class="col-md-4">
+        <label class="form-label required">Department</label>
+        <input type="text" name="department" class="form-control" required>
+      </div>
+
+      <div class="col-md-4">
+        <label class="form-label required">Designation</label>
+        <input type="text" name="designation" class="form-control" required>
+      </div>
+      <div class="col-md-4">
+        <label class="form-label required">Email</label>
+        <input type="email" name="email" class="form-control" required>
+      </div>
+      <div class="col-md-4">
+        <label class="form-label required">Mobile</label>
+        <input type="tel" name="mobile" class="form-control" required>
+      </div>
+
+      <div class="col-md-4">
+        <label class="form-label required">Joining Date</label>
+        <input type="date" name="join_date" class="form-control" required>
+      </div>
+      <div class="col-md-4">
+        <label class="form-label required">Role</label>
+        <select name="role" class="form-select" required>
+          <option value="">Select Role</option>
+          <option>Fabricator</option>
+          <option>Supervisor</option>
+          <option>Admin</option>
+        </select>
+      </div>
+      <div class="col-md-4">
+        <label class="form-label">Photo Upload</label>
+        <input type="file" name="photo" class="form-control" accept="image/*">
+      </div>
+
+      <div class="col-12">
+        <label class="form-label required">Permanent Address</label>
+        <textarea name="address" class="form-control" rows="2" required></textarea>
+      </div>
+
+      <div class="col-12 text-end">
+        <button type="submit" class="btn btn-success">✅ Register Employee</button>
+        <a href="/employees" class="btn btn-secondary">⬅️ Back</a>
+      </div>
+    </div>
+  </form>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
