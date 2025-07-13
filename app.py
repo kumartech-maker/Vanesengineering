@@ -40,13 +40,13 @@ def init_db():
         department TEXT,
         designation TEXT,
         contact TEXT,
-        phone TEXT,  -- ✅ Add this line
+        phone TEXT,
         email TEXT,
         join_date TEXT,
         address TEXT,
         role TEXT,
         photo_filename TEXT,
-        default_password TEXT
+        password TEXT  -- ✅ Rename from default_password to password
     )
 ''')
 
