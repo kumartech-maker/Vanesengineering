@@ -974,80 +974,83 @@ def delete_project(project_id):
     return redirect(url_for('projects'))
 
 
-@app.route('/register_employee', methods=['POST'])
+
+@app.route('/register_employee', methods=['GET', 'POST'])
 def register_employee():
     if 'user' not in session:
         return redirect(url_for('login'))
 
-    try:
-        conn = get_db()
-        cur = conn.cursor()
+    conn = get_db()
+    cur = conn.cursor()
 
-        # Auto-generate next employee ID
-        cur.execute("SELECT COUNT(*) FROM employees")
-        count = cur.fetchone()[0] + 1
-        employee_id = f"VE/EMP/{str(count).zfill(4)}"
+    if request.method == 'POST':
+        try:
+            # --- Get form fields ---
+            name = request.form['name']
+            gender = request.form['gender']
+            dob = request.form['dob']
+            blood_group = request.form['blood_group']
+            department = request.form['department']
+            designation = request.form['designation']
+            contact = request.form['contact']
+            email = request.form['email']
+            join_date = request.form['join_date']
+            address = request.form['address']
+            role = request.form['role']
 
-        # Collect form data
-        full_name = request.form['full_name']
-        gender = request.form['gender']
-        dob = request.form['dob']
-        blood_group = request.form['blood_group']
-        department = request.form['department']
-        designation = request.form['designation']
-        email = request.form['email']
-        mobile = request.form['mobile']
-        join_date = request.form['join_date']
-        address = request.form['address']
-        role = request.form['role']
+            # --- Handle photo upload ---
+            photo_file = request.files.get('photo')
+            photo_filename = None
+            if photo_file and photo_file.filename != '':
+                uploads_dir = os.path.join('static', 'photos')
+                os.makedirs(uploads_dir, exist_ok=True)
+                photo_filename = photo_file.filename
+                photo_path = os.path.join(uploads_dir, photo_filename)
+                photo_file.save(photo_path)
 
-        # Check if email already exists
-        cur.execute("SELECT * FROM users WHERE username = ?", (email,))
-        if cur.fetchone():
-            flash("❌ Email already registered.", "danger")
-            return redirect(url_for('employee_register'))
+            # --- Auto-generate employee ID ---
+            cur.execute("SELECT COUNT(*) FROM employees")
+            count = cur.fetchone()[0] + 1
+            employee_id = f"VE/EMP/{str(count).zfill(4)}"
 
-        # Handle photo upload
-        photo_file = request.files.get('photo')
-        photo_filename = None
-        if photo_file and photo_file.filename != '':
-            uploads_dir = os.path.join('static', 'employee_photos')
-            os.makedirs(uploads_dir, exist_ok=True)
-            photo_filename = f"{employee_id.replace('/', '_')}_{photo_file.filename}"
-            photo_file.save(os.path.join(uploads_dir, photo_filename))
+            # --- Generate credentials ---
+            username = email or employee_id
+            password = 'emp@123'
+            hashed_password = generate_password_hash(password)
 
-        # Insert into employees table
-        cur.execute('''
-            INSERT INTO employees (
-                employee_id, full_name, gender, dob, blood_group,
-                department, designation, email, mobile,
-                join_date, address, photo, role
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-        ''', (
-            employee_id, full_name, gender, dob, blood_group,
-            department, designation, email, mobile,
-            join_date, address, photo_filename, role
-        ))
+            # --- Insert employee ---
+            cur.execute('''
+                INSERT INTO employees (
+                    employee_id, name, gender, dob, blood_group,
+                    department, designation, contact, email,
+                    join_date, address, photo, role
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            ''', (
+                employee_id, name, gender, dob, blood_group,
+                department, designation, contact, email,
+                join_date, address, photo_filename, role
+            ))
 
-        # Insert login credentials into users table
-        import hashlib
-        password = "emp@123"
-        hashed_password = hashlib.sha256(password.encode()).hexdigest()
-        cur.execute("INSERT INTO users (username, password, role) VALUES (?, ?, ?)",
-                    (email, hashed_password, role))
+            # --- Insert login credentials ---
+            cur.execute('''
+                INSERT INTO users (
+                    username, password, role
+                ) VALUES (?, ?, ?)
+            ''', (username, hashed_password, role))
 
-        conn.commit()
-        conn.close()
+            conn.commit()
+            flash('✅ Employee registered successfully!', 'success')
+            return redirect(url_for('employee_list'))
 
-        flash(f"✅ Employee '{full_name}' registered successfully! Default password: emp@123", "success")
-        return redirect(url_for('employee_list'))
+        except Exception as e:
+            conn.rollback()
+            import traceback
+            traceback.print_exc()
+            flash(f'❌ Error: {str(e)}', 'danger')
+            return redirect(url_for('register_employee'))
 
-    except Exception as e:
-        import traceback
-        traceback.print_exc()
-        flash("❌ Failed to register employee.", "danger")
-        return redirect(url_for('employee_register'))
-
+    # --- GET method: show the form ---
+    return render_template('register_employee.html')
 @app.route('/employee_list')
 def employee_list():
     if 'user' not in session:
