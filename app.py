@@ -1133,12 +1133,19 @@ def edit_employee(emp_id):
             flash("⚠️ Employee not found.", "danger")
             return redirect(url_for('employee_list'))
 
-@app.route('/export_employees_excel')
-def export_employees_excel():
+@app.route('/export_employees')
+def export_employees():
     import pandas as pd
     if 'user' not in session:
         return redirect(url_for('login'))
 
+    conn = get_db()
+    df = pd.read_sql_query("SELECT * FROM employees", conn)
+    conn.close()
+
+    output_file = f"/tmp/employee_list.xlsx"
+    df.to_excel(output_file, index=False)
+    return send_file(output_file, as_attachment=True)
 
 @app.route('/download_id_card/<emp_id>')
 def download_id_card(emp_id):
