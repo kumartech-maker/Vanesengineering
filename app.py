@@ -23,6 +23,44 @@ def init_db():
     conn = get_db()
     cur = conn.cursor()
 
+
+
+
+
+    # Employee master table
+    cur.execute('''
+        CREATE TABLE IF NOT EXISTS employees (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            employee_id TEXT UNIQUE,
+            full_name TEXT,
+            gender TEXT,
+            dob TEXT,
+            blood_group TEXT,
+            department TEXT,
+            designation TEXT,
+            contact_number TEXT,
+            email TEXT,
+            join_date TEXT,
+            permanent_address TEXT,
+            photo TEXT,
+            role TEXT
+        )
+    ''')
+
+    # Employee login credentials table
+    cur.execute('''
+        CREATE TABLE IF NOT EXISTS employee_logins (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            employee_id TEXT UNIQUE,
+            username TEXT UNIQUE,
+            password_hash TEXT,
+            role TEXT,
+            FOREIGN KEY (employee_id) REFERENCES employees(employee_id)
+        )
+    ''')
+
+
+
     cur.execute('''
     CREATE TABLE IF NOT EXISTS projects (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -934,6 +972,160 @@ def delete_project(project_id):
 
     flash("🗑️ Project deleted successfully!", "success")
     return redirect(url_for('projects'))
+
+
+@app.route('/register_employee', methods=['POST'])
+def register_employee():
+    if 'user' not in session:
+        return redirect(url_for('login'))
+
+    try:
+        conn = get_db()
+        cur = conn.cursor()
+
+        # Auto-generate next employee ID
+        cur.execute("SELECT COUNT(*) FROM employees")
+        count = cur.fetchone()[0] + 1
+        employee_id = f"VE/EMP/{str(count).zfill(4)}"
+
+        # Collect form data
+        full_name = request.form['full_name']
+        gender = request.form['gender']
+        dob = request.form['dob']
+        blood_group = request.form['blood_group']
+        department = request.form['department']
+        designation = request.form['designation']
+        email = request.form['email']
+        mobile = request.form['mobile']
+        join_date = request.form['join_date']
+        address = request.form['address']
+        role = request.form['role']
+
+        # Check if email already exists
+        cur.execute("SELECT * FROM users WHERE username = ?", (email,))
+        if cur.fetchone():
+            flash("❌ Email already registered.", "danger")
+            return redirect(url_for('employee_register'))
+
+        # Handle photo upload
+        photo_file = request.files.get('photo')
+        photo_filename = None
+        if photo_file and photo_file.filename != '':
+            uploads_dir = os.path.join('static', 'employee_photos')
+            os.makedirs(uploads_dir, exist_ok=True)
+            photo_filename = f"{employee_id.replace('/', '_')}_{photo_file.filename}"
+            photo_file.save(os.path.join(uploads_dir, photo_filename))
+
+        # Insert into employees table
+        cur.execute('''
+            INSERT INTO employees (
+                employee_id, full_name, gender, dob, blood_group,
+                department, designation, email, mobile,
+                join_date, address, photo, role
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        ''', (
+            employee_id, full_name, gender, dob, blood_group,
+            department, designation, email, mobile,
+            join_date, address, photo_filename, role
+        ))
+
+        # Insert login credentials into users table
+        import hashlib
+        password = "emp@123"
+        hashed_password = hashlib.sha256(password.encode()).hexdigest()
+        cur.execute("INSERT INTO users (username, password, role) VALUES (?, ?, ?)",
+                    (email, hashed_password, role))
+
+        conn.commit()
+        conn.close()
+
+        flash(f"✅ Employee '{full_name}' registered successfully! Default password: emp@123", "success")
+        return redirect(url_for('employee_list'))
+
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        flash("❌ Failed to register employee.", "danger")
+        return redirect(url_for('employee_register'))
+
+@app.route('/employee_list')
+def employee_list():
+    if 'user' not in session:
+        return redirect(url_for('login'))
+
+    conn = get_db()
+    cur = conn.cursor()
+
+    # Get filters from query params
+    department = request.args.get('department', '')
+    role = request.args.get('role', '')
+
+    query = "SELECT * FROM employees WHERE 1=1"
+    params = []
+
+    if department:
+        query += " AND department = ?"
+        params.append(department)
+    if role:
+        query += " AND role = ?"
+        params.append(role)
+
+    cur.execute(query, params)
+    employees = cur.fetchall()
+
+    # Get unique department and role values for filters
+    cur.execute("SELECT DISTINCT department FROM employees")
+    departments = [row['department'] for row in cur.fetchall()]
+    cur.execute("SELECT DISTINCT role FROM employees")
+    roles = [row['role'] for row in cur.fetchall()]
+
+    conn.close()
+    return render_template("employee_list.html", employees=employees, departments=departments, roles=roles, selected_department=department, selected_role=role)
+
+@app.route('/delete_employee/<string:emp_id>', methods=['POST'])
+def delete_employee(emp_id):
+    if 'user' not in session:
+        return redirect(url_for('login'))
+
+    conn = get_db()
+    cur = conn.cursor()
+
+    cur.execute("DELETE FROM employees WHERE employee_id = ?", (emp_id,))
+    cur.execute("DELETE FROM users WHERE username = ?", (emp_id,))
+    conn.commit()
+    conn.close()
+
+    flash("🗑️ Employee deleted.", "success")
+    return redirect(url_for('employee_list'))
+
+
+@app.route('/export_employees_excel')
+def export_employees_excel():
+    import pandas as pd
+    if 'user' not in session:
+        return redirect(url_for('login'))
+
+
+@app.route('/reset_password/<string:username>', methods=['POST'])
+def reset_password(username):
+    if 'user' not in session:
+        return redirect(url_for('login'))
+
+    import hashlib
+    new_password = "emp@123"
+    hashed = hashlib.sha256(new_password.encode()).hexdigest()
+
+    conn = get_db()
+    cur = conn.cursor()
+    cur.execute("UPDATE users SET password = ? WHERE username = ?", (hashed, username))
+    conn.commit()
+    conn.close()
+
+    flash("🔐 Password reset to 'emp@123'.", "info")
+    return redirect(url_for('employee_list'))
+
+
+
 
 
 # ---------- ✅ Run Flask App ----------
