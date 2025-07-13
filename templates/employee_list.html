@@ -23,6 +23,16 @@
     <a href="/register_employee" class="btn btn-primary">+ New Employee</a>
   </div>
 
+
+  <div class="d-flex justify-content-between align-items-center mb-3">
+  <h3>👥 Employee List</h3>
+  <div>
+    <a href="javascript:history.back()" class="btn btn-outline-secondary me-2">🔙 Back</a>
+    <a href="/dashboard" class="btn btn-outline-primary me-2">🏠 Dashboard</a>
+    <a href="/register_employee" class="btn btn-primary">+ New Employee</a>
+  </div>
+  </div>
+
   {% with messages = get_flashed_messages(with_categories=true) %}
     {% if messages %}
       {% for category, message in messages %}
