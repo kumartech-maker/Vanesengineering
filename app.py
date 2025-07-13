@@ -403,7 +403,7 @@ def add_duct():
     deg = float(request.form.get('degree_or_offset') or 0)
     factor = float(request.form.get('factor') or 1.0)
 
-    # Calculate area
+    # 🧮 Area calculation
     area = 0
     if duct_type == 'ST':
         area = 2 * (w1 + h1) / 1000 * (length / 1000) * qty
@@ -420,7 +420,7 @@ def add_duct():
     elif duct_type == 'ELB':
         area = 2 * (w1 + h1) / 1000 * ((h1 / 2 / 1000) + (length / 1000) * (math.pi * (deg / 180))) * qty * factor
 
-    # Determine gauge
+    # 🧮 Determine gauge
     gauge = '18g'
     if w1 <= 751 and h1 <= 751:
         gauge = '24g'
@@ -429,31 +429,31 @@ def add_duct():
     elif w1 <= 1800 and h1 <= 1800:
         gauge = '20g'
 
+    # 🧮 Material calculations
     nuts_bolts = qty * 4
-    cleat_factor = 12
-    if gauge == '24g':
-        cleat_factor = 4
-    elif gauge == '22g':
-        cleat_factor = 8
-    elif gauge == '20g':
-        cleat_factor = 10
+    cleat_factor = {'24g': 4, '22g': 8, '20g': 10}.get(gauge, 12)
     cleat = qty * cleat_factor
     gasket = (w1 + h1 + w2 + h2) / 1000 * qty
     corner_pieces = 0 if duct_type == 'DUM' else qty * 8
 
+    # 🧮 Weight (example values per m²)
+    weight_per_m2 = {'24g': 4.0, '22g': 5.0, '20g': 6.0, '18g': 7.5}
+    weight = area * weight_per_m2.get(gauge, 7.5)
+
+    # ✅ Insert to DB
     conn = get_db()
     cur = conn.cursor()
     cur.execute('''
         INSERT INTO duct_entries (
             project_id, duct_no, duct_type, width1, height1, width2, height2,
             quantity, length_or_radius, degree_or_offset, factor,
-            area, gauge, nuts_bolts, cleat, gasket, corner_pieces
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            area, gauge, nuts_bolts, cleat, gasket, corner_pieces, weight
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     ''', (
         project_id, duct_no, duct_type, w1, h1, w2, h2,
         qty, length, deg, factor,
         round(area, 2), gauge, round(nuts_bolts, 2), round(cleat, 2),
-        round(gasket, 2), round(corner_pieces, 2)
+        round(gasket, 2), round(corner_pieces, 2), round(weight, 2)
     ))
     conn.commit()
     conn.close()
