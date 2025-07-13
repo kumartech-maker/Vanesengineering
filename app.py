@@ -1085,67 +1085,86 @@ def delete_employee(emp_id):
     conn = get_db()
     cur = conn.cursor()
 
-    # ✅ Fix column name here
     cur.execute("DELETE FROM employees WHERE emp_id = ?", (emp_id,))
-    cur.execute("DELETE FROM users WHERE username = ?", (emp_id,))  # assuming username = emp_id
+    cur.execute("DELETE FROM users WHERE email = ?", (emp_id,))
     conn.commit()
     conn.close()
 
-    flash("🗑️ Employee deleted.", "success")
+    flash("🗑️ Employee deleted successfully.", "success")
     return redirect(url_for('employee_list'))
 
 
-@app.route('/edit_employee/<int:emp_id>', methods=['GET', 'POST'])
+@app.route('/edit_employee/<string:emp_id>', methods=['GET', 'POST'])
 def edit_employee(emp_id):
+    if 'user' not in session:
+        return redirect(url_for('login'))
+
     conn = get_db()
     cur = conn.cursor()
 
     if request.method == 'POST':
         name = request.form['name']
-        email = request.form['email']
+        department = request.form['department']
+        designation = request.form['designation']
         phone = request.form['phone']
-        # Add other fields
+        email = request.form['email']
+        role = request.form['role']
+        address = request.form['address']
 
         cur.execute('''
-            UPDATE employees SET name = ?, email = ?, phone = ?
-            WHERE id = ?
-        ''', (name, email, phone, emp_id))
-
+            UPDATE employees SET name=?, department=?, designation=?, phone=?, email=?, role=?, address=?
+            WHERE emp_id=?
+        ''', (name, department, designation, phone, email, role, address, emp_id))
         conn.commit()
         conn.close()
-        flash("✅ Employee updated successfully", "success")
+
+        flash("✅ Employee details updated.", "success")
         return redirect(url_for('employee_list'))
 
-    cur.execute("SELECT * FROM employees WHERE id = ?", (emp_id,))
-    employee = cur.fetchone()
-    conn.close()
-    return render_template("edit_employee.html", employee=employee)
-
+    else:
+        cur.execute("SELECT * FROM employees WHERE emp_id=?", (emp_id,))
+        employee = cur.fetchone()
+        conn.close()
+        if employee:
+            return render_template('edit_employee.html', employee=employee)
+        else:
+            flash("⚠️ Employee not found.", "danger")
+            return redirect(url_for('employee_list'))
 
 @app.route('/export_employees_excel')
 def export_employees_excel():
     import pandas as pd
     if 'user' not in session:
         return redirect(url_for('login'))
-
-@app.route('/download_id_card/<int:emp_id>')
+@app.route('/download_id_card/<string:emp_id>')
 def download_id_card(emp_id):
-    # generate or locate the PDF file
-    filename = f"id_card_{emp_id}.pdf"
-    filepath = os.path.join('static', 'employee_docs', filename)
+    conn = get_db()
+    cur = conn.cursor()
+    cur.execute("SELECT * FROM employees WHERE emp_id=?", (emp_id,))
+    employee = cur.fetchone()
+    conn.close()
 
-    if not os.path.exists(filepath):
-        return "File not found", 404
-    return send_file(filepath, as_attachment=True)
+    if not employee:
+        return "Employee not found", 404
 
-@app.route('/download_joining_letter/<int:emp_id>')
+    # Your PDF generation logic goes here — generate to buffer or file
+    # Then:
+    return send_file("generated_id_card.pdf", as_attachment=True)
+
+
+@app.route('/download_joining_letter/<string:emp_id>')
 def download_joining_letter(emp_id):
-    filename = f"joining_letter_{emp_id}.pdf"
-    filepath = os.path.join('static', 'employee_docs', filename)
+    conn = get_db()
+    cur = conn.cursor()
+    cur.execute("SELECT * FROM employees WHERE emp_id=?", (emp_id,))
+    employee = cur.fetchone()
+    conn.close()
 
-    if not os.path.exists(filepath):
-        return "File not found", 404
-    return send_file(filepath, as_attachment=True)
+    if not employee:
+        return "Employee not found", 404
+
+    # Your ReportLab PDF generation logic
+    return send_file("joining_letter.pdf", as_attachment=True)
 
 
 @app.route('/reset_password/<string:username>', methods=['POST'])
