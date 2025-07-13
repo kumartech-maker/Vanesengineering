@@ -30,23 +30,24 @@ def init_db():
 
     # Employee master table
     cur.execute('''
-        CREATE TABLE IF NOT EXISTS employees (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            employee_id TEXT UNIQUE,
-            full_name TEXT,
-            gender TEXT,
-            dob TEXT,
-            blood_group TEXT,
-            department TEXT,
-            designation TEXT,
-            contact_number TEXT,
-            email TEXT,
-            join_date TEXT,
-            permanent_address TEXT,
-            photo TEXT,
-            role TEXT
-        )
-    ''')
+    CREATE TABLE IF NOT EXISTS employees (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        emp_id TEXT,
+        name TEXT,
+        gender TEXT,
+        dob TEXT,
+        blood_group TEXT,
+        department TEXT,
+        designation TEXT,
+        contact TEXT,
+        email TEXT,
+        join_date TEXT,
+        address TEXT,
+        role TEXT,
+        photo_filename TEXT,
+        default_password TEXT
+    )
+''')
 
     # Employee login credentials table
     cur.execute('''
