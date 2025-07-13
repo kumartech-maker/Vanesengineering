@@ -26,7 +26,7 @@ def init_db():
     cur.execute('''
     CREATE TABLE IF NOT EXISTS projects (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
-        project_code TEXT UNIQUE,
+        project_code TEXT,  -- 👈 Add this line
         vendor_id INTEGER,
         quotation_ro TEXT,
         start_date TEXT,
@@ -45,7 +45,6 @@ def init_db():
         FOREIGN KEY(vendor_id) REFERENCES vendors(id)
     )
 ''')
-    
 
     
     cur.execute('''  
@@ -255,7 +254,6 @@ def projects():
                            enquiry_id="ENQ" + str(datetime.now().timestamp()).replace(".", ""))
 
 # ---------- ✅ Create Project ----------
-
 @app.route('/create_project', methods=['POST'])
 def create_project():
     if 'user' not in session:
@@ -272,39 +270,45 @@ def create_project():
         file = request.files.get('drawing_file')
         file_name = None
 
+        # Save file if uploaded
         if file and file.filename != '':
             uploads_dir = os.path.join('static', 'uploads')
             os.makedirs(uploads_dir, exist_ok=True)
             file_name = file.filename
             file.save(os.path.join(uploads_dir, file_name))
 
-        # Generate formatted project_code like VE/TN/2526/P001
+        # ✅ Connect to DB
         conn = get_db()
         cur = conn.cursor()
 
-        cur.execute("SELECT COUNT(*) FROM projects")
-        count = cur.fetchone()[0] + 1
-        year_code = datetime.now().strftime('%y') + str(int(datetime.now().strftime('%y')) + 1)
-        project_code = f"VE/TN/{year_code}/P{str(count).zfill(3)}"
-
+        # ✅ Insert project without project_code first
         cur.execute('''
             INSERT INTO projects (
-                project_code, vendor_id, quotation_ro, start_date, end_date,
+                vendor_id, quotation_ro, start_date, end_date,
                 location, incharge, notes, file_name,
                 enquiry_id, client_name
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         ''', (
-            project_code, vendor_id, '', start_date, end_date,
+            vendor_id, '', start_date, end_date,
             '', incharge, notes, file_name,
             enquiry_no, project_name
         ))
 
+        project_id = cur.lastrowid  # ✅ Auto-generated primary key
+        project_code = f"PRJ/{datetime.now().year}/{str(project_id).zfill(3)}"
+
+        # ✅ Update the row with the generated project_code
+        cur.execute("UPDATE projects SET project_code = ? WHERE id = ?", (project_code, project_id))
+
         conn.commit()
         conn.close()
+
         flash("✅ Project added successfully!", "success")
         return redirect(url_for('projects'))
 
     except Exception as e:
+        import traceback
+        traceback.print_exc()
         print("❌ Error while creating project:", e)
         return "Bad Request", 400
 
