@@ -1142,7 +1142,6 @@ def export_employees():
     output_file = f"/tmp/employee_list.xlsx"
     df.to_excel(output_file, index=False)
     return send_file(output_file, as_attachment=True)
-
 @app.route('/download_id_card/<path:emp_id>')
 def download_id_card(emp_id):
     if 'user' not in session:
@@ -1158,7 +1157,8 @@ def download_id_card(emp_id):
             return "Employee not found", 404
 
         from reportlab.pdfgen import canvas
-        pdf_path = f"/tmp/{emp_id}_id_card.pdf"
+        safe_emp_id = emp_id.replace("/", "_")  # <-- important fix
+        pdf_path = f"/tmp/{safe_emp_id}_id_card.pdf"
         c = canvas.Canvas(pdf_path, pagesize=(300, 200))
         c.setFont("Helvetica-Bold", 12)
         c.drawString(100, 180, "VANES ENGINEERING")
@@ -1193,7 +1193,8 @@ def download_joining_letter(emp_id):
             return "Employee not found", 404
 
         from reportlab.pdfgen import canvas
-        pdf_path = f"/tmp/{emp_id}_joining_letter.pdf"
+        safe_emp_id = emp_id.replace("/", "_")  # <-- important fix
+        pdf_path = f"/tmp/{safe_emp_id}_joining_letter.pdf"
         c = canvas.Canvas(pdf_path)
         c.setFont("Helvetica-Bold", 14)
         c.drawString(100, 800, "Joining Letter")
