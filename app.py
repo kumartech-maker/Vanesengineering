@@ -1255,6 +1255,20 @@ def reset_password(username):
     return redirect(url_for('employee_list'))
 
 
+@app.route('/attendance')
+def attendance_dashboard():
+    if 'user' not in session:
+        return redirect(url_for('login'))
+
+    conn = get_db()
+    cur = conn.cursor()
+    cur.execute("SELECT * FROM employees")
+    employees = cur.fetchall()
+    conn.close()
+
+    return render_template('attendance.html', employees=employees)
+
+
 @app.route('/mark_attendance', methods=['GET', 'POST'])
 def mark_attendance():
     if 'user' not in session:
