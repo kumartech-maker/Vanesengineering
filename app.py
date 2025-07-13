@@ -23,27 +23,28 @@ def init_db():
     conn = get_db()
     cur = conn.cursor()
 
-    cur.execute('''  
-        CREATE TABLE IF NOT EXISTS projects (  
-            id INTEGER PRIMARY KEY AUTOINCREMENT,  
-            vendor_id INTEGER,  
-            quotation_ro TEXT,  
-            start_date TEXT,  
-            end_date TEXT,  
-            location TEXT,  
-            incharge TEXT,  
-            notes TEXT,  
-            file_name TEXT,  
-            enquiry_id TEXT,  
-            client_name TEXT,  
-            site_location TEXT,  
-            engineer_name TEXT,  
-            mobile TEXT,  
-            status TEXT DEFAULT 'new',  
-            total_sqm REAL DEFAULT 0,  
-            FOREIGN KEY(vendor_id) REFERENCES vendors(id)  
-        )  
-    ''')
+    cur.execute('''
+    CREATE TABLE IF NOT EXISTS projects (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        project_code TEXT UNIQUE,
+        vendor_id INTEGER,
+        quotation_ro TEXT,
+        start_date TEXT,
+        end_date TEXT,
+        location TEXT,
+        incharge TEXT,
+        notes TEXT,
+        file_name TEXT,
+        enquiry_id TEXT,
+        client_name TEXT,
+        site_location TEXT,
+        engineer_name TEXT,
+        mobile TEXT,
+        status TEXT DEFAULT 'new',
+        total_sqm REAL DEFAULT 0,
+        FOREIGN KEY(vendor_id) REFERENCES vendors(id)
+    )
+''')
     
 
     
@@ -255,7 +256,6 @@ def projects():
 
 # ---------- ✅ Create Project ----------
 
-
 @app.route('/create_project', methods=['POST'])
 def create_project():
     if 'user' not in session:
@@ -278,40 +278,36 @@ def create_project():
             file_name = file.filename
             file.save(os.path.join(uploads_dir, file_name))
 
+        # Generate formatted project_code like VE/TN/2526/P001
         conn = get_db()
         cur = conn.cursor()
 
-        # Step 1: Insert project temporarily (without formatted ID)
+        cur.execute("SELECT COUNT(*) FROM projects")
+        count = cur.fetchone()[0] + 1
+        year_code = datetime.now().strftime('%y') + str(int(datetime.now().strftime('%y')) + 1)
+        project_code = f"VE/TN/{year_code}/P{str(count).zfill(3)}"
+
         cur.execute('''
             INSERT INTO projects (
-                vendor_id, quotation_ro, start_date, end_date,
+                project_code, vendor_id, quotation_ro, start_date, end_date,
                 location, incharge, notes, file_name,
                 enquiry_id, client_name
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         ''', (
-            vendor_id, '', start_date, end_date,
+            project_code, vendor_id, '', start_date, end_date,
             '', incharge, notes, file_name,
             enquiry_no, project_name
         ))
 
-        project_id = cur.lastrowid
-
-        # Step 2: Generate formatted ID like VE/TN/2526/E001
-        year_code = datetime.now().strftime("%y") + str(int(datetime.now().strftime("%y")) + 1)  # 2526
-        formatted_id = f"VE/TN/{year_code}/E{str(project_id).zfill(3)}"
-
-        # Step 3: Update project row with formatted ID
-        cur.execute("UPDATE projects SET quotation_ro = ? WHERE id = ?", (formatted_id, project_id))
-
         conn.commit()
         conn.close()
-
-        flash(f"✅ Project created with ID: {formatted_id}", "success")
+        flash("✅ Project added successfully!", "success")
         return redirect(url_for('projects'))
 
     except Exception as e:
         print("❌ Error while creating project:", e)
         return "Bad Request", 400
+
 
 # ---------- ✅ Add Measurement Info to Project ----------
 
