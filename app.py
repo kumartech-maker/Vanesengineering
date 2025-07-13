@@ -1147,66 +1147,76 @@ def export_employees():
 def download_id_card(emp_id):
     if 'user' not in session:
         return redirect(url_for('login'))
+    try:
+        conn = get_db()
+        cur = conn.cursor()
+        cur.execute("SELECT * FROM employees WHERE emp_id = ?", (emp_id,))
+        emp = cur.fetchone()
+        conn.close()
 
-    conn = get_db()
-    cur = conn.cursor()
-    cur.execute("SELECT * FROM employees WHERE emp_id = ?", (emp_id,))
-    emp = cur.fetchone()
-    conn.close()
+        if not emp:
+            return "Employee not found", 404
 
-    if not emp:
-        return "Employee not found", 404
+        from reportlab.pdfgen import canvas
+        pdf_path = f"/tmp/{emp_id}_id_card.pdf"
+        c = canvas.Canvas(pdf_path, pagesize=(300, 200))
+        c.setFont("Helvetica-Bold", 12)
+        c.drawString(100, 180, "VANES ENGINEERING")
+        c.setFont("Helvetica", 10)
+        c.drawString(20, 150, f"Emp ID: {emp['emp_id']}")
+        c.drawString(20, 135, f"Name: {emp['name']}")
+        c.drawString(20, 120, f"Dept: {emp['department']}")
+        c.drawString(20, 105, f"Role: {emp['role']}")
+        c.drawString(20, 90, f"Join Date: {emp['join_date']}")
+        c.drawString(20, 60, "Signature: _______________")
+        c.showPage()
+        c.save()
 
-    pdf_path = f"/tmp/{emp_id}_id_card.pdf"
-    c = canvas.Canvas(pdf_path, pagesize=(300, 200))
-    c.setFont("Helvetica-Bold", 12)
-    c.drawString(100, 180, "VANES ENGINEERING")
-    c.setFont("Helvetica", 10)
-    c.drawString(20, 150, f"Emp ID: {emp['emp_id']}")
-    c.drawString(20, 135, f"Name: {emp['name']}")
-    c.drawString(20, 120, f"Dept: {emp['department']}")
-    c.drawString(20, 105, f"Role: {emp['role']}")
-    c.drawString(20, 90, f"Join Date: {emp['join_date']}")
-    c.drawString(20, 60, "Signature: _______________")
-    c.showPage()
-    c.save()
-
-    return send_file(pdf_path, as_attachment=True, download_name=f"{emp_id}_ID_Card.pdf")
+        return send_file(pdf_path, as_attachment=True, download_name=f"{emp_id}_ID_Card.pdf")
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        return "Internal Error in ID card route", 500
 
 @app.route('/download_joining_letter/<path:emp_id>')
 def download_joining_letter(emp_id):
     if 'user' not in session:
         return redirect(url_for('login'))
+    try:
+        conn = get_db()
+        cur = conn.cursor()
+        cur.execute("SELECT * FROM employees WHERE emp_id = ?", (emp_id,))
+        emp = cur.fetchone()
+        conn.close()
 
-    conn = get_db()
-    cur = conn.cursor()
-    cur.execute("SELECT * FROM employees WHERE emp_id = ?", (emp_id,))
-    emp = cur.fetchone()
-    conn.close()
+        if not emp:
+            return "Employee not found", 404
 
-    if not emp:
-        return "Employee not found", 404
+        from reportlab.pdfgen import canvas
+        pdf_path = f"/tmp/{emp_id}_joining_letter.pdf"
+        c = canvas.Canvas(pdf_path)
+        c.setFont("Helvetica-Bold", 14)
+        c.drawString(100, 800, "Joining Letter")
+        c.setFont("Helvetica", 11)
+        c.drawString(40, 770, f"Date: {emp['join_date']}")
+        c.drawString(40, 740, f"To: {emp['name']},")
+        c.drawString(40, 720, f"Department: {emp['department']}")
+        c.drawString(40, 700, f"Designation: {emp['designation']}")
+        c.drawString(40, 660, f"Dear {emp['name']},")
+        c.drawString(40, 640, "We are pleased to confirm your joining as a valued team member.")
+        c.drawString(40, 620, "You are appointed as:")
+        c.drawString(60, 600, f"Role: {emp['role']}")
+        c.drawString(40, 560, "Please contact HR for further onboarding.")
+        c.drawString(40, 520, "Regards,")
+        c.drawString(40, 500, "Vanes Engineering")
+        c.showPage()
+        c.save()
 
-    pdf_path = f"/tmp/{emp_id}_joining_letter.pdf"
-    c = canvas.Canvas(pdf_path)
-    c.setFont("Helvetica-Bold", 14)
-    c.drawString(100, 800, "Joining Letter")
-    c.setFont("Helvetica", 11)
-    c.drawString(40, 770, f"Date: {emp['join_date']}")
-    c.drawString(40, 740, f"To: {emp['name']},")
-    c.drawString(40, 720, f"Department: {emp['department']}")
-    c.drawString(40, 700, f"Designation: {emp['designation']}")
-    c.drawString(40, 660, f"Dear {emp['name']},")
-    c.drawString(40, 640, "We are pleased to confirm your joining as a valued team member.")
-    c.drawString(40, 620, "You are appointed as:")
-    c.drawString(60, 600, f"Role: {emp['role']}")
-    c.drawString(40, 560, "Please contact HR for further onboarding.")
-    c.drawString(40, 520, "Regards,")
-    c.drawString(40, 500, "Vanes Engineering")
-    c.showPage()
-    c.save()
-
-    return send_file(pdf_path, as_attachment=True, download_name=f"{emp_id}_Joining_Letter.pdf")
+        return send_file(pdf_path, as_attachment=True, download_name=f"{emp_id}_Joining_Letter.pdf")
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        return "Internal Error in joining letter route", 500
 
 @app.route('/reset_password/<string:username>', methods=['POST'])
 def reset_password(username):
