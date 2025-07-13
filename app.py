@@ -1085,8 +1085,9 @@ def delete_employee(emp_id):
     conn = get_db()
     cur = conn.cursor()
 
-    cur.execute("DELETE FROM employees WHERE employee_id = ?", (emp_id,))
-    cur.execute("DELETE FROM users WHERE username = ?", (emp_id,))
+    # ✅ Fix column name here
+    cur.execute("DELETE FROM employees WHERE emp_id = ?", (emp_id,))
+    cur.execute("DELETE FROM users WHERE username = ?", (emp_id,))  # assuming username = emp_id
     conn.commit()
     conn.close()
 
@@ -1094,11 +1095,57 @@ def delete_employee(emp_id):
     return redirect(url_for('employee_list'))
 
 
+@app.route('/edit_employee/<int:emp_id>', methods=['GET', 'POST'])
+def edit_employee(emp_id):
+    conn = get_db()
+    cur = conn.cursor()
+
+    if request.method == 'POST':
+        name = request.form['name']
+        email = request.form['email']
+        phone = request.form['phone']
+        # Add other fields
+
+        cur.execute('''
+            UPDATE employees SET name = ?, email = ?, phone = ?
+            WHERE id = ?
+        ''', (name, email, phone, emp_id))
+
+        conn.commit()
+        conn.close()
+        flash("✅ Employee updated successfully", "success")
+        return redirect(url_for('employee_list'))
+
+    cur.execute("SELECT * FROM employees WHERE id = ?", (emp_id,))
+    employee = cur.fetchone()
+    conn.close()
+    return render_template("edit_employee.html", employee=employee)
+
+
 @app.route('/export_employees_excel')
 def export_employees_excel():
     import pandas as pd
     if 'user' not in session:
         return redirect(url_for('login'))
+
+@app.route('/download_id_card/<int:emp_id>')
+def download_id_card(emp_id):
+    # generate or locate the PDF file
+    filename = f"id_card_{emp_id}.pdf"
+    filepath = os.path.join('static', 'employee_docs', filename)
+
+    if not os.path.exists(filepath):
+        return "File not found", 404
+    return send_file(filepath, as_attachment=True)
+
+@app.route('/download_joining_letter/<int:emp_id>')
+def download_joining_letter(emp_id):
+    filename = f"joining_letter_{emp_id}.pdf"
+    filepath = os.path.join('static', 'employee_docs', filename)
+
+    if not os.path.exists(filepath):
+        return "File not found", 404
+    return send_file(filepath, as_attachment=True)
 
 
 @app.route('/reset_password/<string:username>', methods=['POST'])
