@@ -1078,15 +1078,13 @@ def employee_list():
 
     conn.close()
     return render_template("employee_list.html", employees=employees, departments=departments, roles=roles, selected_department=department, selected_role=role)
-
-@app.route('/delete_employee/<string:emp_id>', methods=['POST'])
+@app.route('/delete_employee/<path:emp_id>', methods=['POST'])
 def delete_employee(emp_id):
     if 'user' not in session:
         return redirect(url_for('login'))
 
     conn = get_db()
     cur = conn.cursor()
-
     cur.execute("DELETE FROM employees WHERE emp_id = ?", (emp_id,))
     cur.execute("DELETE FROM users WHERE email = ?", (emp_id,))
     conn.commit()
@@ -1095,8 +1093,7 @@ def delete_employee(emp_id):
     flash("🗑️ Employee deleted successfully.", "success")
     return redirect(url_for('employee_list'))
 
-
-@app.route('/edit_employee/<string:emp_id>', methods=['GET', 'POST'])
+@app.route('/edit_employee/<path:emp_id>', methods=['GET', 'POST'])
 def edit_employee(emp_id):
     if 'user' not in session:
         return redirect(url_for('login'))
@@ -1132,7 +1129,6 @@ def edit_employee(emp_id):
         else:
             flash("⚠️ Employee not found.", "danger")
             return redirect(url_for('employee_list'))
-
 @app.route('/export_employees')
 def export_employees():
     import pandas as pd
@@ -1147,7 +1143,7 @@ def export_employees():
     df.to_excel(output_file, index=False)
     return send_file(output_file, as_attachment=True)
 
-@app.route('/download_id_card/<emp_id>')
+@app.route('/download_id_card/<path:emp_id>')
 def download_id_card(emp_id):
     if 'user' not in session:
         return redirect(url_for('login'))
@@ -1161,7 +1157,6 @@ def download_id_card(emp_id):
     if not emp:
         return "Employee not found", 404
 
-    # PDF creation
     pdf_path = f"/tmp/{emp_id}_id_card.pdf"
     c = canvas.Canvas(pdf_path, pagesize=(300, 200))
     c.setFont("Helvetica-Bold", 12)
@@ -1178,8 +1173,7 @@ def download_id_card(emp_id):
 
     return send_file(pdf_path, as_attachment=True, download_name=f"{emp_id}_ID_Card.pdf")
 
-
-@app.route('/download_joining_letter/<emp_id>')
+@app.route('/download_joining_letter/<path:emp_id>')
 def download_joining_letter(emp_id):
     if 'user' not in session:
         return redirect(url_for('login'))
@@ -1193,7 +1187,6 @@ def download_joining_letter(emp_id):
     if not emp:
         return "Employee not found", 404
 
-    # PDF creation
     pdf_path = f"/tmp/{emp_id}_joining_letter.pdf"
     c = canvas.Canvas(pdf_path)
     c.setFont("Helvetica-Bold", 14)
@@ -1214,7 +1207,6 @@ def download_joining_letter(emp_id):
     c.save()
 
     return send_file(pdf_path, as_attachment=True, download_name=f"{emp_id}_Joining_Letter.pdf")
-
 
 @app.route('/reset_password/<string:username>', methods=['POST'])
 def reset_password(username):
