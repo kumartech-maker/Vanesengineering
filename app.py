@@ -12,7 +12,7 @@ from reportlab.lib import colors
 from num2words import num2words
 from werkzeug.security import generate_password_hash, check_password_hash
 from reportlab.pdfgen import canvas
-from reportlab.lib.pagesizes import IDCARD
+from reportlab.lib.pagesizes import A6  # Or use (300, 200) as a custom size
 
 app = Flask(__name__)
 app.secret_key = 'secretkey'
