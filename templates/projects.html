@@ -301,19 +301,19 @@
               {% endfor %}
             </tbody>
             <tfoot class="table-light fw-bold">
-              <tr>
-                <td colspan="11" class="text-end">TOTAL:</td>
-                <td>{{ "%.2f"|format(total_24g) }}</td>
-                <td>{{ "%.2f"|format(total_22g) }}</td>
-                <td>{{ "%.2f"|format(total_20g) }}</td>
-                <td>{{ "%.2f"|format(total_18g) }}</td>
-                <td>{{ "%.2f"|format(total_nuts) }}</td>
-                <td>{{ "%.2f"|format(total_cleat) }}</td>
-                <td>{{ "%.2f"|format(total_gasket) }}</td>
-                <td>{{ "%.2f"|format(total_corner) }}</td>
-                <td>{{ "%.2f"|format(total_weight) }}</td>
-                <td></td>
-              </tr>
+  <tr>
+    <td colspan="11" class="text-end">TOTAL:</td>
+    <td id="total_24g">0.00</td>
+    <td id="total_22g">0.00</td>
+    <td id="total_20g">0.00</td>
+    <td id="total_18g">0.00</td>
+    <td id="total_nuts">0.00</td>
+    <td id="total_cleat">0.00</td>
+    <td id="total_gasket">0.00</td>
+    <td id="total_corner">0.00</td>
+    <td id="total_weight">0.00</td>
+    <td></td>
+  </tr>
             </tfoot>
           </table>
         </div>
@@ -532,6 +532,43 @@ function recalculateTotals() {
   document.getElementById("totalGasket").textContent = totalGasket.toFixed(2);
   document.getElementById("totalCorner").textContent = totalCorner.toFixed(2);
   document.getElementById("totalWeight").textContent = totalWeight.toFixed(2);
+}
+
+document.addEventListener("DOMContentLoaded", recalculateTotals);
+</script>
+
+
+<script>
+function recalculateTotals() {
+  let total24 = 0, total22 = 0, total20 = 0, total18 = 0;
+  let nuts = 0, cleat = 0, gasket = 0, corner = 0, weight = 0;
+
+  document.querySelectorAll("table tbody tr").forEach(row => {
+    const cells = row.querySelectorAll("td");
+    if (cells.length < 20) return;
+
+    total24 += parseFloat(cells[11].innerText) || 0;
+    total22 += parseFloat(cells[12].innerText) || 0;
+    total20 += parseFloat(cells[13].innerText) || 0;
+    total18 += parseFloat(cells[14].innerText) || 0;
+
+    nuts   += parseFloat(cells[15].innerText) || 0;
+    cleat  += parseFloat(cells[16].innerText) || 0;
+    gasket += parseFloat(cells[17].innerText) || 0;
+    corner += parseFloat(cells[18].innerText) || 0;
+    weight += parseFloat(cells[19].innerText) || 0;
+  });
+
+  document.getElementById("total_24g").innerText = total24.toFixed(2);
+  document.getElementById("total_22g").innerText = total22.toFixed(2);
+  document.getElementById("total_20g").innerText = total20.toFixed(2);
+  document.getElementById("total_18g").innerText = total18.toFixed(2);
+
+  document.getElementById("total_nuts").innerText    = nuts.toFixed(2);
+  document.getElementById("total_cleat").innerText   = cleat.toFixed(2);
+  document.getElementById("total_gasket").innerText  = gasket.toFixed(2);
+  document.getElementById("total_corner").innerText  = corner.toFixed(2);
+  document.getElementById("total_weight").innerText  = weight.toFixed(2);
 }
 
 document.addEventListener("DOMContentLoaded", recalculateTotals);
