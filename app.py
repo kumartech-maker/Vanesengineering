@@ -1269,6 +1269,8 @@ def attendance_dashboard():
     return render_template('attendance.html', employees=employees)
 
 
+from datetime import datetime
+
 @app.route('/mark_attendance', methods=['GET', 'POST'])
 def mark_attendance():
     if 'user' not in session:
@@ -1292,14 +1294,13 @@ def mark_attendance():
         conn.commit()
         conn.close()
         flash("✅ Attendance marked successfully!", "success")
-        return redirect(url_for('mark_attendance'))
+        return redirect(url_for('attendance_dashboard'))  # redirect to main dashboard
 
     # GET method
     cur.execute("SELECT emp_id, name FROM employees ORDER BY emp_id")
     employees = cur.fetchall()
     conn.close()
-    return render_template("attendance_form.html", employees=employees)
-
+    return render_template("attendance.html", employees=employees)
 
 @app.route('/attendance_list', methods=['GET'])
 def attendance_list():
