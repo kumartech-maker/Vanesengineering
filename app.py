@@ -176,6 +176,39 @@ def init_db():
         )  
     ''')
 
+
+
+
+    # Insert dummy employees
+    dummy_employees = [
+        ('VE/EMP/0001', 'Madhan Kumar', 'Engineer', '9876543210', 'madhan@example.com', '', '2023-06-01'),
+        ('VE/EMP/0002', 'Rajesh K', 'Supervisor', '9876543211', 'rajesh@example.com', '', '2023-07-10'),
+        ('VE/EMP/0003', 'Priya R', 'Designer', '9876543212', 'priya@example.com', '', '2024-01-15')
+    ]
+
+    for emp in dummy_employees:
+        cur.execute('''
+            INSERT OR IGNORE INTO employees (emp_id, name, role, phone, email, photo, date_joined)
+            VALUES (?, ?, ?, ?, ?, ?, ?)
+        ''', emp)
+
+    # Insert dummy attendance for today
+    from datetime import datetime
+    today = datetime.today().strftime('%Y-%m-%d')
+    dummy_attendance = [
+        ('VE/EMP/0001', today, 'Present', '09:00', '18:00'),
+        ('VE/EMP/0002', today, 'Absent', '', ''),
+        ('VE/EMP/0003', today, 'Present', '09:15', '17:45')
+    ]
+
+    for record in dummy_attendance:
+        cur.execute('''
+            INSERT INTO attendance (emp_id, date, status, check_in, check_out)
+            VALUES (?, ?, ?, ?, ?)
+        ''', record)
+
+    
+
     # Default Admin
     cur.execute('''  
         INSERT OR IGNORE INTO users (email, name, role, contact, password)  
