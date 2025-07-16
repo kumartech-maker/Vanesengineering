@@ -153,7 +153,7 @@ def init_db():
     ''')
 
     cur.execute("DROP TABLE IF EXISTS production_progress")
-cur.execute('''
+     cur.execute('''
     CREATE TABLE production_progress (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         project_id INTEGER NOT NULL,
