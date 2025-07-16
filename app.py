@@ -882,84 +882,96 @@ def production(project_id):
     conn.row_factory = sqlite3.Row
     cur = conn.cursor()
 
+    # Fetch project
     cur.execute("SELECT * FROM projects WHERE id = ?", (project_id,))
     project = cur.fetchone()
     if not project:
         flash("Project not found", "danger")
         return redirect(url_for('projects'))
 
+    # Fetch duct entries
     cur.execute("SELECT * FROM duct_entries WHERE project_id = ?", (project_id,))
     ducts = cur.fetchall()
 
-    total_area = 0
-    total_nuts = 0
-    total_cleat = 0
-    total_gasket = 0
-    total_corner = 0
-    total_weight = 0
-
+    # Totals
+    total_area = total_nuts = total_cleat = total_gasket = total_corner = total_weight = 0
     for duct in ducts:
-        try:
-            area = float(duct["area"] or 0)
-            nuts = float(duct["nuts_bolts"] or 0)
-            cleat = float(duct["cleat"] or 0)
-            gasket = float(duct["gasket"] or 0)
-            corner = float(duct["corner_pieces"] or 0)
-            weight = float(duct["weight"] or 0)
+        total_area   += float(duct["area"] or 0)
+        total_nuts   += float(duct["nuts_bolts"] or 0)
+        total_cleat  += float(duct["cleat"] or 0)
+        total_gasket += float(duct["gasket"] or 0)
+        total_corner += float(duct["corner_pieces"] or 0)
+        total_weight += float(duct["weight"] or 0)
 
-            total_area += area
-            total_nuts += nuts
-            total_cleat += cleat
-            total_gasket += gasket
-            total_corner += corner
-            total_weight += weight
-        except Exception as e:
-            print("❌ Error calculating totals:", e)
-
-    # Update total_sqm in projects table
+    # Update project total_sqm
     cur.execute("UPDATE projects SET total_sqm = ? WHERE id = ?", (total_area, project_id))
     conn.commit()
 
-    # Handle progress tracking
+    # Fetch or insert progress
     cur.execute("SELECT * FROM production_progress WHERE project_id = ?", (project_id,))
     progress = cur.fetchone()
     if not progress:
         cur.execute("""
-            INSERT INTO production_progress (project_id, sheet_cutting_sqm, plasma_fabrication_sqm, boxing_assembly_sqm)
-            VALUES (?, 0, 0, 0)
+            INSERT INTO production_progress (
+              project_id, sheet_cutting_sqm, plasma_fabrication_sqm,
+              boxing_assembly_sqm, quality_check_percent, dispatch_percent
+            ) VALUES (?, 0, 0, 0, 0, 0)
         """, (project_id,))
         conn.commit()
         cur.execute("SELECT * FROM production_progress WHERE project_id = ?", (project_id,))
         progress = cur.fetchone()
 
+    # Calculate % for each of 5 stages
+    total_sqm = total_area or 1  # avoid zero division
+
+    sheet_pct = round((progress["sheet_cutting_sqm"] / total_sqm) * 100, 2)
+    plasma_pct = round((progress["plasma_fabrication_sqm"] / total_sqm) * 100, 2)
+    boxing_pct = round((progress["boxing_assembly_sqm"] / total_sqm) * 100, 2)
+    quality_pct = float(progress["quality_check_percent"] or 0)
+    dispatch_pct = float(progress["dispatch_percent"] or 0)
+
+    # Overall % (simple average)
+    overall_pct = round((sheet_pct + plasma_pct + boxing_pct + quality_pct + dispatch_pct) / 5, 2)
+
     conn.close()
-
     return render_template("production.html",
-                           project=project,
-                           ducts=ducts,
-                           progress=progress,
-                           total_area=total_area,
-                           total_nuts=total_nuts,
-                           total_cleat=total_cleat,
-                           total_gasket=total_gasket,
-                           total_corner=total_corner,
-                           total_weight=total_weight)
-
+        project=project,
+        ducts=ducts,
+        progress=progress,
+        total_area=total_area,
+        total_nuts=total_nuts,
+        total_cleat=total_cleat,
+        total_gasket=total_gasket,
+        total_corner=total_corner,
+        total_weight=total_weight,
+        sheet_pct=sheet_pct,
+        plasma_pct=plasma_pct,
+        boxing_pct=boxing_pct,
+        quality_pct=quality_pct,
+        dispatch_pct=dispatch_pct,
+        overall_pct=overall_pct
+                          )
 # ---------- ✅ Update Production Progress ----------
 
 @app.route("/update_production/<int:project_id>", methods=["POST"])
 def update_production(project_id):
-    sheet_cutting = float(request.form.get("sheet_cutting") or 0)
-    plasma_fabrication = float(request.form.get("plasma_fabrication") or 0)
-    boxing_assembly = float(request.form.get("boxing_assembly") or 0)
+    sheet = float(request.form.get("sheet_cutting") or 0)
+    plasma = float(request.form.get("plasma_fabrication") or 0)
+    boxing = float(request.form.get("boxing_assembly") or 0)
+    quality = float(request.form.get("quality_check") or 0)
+    dispatch = float(request.form.get("dispatch") or 0)
 
     conn = get_db()
     cur = conn.cursor()
     cur.execute("""
-        UPDATE production_progress
-        SET sheet_cutting_sqm = ?, plasma_fabrication_sqm = ?, boxing_assembly_sqm = ?
+        UPDATE production_progress SET
+        sheet_cutting_sqm = ?,
+        plasma_fabrication_sqm = ?,
+        boxing_assembly_sqm = ?,
+        quality_check_percent = ?,
+        dispatch_percent = ?
         WHERE project_id = ?
-    """, (sheet_cutting, plasma_fabrication, boxing_assembly, project_id))
+    """, (sheet, plasma, boxing, quality, dispatch, project_id))
     conn.commit()
     conn.close()
 
