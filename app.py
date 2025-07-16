@@ -153,18 +153,18 @@ def init_db():
     ''')
 
     cur.execute("DROP TABLE IF EXISTS production_progress")
-     cur.execute('''
-    CREATE TABLE production_progress (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        project_id INTEGER NOT NULL,
-        sheet_cutting_sqm REAL DEFAULT 0,
-        plasma_fabrication_sqm REAL DEFAULT 0,
-        boxing_assembly_sqm REAL DEFAULT 0,
-        quality_check_pct REAL DEFAULT 0,
-        dispatch_percent REAL DEFAULT 0,
-        FOREIGN KEY (project_id) REFERENCES projects(id)
-    )
-''')
+    cur.execute('''
+        CREATE TABLE production_progress (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            project_id INTEGER NOT NULL,
+            sheet_cutting_sqm REAL DEFAULT 0,
+            plasma_fabrication_sqm REAL DEFAULT 0,
+            boxing_assembly_sqm REAL DEFAULT 0,
+            quality_check_pct REAL DEFAULT 0,
+            dispatch_percent REAL DEFAULT 0,
+            FOREIGN KEY (project_id) REFERENCES projects(id)
+        )
+    ''')
     # Dummy employees
     dummy_employees = [
         ('VE/EMP/0001', 'Madhan Kumar', 'Engineer', '9876543210', 'madhan@example.com', 'default.jpg', '2023-06-01'),
