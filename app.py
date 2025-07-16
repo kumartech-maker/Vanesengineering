@@ -953,7 +953,7 @@ def production(project_id):
         "plasma_fabrication_pct": round(plasma_pct, 1),
         "boxing_assembly_pct": round(boxing_pct, 1),
         "quality_check_pct": round(qc_pct, 1),
-        "dispatch_pct": round(dispatch_pct, 1),
+        "dispatch_percent": round(dispatch_pct, 1),
         "overall_progress": round(overall_progress, 1),
     })
 
@@ -985,7 +985,7 @@ def update_production(project_id):
             plasma_fabrication_sqm = ?,
             boxing_assembly_sqm = ?,
             quality_check_pct = ?,
-            dispatch_pct = ?
+            dispatch_percent = ?
         WHERE project_id = ?
     """, (sheet, plasma, boxing, qc, dispatch, project_id))
     conn.commit()
