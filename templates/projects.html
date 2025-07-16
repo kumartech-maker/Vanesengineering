@@ -416,6 +416,22 @@ document.addEventListener("DOMContentLoaded", function() {
   }
 });
 </script>
+
+  <script>
+document.addEventListener("DOMContentLoaded", function () {
+  const vendorSelect = document.getElementById('vendorSelect');
+  const gstInput = document.getElementById('vendorGst');
+  const addrInput = document.getElementById('vendorAddress');
+
+  if (vendorSelect && gstInput && addrInput) {
+    vendorSelect.addEventListener('change', function () {
+      const selected = this.options[this.selectedIndex];
+      gstInput.value = selected.getAttribute('data-gst') || '';
+      addrInput.value = selected.getAttribute('data-address') || '';
+    });
+  }
+});
+  </script>
 </body>
 </html>
 
