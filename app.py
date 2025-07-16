@@ -162,20 +162,20 @@ def init_db():
     # Production progress
     
 
-    
-
-    cur.execute("""
-CREATE TABLE IF NOT EXISTS production_progress (
+    cur.execute("DROP TABLE IF EXISTS production_progress")
+cur.execute("""
+CREATE TABLE production_progress (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     project_id INTEGER NOT NULL,
     sheet_cutting_sqm REAL DEFAULT 0,
     plasma_fabrication_sqm REAL DEFAULT 0,
     boxing_assembly_sqm REAL DEFAULT 0,
-    quality_check_percent REAL DEFAULT 0,
+    quality_check_pct REAL DEFAULT 0,
     dispatch_percent REAL DEFAULT 0,
     FOREIGN KEY (project_id) REFERENCES projects(id)
 )
 """)
+
     
 
     # Dummy employees
