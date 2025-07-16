@@ -164,18 +164,15 @@ def init_db():
 
     # Create table if not exists
     cur.execute("""
-    CREATE TABLE IF NOT EXISTS production_progress (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        project_id INTEGER NOT NULL,
-        sheet_cutting_sqm REAL DEFAULT 0,
-        plasma_fabrication_sqm REAL DEFAULT 0,
-        boxing_assembly_sqm REAL DEFAULT 0,
-        quality_check_percent REAL DEFAULT 0,
-        dispatch_percent REAL DEFAULT 0,
-        FOREIGN KEY (project_id) REFERENCES projects(id)
-    )
-    """)
-    
+    INSERT INTO production_progress (
+        project_id,
+        sheet_cutting_sqm,
+        plasma_fabrication_sqm,
+        boxing_assembly_sqm,
+        quality_check_percent,
+        dispatch_percent
+    ) VALUES (?, 0, 0, 0, 0, 0)
+""", (project_id,))
 
     # Dummy employees
     dummy_employees = [
