@@ -916,11 +916,9 @@ def production(project_id):
     total_corner = sum(float(d["corner_pieces"] or 0) for d in ducts)
     total_weight = sum(float(d["weight"] or 0) for d in ducts)
 
-    # Update total_sqm
     cur.execute("UPDATE projects SET total_sqm = ? WHERE id = ?", (total_area, project_id))
     conn.commit()
 
-    # Get or create production_progress row
     cur.execute("SELECT * FROM production_progress WHERE project_id = ?", (project_id,))
     progress = cur.fetchone()
 
@@ -935,25 +933,23 @@ def production(project_id):
         cur.execute("SELECT * FROM production_progress WHERE project_id = ?", (project_id,))
         progress = cur.fetchone()
 
-    # ✅ Calculate stage-wise percentage (based on sqm)
+    # Calculate stage-wise percentage (based on sqm)
     sheet_pct = ((progress["sheet_cutting_sqm"] or 0) / total_area * 100) if total_area else 0
     plasma_pct = ((progress["plasma_fabrication_sqm"] or 0) / total_area * 100) if total_area else 0
     boxing_pct = ((progress["boxing_assembly_sqm"] or 0) / total_area * 100) if total_area else 0
     qc_pct = float(progress["quality_check_pct"] or 0)
-    dispatch_pct = float(progress["dispatch_pct"] or 0)
+    dispatch_pct = float(progress["dispatch_percent"] or 0)
 
-    # ✅ Overall percentage (average of all 5 stages)
     stages = [sheet_pct, plasma_pct, boxing_pct, qc_pct, dispatch_pct]
     overall_progress = sum(stages) / 5
 
-    # Convert to dict for Jinja
     progress_dict = dict(progress)
     progress_dict.update({
         "sheet_cutting_pct": round(sheet_pct, 1),
         "plasma_fabrication_pct": round(plasma_pct, 1),
         "boxing_assembly_pct": round(boxing_pct, 1),
         "quality_check_pct": round(qc_pct, 1),
-        "dispatch_percent": round(dispatch_pct, 1),
+        "dispatch_pct": round(dispatch_pct, 1),
         "overall_progress": round(overall_progress, 1),
     })
 
@@ -968,6 +964,8 @@ def production(project_id):
                            total_gasket=total_gasket,
                            total_corner=total_corner,
                            total_weight=total_weight)
+
+
 
 @app.route("/update_production/<int:project_id>", methods=["POST"])
 def update_production(project_id):
