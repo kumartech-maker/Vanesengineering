@@ -353,7 +353,6 @@ def create_project():
         file = request.files.get('drawing_file')
         file_name = None
 
-        # Save file if uploaded
         if file and file.filename != '':
             uploads_dir = os.path.join('static', 'uploads')
             os.makedirs(uploads_dir, exist_ok=True)
@@ -364,7 +363,7 @@ def create_project():
         conn = get_db()
         cur = conn.cursor()
 
-        # ✅ Insert project without project_code first
+        # ✅ Insert project without project_code
         cur.execute('''
             INSERT INTO projects (
                 vendor_id, quotation_ro, start_date, end_date,
@@ -377,10 +376,12 @@ def create_project():
             enquiry_no, project_name
         ))
 
-        project_id = cur.lastrowid  # ✅ Auto-generated primary key
-        project_code = f"PRJ/{datetime.now().year}/{str(project_id).zfill(3)}"
+        project_id = cur.lastrowid
 
-        # ✅ Update the row with the generated project_code
+        # ✅ Generate custom project code: VE/2526/E001
+        custom_year = 2526  # Change this if you want dynamic logic
+        project_code = f"VE/{custom_year}/E{str(project_id).zfill(3)}"
+
         cur.execute("UPDATE projects SET project_code = ? WHERE id = ?", (project_code, project_id))
 
         conn.commit()
@@ -392,9 +393,7 @@ def create_project():
     except Exception as e:
         import traceback
         traceback.print_exc()
-        print("❌ Error while creating project:", e)
-        return "Bad Request", 400
-
+        return "❌ Failed to create project", 400
 
 # ---------- ✅ Add Measurement Info to Project ----------
 
