@@ -1,18 +1,11 @@
 from flask import Flask, render_template, request, redirect, url_for, flash, session, send_file, jsonify
 from datetime import datetime
-from io import BytesIO
 import sqlite3
 import os
 import pandas as pd
 import math
-from reportlab.pdfgen import canvas
-from reportlab.lib.pagesizes import A4
-from reportlab.platypus import Table, TableStyle
-from reportlab.lib import colors
 from num2words import num2words
 from werkzeug.security import generate_password_hash, check_password_hash
-from reportlab.pdfgen import canvas
-from reportlab.lib.pagesizes import A6  # Or use (300, 200) as a custom size
 
 app = Flask(__name__)
 app.secret_key = 'secretkey'
@@ -39,7 +32,7 @@ def init_db():
         )
     ''')
 
-    # Employee master table
+    # Employees table
     cur.execute('''
         CREATE TABLE IF NOT EXISTS employees (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -61,7 +54,7 @@ def init_db():
         )
     ''')
 
-    # Employee login table
+    # Employee login
     cur.execute('''
         CREATE TABLE IF NOT EXISTS employee_logins (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -73,7 +66,7 @@ def init_db():
         )
     ''')
 
-    # Projects table
+    # Projects
     cur.execute('''
         CREATE TABLE IF NOT EXISTS projects (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -147,7 +140,7 @@ def init_db():
         )
     ''')
 
-    # Users table
+    # Users
     cur.execute('''
         CREATE TABLE IF NOT EXISTS users (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -159,24 +152,20 @@ def init_db():
         )
     ''')
 
-    # Production progress
-    
-
+    # Recreate production_progress table
     cur.execute("DROP TABLE IF EXISTS production_progress")
-cur.execute("""
-CREATE TABLE production_progress (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    project_id INTEGER NOT NULL,
-    sheet_cutting_sqm REAL DEFAULT 0,
-    plasma_fabrication_sqm REAL DEFAULT 0,
-    boxing_assembly_sqm REAL DEFAULT 0,
-    quality_check_pct REAL DEFAULT 0,
-    dispatch_percent REAL DEFAULT 0,
-    FOREIGN KEY (project_id) REFERENCES projects(id)
-)
-""")
-
-    
+    cur.execute('''
+        CREATE TABLE production_progress (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            project_id INTEGER NOT NULL,
+            sheet_cutting_sqm REAL DEFAULT 0,
+            plasma_fabrication_sqm REAL DEFAULT 0,
+            boxing_assembly_sqm REAL DEFAULT 0,
+            quality_check_pct REAL DEFAULT 0,
+            dispatch_percent REAL DEFAULT 0,
+            FOREIGN KEY (project_id) REFERENCES projects(id)
+        )
+    ''')
 
     # Dummy employees
     dummy_employees = [
@@ -205,7 +194,7 @@ CREATE TABLE production_progress (
             VALUES (?, ?, ?, ?, ?)
         ''', record)
 
-    # Default admin user
+    # Default admin
     cur.execute('''
         INSERT OR IGNORE INTO users (email, name, role, contact, password)
         VALUES (?, ?, ?, ?, ?)
@@ -225,11 +214,11 @@ CREATE TABLE production_progress (
     conn.commit()
     conn.close()
 
-
-
 @app.before_request
 def setup_db_on_request():
     init_db()
+
+
 
 # ---------- ✅ Login ----------
 
