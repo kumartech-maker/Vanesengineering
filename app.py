@@ -928,7 +928,7 @@ def production(project_id):
         cur.execute("""
             INSERT INTO production_progress (
               project_id, sheet_cutting_sqm, plasma_fabrication_sqm, 
-              boxing_assembly_sqm, quality_check_pct, dispatch_pct
+              boxing_assembly_sqm, quality_check_pct, dispatch_percent
             ) VALUES (?, 0, 0, 0, 0, 0)
         """, (project_id,))
         conn.commit()
