@@ -503,45 +503,40 @@ function setupVendorAutoFill() {
   }
 }
 
+<script>
 function recalculateTotals() {
   let total24 = 0, total22 = 0, total20 = 0, total18 = 0;
   let nuts = 0, cleat = 0, gasket = 0, corner = 0, weight = 0;
 
-  document.querySelectorAll("table tbody tr").forEach(row => {
+  document.querySelectorAll("#duct-table tbody tr").forEach(row => {
     const cells = row.querySelectorAll("td");
     if (cells.length < 20) return;
 
-    total24 += parseFloat(cells[11].innerText) || 0;
-    total22 += parseFloat(cells[12].innerText) || 0;
-    total20 += parseFloat(cells[13].innerText) || 0;
-    total18 += parseFloat(cells[14].innerText) || 0;
+    total24 += parseFloat(cells[11]?.innerText || 0);
+    total22 += parseFloat(cells[12]?.innerText || 0);
+    total20 += parseFloat(cells[13]?.innerText || 0);
+    total18 += parseFloat(cells[14]?.innerText || 0);
 
-    nuts   += parseFloat(cells[15].innerText) || 0;
-    cleat  += parseFloat(cells[16].innerText) || 0;
-    gasket += parseFloat(cells[17].innerText) || 0;
-    corner += parseFloat(cells[18].innerText) || 0;
-    weight += parseFloat(cells[19].innerText) || 0;
+    nuts   += parseFloat(cells[15]?.innerText || 0);
+    cleat  += parseFloat(cells[16]?.innerText || 0);
+    gasket += parseFloat(cells[17]?.innerText || 0);
+    corner += parseFloat(cells[18]?.innerText || 0);
+    weight += parseFloat(cells[19]?.innerText || 0);
   });
 
   document.getElementById("total_24g").innerText = total24.toFixed(2);
   document.getElementById("total_22g").innerText = total22.toFixed(2);
   document.getElementById("total_20g").innerText = total20.toFixed(2);
   document.getElementById("total_18g").innerText = total18.toFixed(2);
-  document.getElementById("total_nuts").innerText    = nuts.toFixed(2);
-  document.getElementById("total_cleat").innerText   = cleat.toFixed(2);
-  document.getElementById("total_gasket").innerText  = gasket.toFixed(2);
-  document.getElementById("total_corner").innerText  = corner.toFixed(2);
-  document.getElementById("total_weight").innerText  = weight.toFixed(2);
+
+  document.getElementById("total_nuts").innerText = nuts.toFixed(2);
+  document.getElementById("total_cleat").innerText = cleat.toFixed(2);
+  document.getElementById("total_gasket").innerText = gasket.toFixed(2);
+  document.getElementById("total_corner").innerText = corner.toFixed(2);
+  document.getElementById("total_weight").innerText = weight.toFixed(2);
 }
 
-document.addEventListener('DOMContentLoaded', function () {
-  setupAutoCalculation('');
-  setupAutoCalculation('Modal');
-  setupFactorField('ductType', '.factor-field');
-  setupFactorField('ductTypeModal', '.factor-field-modal');
-  setupVendorAutoFill();
-  recalculateTotals();
-});
+document.addEventListener("DOMContentLoaded", recalculateTotals);
 </script>
 
 <!-- Bootstrap & jQuery -->
