@@ -72,17 +72,14 @@
               <input name="end_date" type="date" class="form-control" required>
             </div>
 
-            <div class="col-md-12">
-              <label>Vendor</label>
-              <select name="vendor_id" class="form-select" id="vendorSelect" required>
-                <option value="">-- Select Vendor --</option>
-                {% for vendor in vendors %}
-                <option value="{{ vendor.id }}" data-gst="{{ vendor.gst }}" data-address="{{ vendor.address }}">
-                  {{ vendor.name }}
-                </option>
-                {% endfor %}
-              </select>
-            </div>
+            <div class="col-md-6">
+  <label>Vendor GST</label>
+  <input type="text" id="vendorGst" class="form-control" readonly>
+</div>
+<div class="col-md-6">
+  <label>Vendor Address</label>
+  <input type="text" id="vendorAddress" class="form-control" readonly>
+</div>
 
             <div class="col-md-6">
               <label>Vendor GST</label>
