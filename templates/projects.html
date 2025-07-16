@@ -235,91 +235,88 @@
     </div>
 
 <div class="col-md-7">
-      <div class="card shadow-sm">
-        <div class="card-header bg-secondary text-white">📊 Duct Entries</div>
-        <div class="card-body table-responsive p-0" style="max-height: 520px; overflow-y: auto;">
-          <table class="table table-sm table-striped m-0">
-            <thead class="table-light sticky-top">
-              <tr>
-                <th>Duct</th><th>Type</th><th>W1</th><th>H1</th><th>W2</th><th>H2</th>
-                <th>Qty</th><th>Len</th><th>Deg</th><th>Factor</th><th>Gauge</th>
-                <th>24G Area</th><th>22G Area</th><th>20G Area</th><th>18G Area</th>
-                <th>Nuts</th><th>Cleat</th><th>Gasket</th><th>Corner</th><th>Weight</th><th>🛠</th>
-              </tr>
-            </thead>
-            <tbody>
-              {% set total_24g = 0 %}
-              {% set total_22g = 0 %}
-              {% set total_20g = 0 %}
-              {% set total_18g = 0 %}
-              {% set total_nuts = 0 %}
-              {% set total_cleat = 0 %}
-              {% set total_gasket = 0 %}
-              {% set total_corner = 0 %}
-              {% set total_weight = 0 %}
-              {% for entry in ducts %}
-              <tr>
-                <td>{{ entry.duct_no }}</td>
-                <td>{{ entry.duct_type }}</td>
-                <td>{{ entry.width1 }}</td>
-                <td>{{ entry.height1 }}</td>
-                <td>{{ entry.width2 }}</td>
-                <td>{{ entry.height2 }}</td>
-                <td>{{ entry.quantity }}</td>
-                <td>{{ entry.length_or_radius }}</td>
-                <td>{{ entry.degree_or_offset }}</td>
-                <td>{{ entry.factor }}</td>
-                <td>{{ entry.gauge }}</td>
+  <div class="card shadow-sm">
+    <div class="card-header bg-secondary text-white">📊 Duct Entries</div>
+    <div class="card-body table-responsive p-0" style="max-height: 520px; overflow-y: auto;">
+      <table id="duct-table" class="table table-sm table-striped m-0">
+        <thead class="table-light sticky-top">
+          <tr>
+            <th>Duct</th><th>Type</th><th>W1</th><th>H1</th><th>W2</th><th>H2</th>
+            <th>Qty</th><th>Len</th><th>Deg</th><th>Factor</th><th>Gauge</th>
+            <th>Area</th>
+            <th>24G</th><th>22G</th><th>20G</th><th>18G</th>
+            <th>Nuts</th><th>Cleat</th><th>Gasket</th><th>Corner</th><th>Weight</th><th>🛠</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% set total_area = 0 %}
+          {% set total_24g = 0 %}
+          {% set total_22g = 0 %}
+          {% set total_20g = 0 %}
+          {% set total_18g = 0 %}
+          {% set total_nuts = 0 %}
+          {% set total_cleat = 0 %}
+          {% set total_gasket = 0 %}
+          {% set total_corner = 0 %}
+          {% set total_weight = 0 %}
 
-                {% set area = entry.area|float %}
-                <td>{{ "%.2f"|format(area if entry.gauge == '24g' else 0) }}</td>
-                <td>{{ "%.2f"|format(area if entry.gauge == '22g' else 0) }}</td>
-                <td>{{ "%.2f"|format(area if entry.gauge == '20g' else 0) }}</td>
-                <td>{{ "%.2f"|format(area if entry.gauge == '18g' else 0) }}</td>
+          {% for entry in ducts %}
+          {% set area = entry.area|float %}
+          <tr>
+            <td>{{ entry.duct_no }}</td>
+            <td>{{ entry.duct_type }}</td>
+            <td>{{ entry.width1 }}</td>
+            <td>{{ entry.height1 }}</td>
+            <td>{{ entry.width2 }}</td>
+            <td>{{ entry.height2 }}</td>
+            <td>{{ entry.quantity }}</td>
+            <td>{{ entry.length_or_radius }}</td>
+            <td>{{ entry.degree_or_offset }}</td>
+            <td>{{ entry.factor }}</td>
+            <td>{{ entry.gauge }}</td>
 
-                <td>{{ "%.2f"|format(entry.nuts_bolts|float) }}</td>
-                <td>{{ "%.2f"|format(entry.cleat|float) }}</td>
-                <td>{{ "%.2f"|format(entry.gasket|float) }}</td>
-                <td>{{ "%.2f"|format(entry.corner_pieces|float) }}</td>
-                <td>{{ "%.2f"|format(entry.weight|float) }}</td>
-                <td>
-                  <button class="btn btn-sm btn-warning" data-bs-toggle="modal" data-bs-target="#editDuctModal{{ entry.id }}">✏️</button>
-                  <form action="{{ url_for('delete_duct', entry_id=entry.id) }}" method="post" style="display:inline;">
-                    <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm('Are you sure?');">🗑️</button>
-                  </form>
-                </td>
-              </tr>
-              {% set total_24g = total_24g + (area if entry.gauge == '24g' else 0) %}
-              {% set total_22g = total_22g + (area if entry.gauge == '22g' else 0) %}
-              {% set total_20g = total_20g + (area if entry.gauge == '20g' else 0) %}
-              {% set total_18g = total_18g + (area if entry.gauge == '18g' else 0) %}
-              {% set total_nuts = total_nuts + (entry.nuts_bolts|float) %}
-              {% set total_cleat = total_cleat + (entry.cleat|float) %}
-              {% set total_gasket = total_gasket + (entry.gasket|float) %}
-              {% set total_corner = total_corner + (entry.corner_pieces|float) %}
-              {% set total_weight = total_weight + (entry.weight|float) %}
-              {% endfor %}
-            </tbody>
-            <tfoot class="table-light fw-bold">
-  <tr>
-    <td colspan="11" class="text-end">TOTAL:</td>
-    <td id="total_24g">0.00</td>
-    <td id="total_22g">0.00</td>
-    <td id="total_20g">0.00</td>
-    <td id="total_18g">0.00</td>
-    <td id="total_nuts">0.00</td>
-    <td id="total_cleat">0.00</td>
-    <td id="total_gasket">0.00</td>
-    <td id="total_corner">0.00</td>
-    <td id="total_weight">0.00</td>
-    <td></td>
-  </tr>
-            </tfoot>
-          </table>
-        </div>
-      </div>
+            <td class="area">{{ "%.2f"|format(area) }}</td>
+
+            <td>{{ "%.2f"|format(area if entry.gauge == '24g' else 0) }}</td>
+            <td>{{ "%.2f"|format(area if entry.gauge == '22g' else 0) }}</td>
+            <td>{{ "%.2f"|format(area if entry.gauge == '20g' else 0) }}</td>
+            <td>{{ "%.2f"|format(area if entry.gauge == '18g' else 0) }}</td>
+
+            <td class="nuts">{{ "%.2f"|format(entry.nuts_bolts|float) }}</td>
+            <td class="cleat">{{ "%.2f"|format(entry.cleat|float) }}</td>
+            <td class="gasket">{{ "%.2f"|format(entry.gasket|float) }}</td>
+            <td class="corner">{{ "%.2f"|format(entry.corner_pieces|float) }}</td>
+            <td class="weight">{{ "%.2f"|format(entry.weight|float) }}</td>
+            <td>
+              <button class="btn btn-sm btn-warning" data-bs-toggle="modal" data-bs-target="#editDuctModal{{ entry.id }}">✏️</button>
+              <form action="{{ url_for('delete_duct', entry_id=entry.id) }}" method="post" style="display:inline;">
+                <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm('Are you sure?');">🗑️</button>
+              </form>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+
+        <tfoot class="table-light fw-bold">
+          <tr>
+            <td colspan="11" class="text-end">TOTAL:</td>
+            <td id="totalArea">0.00</td>
+            <td id="total24G">0.00</td>
+            <td id="total22G">0.00</td>
+            <td id="total20G">0.00</td>
+            <td id="total18G">0.00</td>
+            <td id="totalNuts">0.00</td>
+            <td id="totalCleat">0.00</td>
+            <td id="totalGasket">0.00</td>
+            <td id="totalCorner">0.00</td>
+            <td id="totalWeight">0.00</td>
+            <td></td>
+          </tr>
+        </tfoot>
+      </table>
     </div>
-  </div> <!-- End row -->
+  </div>
+</div>
 
 <!-- Edit Duct Entry Modals -->
   {% for entry in ducts %}
@@ -408,6 +405,9 @@
   {% endif %}
 </div> <!-- End container -->
 
+
+
+<!-- Totals Calculation -->
 <!-- Auto Calculation Script -->
 <script>
 function setupAutoCalculation(prefix = '') {
@@ -503,42 +503,6 @@ function setupVendorAutoFill() {
   }
 }
 
-document.addEventListener('DOMContentLoaded', function () {
-  setupAutoCalculation('');
-  setupAutoCalculation('Modal');
-  setupFactorField('ductType', '.factor-field');
-  setupFactorField('ductTypeModal', '.factor-field-modal');
-  setupVendorAutoFill();
-});
-</script>
-
-<!-- Totals Calculation -->
-<script>
-function recalculateTotals() {
-  let totalArea = 0, totalNuts = 0, totalCleat = 0, totalGasket = 0, totalCorner = 0, totalWeight = 0;
-
-  document.querySelectorAll("#duct-table tbody tr").forEach(row => {
-    totalArea += parseFloat(row.querySelector('.area')?.textContent || 0);
-    totalNuts += parseFloat(row.querySelector('.nuts')?.textContent || 0);
-    totalCleat += parseFloat(row.querySelector('.cleat')?.textContent || 0);
-    totalGasket += parseFloat(row.querySelector('.gasket')?.textContent || 0);
-    totalCorner += parseFloat(row.querySelector('.corner')?.textContent || 0);
-    totalWeight += parseFloat(row.querySelector('.weight')?.textContent || 0);
-  });
-
-  document.getElementById("totalArea").textContent = totalArea.toFixed(2);
-  document.getElementById("totalNuts").textContent = totalNuts.toFixed(2);
-  document.getElementById("totalCleat").textContent = totalCleat.toFixed(2);
-  document.getElementById("totalGasket").textContent = totalGasket.toFixed(2);
-  document.getElementById("totalCorner").textContent = totalCorner.toFixed(2);
-  document.getElementById("totalWeight").textContent = totalWeight.toFixed(2);
-}
-
-document.addEventListener("DOMContentLoaded", recalculateTotals);
-</script>
-
-
-<script>
 function recalculateTotals() {
   let total24 = 0, total22 = 0, total20 = 0, total18 = 0;
   let nuts = 0, cleat = 0, gasket = 0, corner = 0, weight = 0;
@@ -563,7 +527,6 @@ function recalculateTotals() {
   document.getElementById("total_22g").innerText = total22.toFixed(2);
   document.getElementById("total_20g").innerText = total20.toFixed(2);
   document.getElementById("total_18g").innerText = total18.toFixed(2);
-
   document.getElementById("total_nuts").innerText    = nuts.toFixed(2);
   document.getElementById("total_cleat").innerText   = cleat.toFixed(2);
   document.getElementById("total_gasket").innerText  = gasket.toFixed(2);
@@ -571,7 +534,14 @@ function recalculateTotals() {
   document.getElementById("total_weight").innerText  = weight.toFixed(2);
 }
 
-document.addEventListener("DOMContentLoaded", recalculateTotals);
+document.addEventListener('DOMContentLoaded', function () {
+  setupAutoCalculation('');
+  setupAutoCalculation('Modal');
+  setupFactorField('ductType', '.factor-field');
+  setupFactorField('ductTypeModal', '.factor-field-modal');
+  setupVendorAutoFill();
+  recalculateTotals();
+});
 </script>
 
 <!-- Bootstrap & jQuery -->
