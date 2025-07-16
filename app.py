@@ -270,6 +270,30 @@ def dashboard():
         return redirect(url_for('login'))
     return render_template("dashboard.html", user=session['user'])
 
+
+@app.route("/setup_db")
+def setup_db():
+    conn = get_db()
+    cur = conn.cursor()
+
+    # Check and add missing columns safely
+    def add_column_if_missing(column_name, column_def):
+        try:
+            cur.execute(f"ALTER TABLE production_progress ADD COLUMN {column_name} {column_def}")
+            print(f"✅ Added column: {column_name}")
+        except sqlite3.OperationalError as e:
+            if f"duplicate column name: {column_name}" in str(e).lower():
+                print(f"⚠️ Column already exists: {column_name}")
+            else:
+                print(f"❌ Error adding column {column_name}: {e}")
+
+    add_column_if_missing("quality_check_percent", "REAL DEFAULT 0")
+    add_column_if_missing("dispatch_percent", "REAL DEFAULT 0")
+
+    conn.commit()
+    conn.close()
+    return "✅ Database setup complete!"
+
 # ---------- ✅ Vendor Registration ----------
 
 @app.route('/vendor_registration', methods=['GET', 'POST'])
