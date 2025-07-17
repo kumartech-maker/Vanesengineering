@@ -1080,7 +1080,7 @@ def production_overview():
     return render_template("production_overview.html", projects=projects)
 
 def get_summary_data():
-    conn = get_db_connection()
+    conn = get_db()  # ✅ FIXED
     cur = conn.cursor()
 
     cur.execute('SELECT * FROM projects')
@@ -1095,9 +1095,9 @@ def get_summary_data():
     conn.close()
 
     return {
-        'projects': projects,
-        'production': production,
-        'ducts': ducts
+        'projects': [dict(row) for row in projects],
+        'production': [dict(row) for row in production],
+        'ducts': [dict(row) for row in ducts]
     }
 
 # ---------- ✅ Summary Placeholder ----------
@@ -1113,7 +1113,7 @@ def summary():
         md_bytes = md_sig.read()
         pm_bytes = pm_sig.read()
 
-        summary_data = get_summary_data()
+        summary_data = get_summary_data()['projects']
 
         buffer = BytesIO()
         pdf = canvas.Canvas(buffer, pagesize=landscape(A4))
@@ -1122,17 +1122,17 @@ def summary():
         pdf.setFont("Helvetica-Bold", 16)
         pdf.drawString(30, height - 40, "Project Summary Report")
 
-        data = [["Project", "Site", "Stage", "Area (sq.m)", "Progress (%)"]]
+        data = [["Project Name", "Enquiry No", "Start Date", "End Date", "Incharge"]]
         for row in summary_data:
             data.append([
-                row["project"],
-                row["site"],
-                row["stage"],
-                str(row["area"]),
-                f'{row["progress"]} %'
+                row["project_name"],
+                row["enquiry_no"],
+                row["start_date"],
+                row["end_date"],
+                row["incharge"]
             ])
 
-        table = Table(data, colWidths=[100, 100, 120, 100, 100])
+        table = Table(data, colWidths=[120] * len(data[0]))
         table.setStyle(TableStyle([
             ('BACKGROUND', (0, 0), (-1, 0), colors.darkblue),
             ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
@@ -1160,9 +1160,8 @@ def summary():
         buffer.seek(0)
         return send_file(buffer, as_attachment=True, download_name="summary_report.pdf", mimetype='application/pdf')
 
-    summary_data = get_summary_data()
+    summary_data = get_summary_data()['projects']
     return render_template("summary.html", data=summary_data)
-    
 
 # ---------- ✅ Submit Full Project and Move to Production ----------
 
