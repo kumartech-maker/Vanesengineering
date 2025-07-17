@@ -802,12 +802,12 @@ def export_pdf(project_id):
     conn = sqlite3.connect('database.db')
     c = conn.cursor()
 
-    # Fetch project info
+    # Project Info
     c.execute("SELECT client_name, site_location FROM projects WHERE id = ?", (project_id,))
     proj = c.fetchone()
     client_name, site_location = proj if proj else ("", "")
 
-    # Logo and header
+    # Logo and Heading
     logo_path = os.path.join("static", "logo.png")
     if os.path.exists(logo_path):
         p.drawImage(logo_path, 40, height - 80, width=80, preserveAspectRatio=True)
@@ -820,41 +820,78 @@ def export_pdf(project_id):
     p.drawString(40, height - 95, f"Client: {client_name}")
     p.drawString(350, height - 95, f"Site: {site_location}")
 
-    # Headers & fields (exactly as live table)
-    headers = ["Duct No", "Type", "W", "H", "L/R", "Qty", "Deg", "Factor", "Gauge", "Area",
-               "24G", "22G", "20G", "18G", "Nuts", "Cleat", "Gasket", "Weight"]
-    fields = ["duct_no", "duct_type", "width1", "height1", "length_or_radius", "quantity",
-              "degree_or_offset", "factor", "gauge", "area", "sq24", "sq22", "sq20", "sq18",
-              "nuts_bolts", "cleat", "gasket", "weight"]
+    # Headers for Live Table
+    headers = ["Duct No", "Type", "W1", "H1", "W2", "H2", "Qty", "Len", "Deg", "Factor", "Gauge",
+               "Area", "24G", "22G", "20G", "18G", "Nuts", "Cleat", "Gasket", "Corner", "Weight"]
 
-    # Fetch all duct entries
+    fields = ["duct_no", "duct_type", "width1", "height1", "width2", "height2", "quantity",
+              "length_or_radius", "degree_or_offset", "factor", "gauge", "area",
+              "nuts_bolts", "cleat", "gasket", "corner_pieces", "weight"]
+
+    # Fetch duct entries
     c.execute(f"SELECT {','.join(fields)} FROM duct_entries WHERE project_id = ?", (project_id,))
     rows = c.fetchall()
     conn.close()
 
     data = [headers]
-    totals = [0] * len(fields)
+    totals = {key: 0 for key in ["area", "24G", "22G", "20G", "18G", "quantity", "weight"]}
 
     for row in rows:
-        formatted_row = []
-        for i, val in enumerate(row):
-            if isinstance(val, (int, float)):
-                formatted_row.append(round(val, 2))
-                if fields[i] in ['quantity', 'area', 'sq24', 'sq22', 'sq20', 'sq18', 'nuts_bolts', 'weight']:
-                    totals[i] += val
-            else:
-                formatted_row.append(val if val is not None else "")
+        row_dict = dict(zip(fields, row))
+        area = row_dict.get("area", 0) or 0
+        gauge = (row_dict.get("gauge") or "").strip()
+
+        # Gauge-specific area split
+        g24 = area if gauge == "24G" else 0
+        g22 = area if gauge == "22G" else 0
+        g20 = area if gauge == "20G" else 0
+        g18 = area if gauge == "18G" else 0
+
+        # Format each row
+        formatted_row = [
+            row_dict.get("duct_no", ""),
+            row_dict.get("duct_type", ""),
+            round(row_dict.get("width1", 0), 2),
+            round(row_dict.get("height1", 0), 2),
+            round(row_dict.get("width2", 0), 2),
+            round(row_dict.get("height2", 0), 2),
+            row_dict.get("quantity", ""),
+            round(row_dict.get("length_or_radius", 0), 2),
+            row_dict.get("degree_or_offset", ""),
+            row_dict.get("factor", ""),
+            row_dict.get("gauge", ""),
+            round(area, 2),
+            round(g24, 2),
+            round(g22, 2),
+            round(g20, 2),
+            round(g18, 2),
+            row_dict.get("nuts_bolts", ""),
+            row_dict.get("cleat", ""),
+            row_dict.get("gasket", ""),
+            row_dict.get("corner_pieces", ""),
+            round(row_dict.get("weight", 0), 2),
+        ]
+
+        # Accumulate totals
+        totals["quantity"] += row_dict.get("quantity", 0) or 0
+        totals["area"] += area
+        totals["24G"] += g24
+        totals["22G"] += g22
+        totals["20G"] += g20
+        totals["18G"] += g18
+        totals["weight"] += row_dict.get("weight", 0) or 0
+
         data.append(formatted_row)
 
-    # Append Total row
+    # Final Total Row
     total_row = [""] * len(headers)
-    total_row[headers.index("H")] = "Total"
-    for i, field in enumerate(fields):
-        if field in ['quantity', 'area', 'sq24', 'sq22', 'sq20', 'sq18', 'nuts_bolts', 'weight']:
-            total_row[i] = round(totals[i], 2)
+    total_row[headers.index("H1")] = "Total"
+    for key in totals:
+        if key in headers:
+            total_row[headers.index(key)] = round(totals[key], 2)
     data.append(total_row)
 
-    # Draw table
+    # Draw the table
     table = Table(data, repeatRows=1, colWidths=[45] * len(headers))
     table.setStyle(TableStyle([
         ('BACKGROUND', (0, 0), (-1, 0), colors.lightgrey),
@@ -864,10 +901,12 @@ def export_pdf(project_id):
         ('FONTSIZE', (0, 0), (-1, -1), 6),
         ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
     ]))
+
     table.wrapOn(p, width, height)
     table_height = 12 * len(data)
     table.drawOn(p, 40, height - 130 - table_height)
 
+    # Footer for signatures
     p.setFont("Helvetica", 9)
     p.drawString(40, 40, "Engineer Signature: __________________")
     p.drawString(350, 40, "Client Signature: __________________")
@@ -875,10 +914,10 @@ def export_pdf(project_id):
     p.showPage()
     p.save()
     buffer.seek(0)
+
     return send_file(buffer, as_attachment=True,
                      download_name=f"{client_name}_duct_table.pdf",
                      mimetype='application/pdf')
-    
     
  
 # ---------- ✅ Export Excel ----------
