@@ -1,28 +1,33 @@
-from flask import Flask, render_template, request, redirect, url_for, flash, session, send_file, jsonify
+from flask import Flask, render_template, request, redirect, url_for, flash, session, send_file, jsonify, Response
 from datetime import datetime
 import sqlite3
 import os
 import pandas as pd
 import math
 from num2words import num2words
-# Top of your file
 import csv
 from io import StringIO
-from flask import Response, send_file
-
-
 
 app = Flask(__name__)
 app.secret_key = 'secretkey'
 
+# ✅ Correct database connection function
 def get_db():
     conn = sqlite3.connect("database.db")
     conn.row_factory = sqlite3.Row
     return conn
 
+# Optional: If you want to maintain compatibility with existing code using get_db_connection
+def get_db_connection():
+    return get_db()
+
+# Optional: Initialize DB (create tables if needed)
 def init_db():
     conn = get_db()
     cur = conn.cursor()
+    # You can define your table creation here
+    conn.commit()
+    conn.close()
 
     # Users
     cur.execute('''
