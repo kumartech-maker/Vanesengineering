@@ -5,6 +5,10 @@ import os
 import pandas as pd
 import math
 from num2words import num2words
+# Top of your file
+import csv
+from io import StringIO
+from flask import Response, send_file
 from werkzeug.security import generate_password_hash, check_password_hash
 
 app = Flask(__name__)
@@ -1673,10 +1677,6 @@ def export_attendance_excel():
     return send_file(path, as_attachment=True, download_name="Attendance_Report.xlsx")
 
 
-@app.route('/projects')
-def projects():
-    # existing route logic
-    pass
 
 # 🔽 Add the download route after other routes
 @app.route('/download_all_data')
