@@ -197,15 +197,16 @@ def init_db():
 
 
     # Insert Dummy Summary
-    cur.executemany('''
-        INSERT OR IGNORE INTO summary (project, site, stage, area, progress)
-        VALUES (?, ?, ?, ?, ?)
-    ''', [
-        ('A-123', 'Chennai', 'Sheet Cutting', 320, 50),
-        ('A-123', 'Chennai', 'Boxing', 150, 25),
-        ('B-456', 'Salem', 'Assembly', 410, 70),
-        ('C-789', 'Hyd', 'Dispatch', 100, 90)
-    ])
+    cur.execute('''
+    INSERT OR IGNORE INTO summary_reports (
+        project_id, diagram,
+        area_24g, area_22g, area_20g, area_18g,
+        sheet_cutting, plasma_fabrication, boxing_assembly,
+        quality_checking, dispatch, overall_progress
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+''', (
+    'A-123', 'dummy_diagram.jpg', 120, 90, 80, 60, 40, 30, 20, 15, 10, 50
+))
 
     # Dummy Employees
     dummy_employees = [
