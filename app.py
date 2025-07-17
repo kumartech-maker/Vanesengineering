@@ -577,7 +577,7 @@ def open_project(project_id):
         gasket = float(d.get('gasket') or 0)
         corner = float(d.get('corner_pieces') or 0)
         weight = float(d.get('weight') or 0)
-        gauge = d.get('gauge', '').strip()
+        gauge = (d.get('gauge') or '').strip()
 
         total_area += area
         total_nuts += nuts
