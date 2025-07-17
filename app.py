@@ -13,19 +13,6 @@ from werkzeug.security import generate_password_hash, check_password_hash
 from functools import wraps
 from flask import session, redirect, url_for, flash
 
-def role_required(*roles):
-    def wrapper(view_function):
-        @wraps(view_function)
-        def decorated_function(*args, **kwargs):
-            if 'role' not in session:
-                flash("⛔ You must be logged in.", "danger")
-                return redirect(url_for('login'))
-            if session['role'] not in roles:
-                flash("🚫 Access denied for your role.", "warning")
-                return redirect(url_for('dashboard'))
-            return view_function(*args, **kwargs)
-        return decorated_function
-    return wrapper
 
 app = Flask(__name__)
 app.secret_key = 'secretkey'
