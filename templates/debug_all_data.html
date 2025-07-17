@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Debug All Data</title>
+    <style>
+        table { border-collapse: collapse; margin-bottom: 30px; width: 100%; }
+        th, td { border: 1px solid #333; padding: 6px; font-size: 14px; }
+    </style>
+</head>
+<body>
+    <h1>📊 All Data in Database</h1>
+
+    {% for table, rows in data.items() %}
+        <h2>Table: {{ table }}</h2>
+
+        {% if rows is string %}
+            <p style="color:red;">{{ rows }}</p>
+        {% elif rows %}
+            <table>
+                <thead>
+                    <tr>
+                        {% for key in rows[0].keys() %}
+                            <th>{{ key }}</th>
+                        {% endfor %}
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for row in rows %}
+                        <tr>
+                            {% for value in row %}
+                                <td>{{ value }}</td>
+                            {% endfor %}
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        {% else %}
+            <p>No records found.</p>
+        {% endif %}
+    {% endfor %}
+</body>
+</html>
