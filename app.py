@@ -91,30 +91,28 @@ def init_db():
     ''')
 
     # Duct entries
-    cur.execute('''
-        CREATE TABLE IF NOT EXISTS duct_entries (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            project_id INTEGER,
-            duct_no TEXT,
-            duct_type TEXT,
-            factor TEXT,
-            width1 REAL,
-            height1 REAL,
-            width2 REAL,
-            height2 REAL,
-            length_or_radius REAL,
-            quantity INTEGER,
-            degree_or_offset TEXT,
-            gauge TEXT,
-            area REAL DEFAULT 0,
-            nuts_bolts TEXT,
-            cleat TEXT,
-            gasket TEXT,
-            corner_pieces TEXT,
-            weight REAL DEFAULT 0,
-            FOREIGN KEY (project_id) REFERENCES projects(id)
-        )
-    ''')
+    c.execute('''
+    SELECT 
+        duct_no, 
+        duct_type, 
+        factor, 
+        width1, 
+        height1, 
+        width2, 
+        height2, 
+        length_or_radius, 
+        quantity, 
+        degree_or_offset, 
+        gauge, 
+        area, 
+        nuts_bolts, 
+        cleat, 
+        gasket, 
+        corner_pieces, 
+        weight
+    FROM duct_entries
+    WHERE project_id = ?
+''', (project_id,))
 
     # Vendors
     cur.execute('''
