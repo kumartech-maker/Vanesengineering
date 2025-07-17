@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Measurement Sheet</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  <style>
+    body { background-color: #f5f5f5; padding: 20px; }
+    .form-section, .table-section {
+      background: #fff;
+      padding: 20px;
+      border-radius: 12px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.05);
+    }
+    .table th, .table td { vertical-align: middle; }
+    .btn-export { margin-right: 10px; }
+  </style>
+</head>
+<body>
+  <div class="container-fluid">
+    <div class="row">
+      <!-- Duct Entry Form -->
+      <div class="col-md-5">
+        <div class="form-section">
+          <h4 class="mb-4">Duct Entry Form</h4>
+          <form method="POST" action="{{ url_for('add_duct_entry', project_id=project_id) }}">
+            <div class="mb-3">
+              <label for="duct_type" class="form-label">Duct Type</label>
+              <input type="text" class="form-control" id="duct_type" name="duct_type" required>
+            </div>
+            <div class="mb-3">
+              <label for="length" class="form-label">Length (mm)</label>
+              <input type="number" class="form-control" id="length" name="length" required>
+            </div>
+            <div class="mb-3">
+              <label for="width" class="form-label">Width (mm)</label>
+              <input type="number" class="form-control" id="width" name="width" required>
+            </div>
+            <div class="mb-3">
+              <label for="height" class="form-label">Height (mm)</label>
+              <input type="number" class="form-control" id="height" name="height">
+            </div>
+            <div class="mb-3">
+              <label for="gauge" class="form-label">Gauge</label>
+              <input type="text" class="form-control" id="gauge" name="gauge">
+            </div>
+            <button type="submit" class="btn btn-primary w-100">Add Entry</button>
+          </form>
+        </div>
+      </div>
+
+      <!-- Measurement Table with Export -->
+      <div class="col-md-7">
+        <div class="table-section">
+          <h4 class="mb-3">Measurement Data</h4>
+          <div class="mb-2">
+            <a href="{{ url_for('export_csv', project_id=project_id) }}" class="btn btn-secondary btn-sm btn-export">Export CSV</a>
+            <a href="{{ url_for('export_excel', project_id=project_id) }}" class="btn btn-success btn-sm btn-export">Export Excel</a>
+            <a href="{{ url_for('export_pdf', project_id=project_id) }}" class="btn btn-danger btn-sm btn-export">Export PDF</a>
+          </div>
+          <table class="table table-bordered table-hover">
+            <thead class="table-light">
+              <tr>
+                <th>#</th>
+                <th>Duct Type</th>
+                <th>Length</th>
+                <th>Width</th>
+                <th>Height</th>
+                <th>Gauge</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for entry in duct_entries %}
+              <tr>
+                <td>{{ loop.index }}</td>
+                <td>{{ entry.duct_type }}</td>
+                <td>{{ entry.length }}</td>
+                <td>{{ entry.width }}</td>
+                <td>{{ entry.height }}</td>
+                <td>{{ entry.gauge }}</td>
+                <td>
+                  <a href="{{ url_for('update_duct', entry_id=entry.id) }}" class="btn btn-sm btn-outline-primary">Edit</a>
+                  <a href="{{ url_for('delete_duct', entry_id=entry.id) }}" class="btn btn-sm btn-outline-danger">Delete</a>
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>
