@@ -272,23 +272,23 @@ users_db = [
 
 @app.route('/', methods=['GET', 'POST'])
 def login():
-if request.method == 'POST':
-email = request.form['email']
-password = request.form['password']
+    if request.method == 'POST':
+        email = request.form['email']
+        password = request.form['password']
 
-# 🔍 Search in mock database  
-    user = next((u for u in users_db if u['email'] == email and u['password'] == password), None)  
+        # 🔍 Search in mock database  
+        user = next((u for u in users_db if u['email'] == email and u['password'] == password), None)
 
-    if user:  
-        session['user'] = user['name']  
-        session['role'] = user['role']  
-        flash("✅ Login successful!", "success")  
-        return redirect(url_for('dashboard'))  
-    else:  
-        flash("❌ Invalid credentials!", "danger")  
-        return redirect(url_for('login'))  
+        if user:  
+            session['user'] = user['name']  
+            session['role'] = user['role']  
+            flash("✅ Login successful!", "success")  
+            return redirect(url_for('dashboard'))  
+        else:  
+            flash("❌ Invalid credentials!", "danger")  
+            return redirect(url_for('login'))  
 
-return render_template("login.html")
+    return render_template("login.html")
 
 
 
