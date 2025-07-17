@@ -260,7 +260,7 @@ def setup_db_on_request():
     init_db()
 
 
-🔐 Mock Database for Users
+#🔐 Mock Database for Users
 
 users_db = [
 {"name": "MD User", "email": "md@company.com", "password": "md123", "role": "md"},
@@ -290,7 +290,6 @@ password = request.form['password']
 
 return render_template("login.html")
 
-Is it ok
 
 
 
