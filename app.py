@@ -171,8 +171,7 @@ def init_db():
     ''')
 
     # Summary
-    
-
+    # Summary Reports
     cur.execute("""
         CREATE TABLE IF NOT EXISTS summary_reports (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -182,31 +181,28 @@ def init_db():
             area_22g REAL DEFAULT 0,
             area_20g REAL DEFAULT 0,
             area_18g REAL DEFAULT 0,
-
             sheet_cutting REAL DEFAULT 0,
             plasma_fabrication REAL DEFAULT 0,
             boxing_assembly REAL DEFAULT 0,
             quality_checking REAL DEFAULT 0,
             dispatch REAL DEFAULT 0,
             overall_progress REAL DEFAULT 0,
-
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )
     """)
 
-
-
-    # Insert Dummy Summary
+    # Dummy Summary Report Insert (Optional)
     cur.execute('''
-    INSERT OR IGNORE INTO summary_reports (
-        project_id, diagram,
-        area_24g, area_22g, area_20g, area_18g,
-        sheet_cutting, plasma_fabrication, boxing_assembly,
-        quality_checking, dispatch, overall_progress
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-''', (
-    'A-123', 'dummy_diagram.jpg', 120, 90, 80, 60, 40, 30, 20, 15, 10, 50
-))
+        INSERT OR IGNORE INTO summary_reports (
+            project_id, diagram,
+            area_24g, area_22g, area_20g, area_18g,
+            sheet_cutting, plasma_fabrication, boxing_assembly,
+            quality_checking, dispatch, overall_progress
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    ''', (
+        'A-123', 'diagram1.jpg', 150.0, 120.0, 80.0, 60.0,
+        45.0, 40.0, 35.0, 30.0, 20.0, 60.0
+    ))
 
     # Dummy Employees
     dummy_employees = [
