@@ -1673,6 +1673,48 @@ def export_attendance_excel():
     return send_file(path, as_attachment=True, download_name="Attendance_Report.xlsx")
 
 
+@app.route('/projects')
+def projects():
+    # existing route logic
+    pass
+
+# 🔽 Add the download route after other routes
+@app.route('/download_all_data')
+def download_all_data():
+    import csv
+    from io import StringIO
+    from flask import Response
+
+    conn = get_db()
+    cur = conn.cursor()
+
+    all_tables = ["projects", "vendors", "duct_entries"]
+    output = StringIO()
+    writer = csv.writer(output)
+
+    for table in all_tables:
+        writer.writerow([f"Table: {table}"])
+        try:
+            cur.execute(f"SELECT * FROM {table}")
+            rows = cur.fetchall()
+            if rows:
+                writer.writerow(rows[0].keys())  # headers
+                for row in rows:
+                    writer.writerow([row[k] for k in row.keys()])
+            else:
+                writer.writerow(["No data found"])
+        except Exception as e:
+            writer.writerow([f"Error reading table: {str(e)}"])
+        writer.writerow([])
+
+    conn.close()
+
+    output.seek(0)
+    return Response(output.getvalue(),
+                    mimetype="text/csv",
+                    headers={"Content-Disposition": "attachment; filename=all_data.csv"})
+
+
 
 
 # ---------- ✅ Run Flask App ----------
