@@ -1681,7 +1681,7 @@ def export_attendance_excel():
 # 🔽 Add the download route after other routes
 @app.route('/debug_data')
 def debug_data():
-    from flask import Markup
+    from markupsafe import Markup
     conn = get_db()
     cur = conn.cursor()
 
