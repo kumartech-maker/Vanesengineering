@@ -129,33 +129,33 @@
 
   <!-- Project Table -->
 <div class="table-responsive mb-4">
-  <table class="table table-bordered table-hover bg-white">
-    <thead class="table-light">
-      <tr>
-        <th>Project ID</th>
-        <th>Project Name</th>
-        <th>Vendor</th>
-        <th>Start</th>
-        <th>End</th>
-        <th>Status</th>
-        <th>Actions</th>
-      </tr>
-    </thead>
-    <tbody>
-      {% for project in projects %}
-      <tr>
-        <td>{{ project.project_code }}</td>
-        <td>{{ project.project_name }}</td>
-        <td>{{ project.vendor_name }}</td>
-        <td>{{ project.start_date }}</td>
-        <td>{{ project.end_date }}</td>
-        <td>{{ project.status }}</td>
-        <td>
-          <a href="/project/{{ project.id }}" class="btn btn-sm btn-info">Open</a>
-        </td>
-      </tr>
-      {% endfor %}
-    </tbody>
+  <table class="table table-bordered">
+  <thead>
+    <tr>
+      <th>Project Code</th>
+      <th>Client Name</th>
+      <th>Vendor Name</th>
+      <th>Start Date</th>
+      <th>End Date</th>
+      <th>Status</th>
+      <th>Actions</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for proj in projects %}
+    <tr>
+      <td>{{ proj.project_code }}</td>
+      <td>{{ proj.client_name or '' }}</td>
+      <td>{{ proj.vendor_name or '' }}</td>
+      <td>{{ proj.start_date }}</td>
+      <td>{{ proj.end_date }}</td>
+      <td>{{ proj.status }}</td>
+      <td>
+        <a href="{{ url_for('open_project', project_id=proj.id) }}" class="btn btn-sm btn-primary">Open</a>
+      </td>
+    </tr>
+    {% endfor %}
+  </tbody>
   </table>
 </div>
 
