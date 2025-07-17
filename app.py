@@ -373,32 +373,27 @@ def get_vendor_info(vendor_id):
 
 
 # ---------- ✅ View All Projects ----------
-
 @app.route('/projects')
 def projects():
     conn = get_db()
     cur = conn.cursor()
 
-    # ✅ Join to get vendor name
+    # JOIN to get vendor_name
     cur.execute("""
-        SELECT 
-            projects.*, 
-            vendors.name AS vendor_name 
-        FROM projects 
-        LEFT JOIN vendors ON projects.vendor_id = vendors.id 
-        ORDER BY projects.id DESC
+        SELECT p.*, v.vendor_name 
+        FROM projects p
+        LEFT JOIN vendors v ON p.vendor_id = v.id
+        ORDER BY p.id DESC
     """)
     projects = cur.fetchall()
 
-    # ✅ Select the first project (with vendor info)
-    project = projects[0] if projects else None
-
-    # ✅ Get full vendor list for dropdown
+    # Get vendors for dropdown
     cur.execute("SELECT * FROM vendors ORDER BY id DESC")
     vendors = cur.fetchall()
 
-    conn.close()
+    project = projects[0] if projects else None
 
+    conn.close()
     return render_template('projects.html',
                            projects=projects,
                            vendors=vendors,
@@ -491,35 +486,35 @@ def open_project(project_id):
     conn = get_db()
     cur = conn.cursor()
 
-    # ✅ Fetch the selected project with vendor name
+    # Get selected project with vendor name
     cur.execute("""
-        SELECT projects.*, vendors.name AS vendor_name
-        FROM projects
-        LEFT JOIN vendors ON projects.vendor_id = vendors.id
-        WHERE projects.id = ?
+        SELECT p.*, v.vendor_name 
+        FROM projects p
+        LEFT JOIN vendors v ON p.vendor_id = v.id
+        WHERE p.id = ?
     """, (project_id,))
     project = cur.fetchone()
+
     if not project:
         flash("Project not found.", "danger")
         return redirect(url_for('projects'))
 
-    # ✅ Fetch all projects with vendor names
+    # All projects with vendor names
     cur.execute("""
-        SELECT projects.*, vendors.name AS vendor_name
-        FROM projects
-        LEFT JOIN vendors ON projects.vendor_id = vendors.id
-        ORDER BY projects.id DESC
+        SELECT p.*, v.vendor_name 
+        FROM projects p
+        LEFT JOIN vendors v ON p.vendor_id = v.id
+        ORDER BY p.id DESC
     """)
     projects = cur.fetchall()
 
-    # Fetch vendors
     cur.execute("SELECT * FROM vendors")
     vendors = cur.fetchall()
 
-    # Fetch duct entries
     cur.execute("SELECT * FROM duct_entries WHERE project_id = ?", (project_id,))
     duct_rows = cur.fetchall()
 
+    # Totals
     ducts = []
     total_area = total_nuts = total_cleat = total_gasket = total_corner = total_weight = 0.0
     gauge_area_totals = {"24G": 0.0, "22G": 0.0, "20G": 0.0, "18G": 0.0}
@@ -555,7 +550,6 @@ def open_project(project_id):
         ducts.append(d)
 
     conn.close()
-
     return render_template("projects.html",
                            project=project,
                            projects=projects,
