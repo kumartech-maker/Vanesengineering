@@ -378,13 +378,26 @@ def get_vendor_info(vendor_id):
 def projects():
     conn = get_db()
     cur = conn.cursor()
-    cur.execute("SELECT * FROM projects ORDER BY id DESC")
+
+    # ✅ Join to get vendor name
+    cur.execute("""
+        SELECT 
+            projects.*, 
+            vendors.name AS vendor_name 
+        FROM projects 
+        LEFT JOIN vendors ON projects.vendor_id = vendors.id 
+        ORDER BY projects.id DESC
+    """)
     projects = cur.fetchall()
+
+    # ✅ Select the first project (with vendor info)
+    project = projects[0] if projects else None
+
+    # ✅ Get full vendor list for dropdown
     cur.execute("SELECT * FROM vendors ORDER BY id DESC")
     vendors = cur.fetchall()
-    conn.close()
 
-    project = projects[0] if projects else None
+    conn.close()
 
     return render_template('projects.html',
                            projects=projects,
@@ -473,21 +486,30 @@ def add_measurement():
     return '', 200
 
 # ---------- ✅ Open Specific Project and Duct Entries ----------
-
 @app.route('/project/<int:project_id>')
 def open_project(project_id):
     conn = get_db()
     cur = conn.cursor()
 
-    # Fetch the selected project
-    cur.execute("SELECT * FROM projects WHERE id = ?", (project_id,))
+    # ✅ Fetch the selected project with vendor name
+    cur.execute("""
+        SELECT projects.*, vendors.name AS vendor_name
+        FROM projects
+        LEFT JOIN vendors ON projects.vendor_id = vendors.id
+        WHERE projects.id = ?
+    """, (project_id,))
     project = cur.fetchone()
     if not project:
         flash("Project not found.", "danger")
         return redirect(url_for('projects'))
 
-    # Fetch all projects for table display
-    cur.execute("SELECT * FROM projects ORDER BY id DESC")
+    # ✅ Fetch all projects with vendor names
+    cur.execute("""
+        SELECT projects.*, vendors.name AS vendor_name
+        FROM projects
+        LEFT JOIN vendors ON projects.vendor_id = vendors.id
+        ORDER BY projects.id DESC
+    """)
     projects = cur.fetchall()
 
     # Fetch vendors
@@ -498,7 +520,6 @@ def open_project(project_id):
     cur.execute("SELECT * FROM duct_entries WHERE project_id = ?", (project_id,))
     duct_rows = cur.fetchall()
 
-    # Initialize totals
     ducts = []
     total_area = total_nuts = total_cleat = total_gasket = total_corner = total_weight = 0.0
     gauge_area_totals = {"24G": 0.0, "22G": 0.0, "20G": 0.0, "18G": 0.0}
@@ -537,7 +558,7 @@ def open_project(project_id):
 
     return render_template("projects.html",
                            project=project,
-                           projects=projects,  # ✅ Fix applied here
+                           projects=projects,
                            vendors=vendors,
                            ducts=ducts,
                            total_area=round(total_area, 2),
@@ -547,7 +568,6 @@ def open_project(project_id):
                            total_corner=round(total_corner, 2),
                            total_weight=round(total_weight, 2),
                            gauge_area_totals=gauge_area_totals)
-
 # ---------- ✅ Add Duct Entry ----------
 
 @app.route('/add_duct', methods=['POST'])
