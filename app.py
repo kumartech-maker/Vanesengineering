@@ -66,7 +66,7 @@ def init_db():
         )
     ''')
 
-    # Projects
+    # Projects table
     cur.execute('''
         CREATE TABLE IF NOT EXISTS projects (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -90,29 +90,31 @@ def init_db():
         )
     ''')
 
-    # Duct entries
-    c.execute('''
-    SELECT 
-        duct_no, 
-        duct_type, 
-        factor, 
-        width1, 
-        height1, 
-        width2, 
-        height2, 
-        length_or_radius, 
-        quantity, 
-        degree_or_offset, 
-        gauge, 
-        area, 
-        nuts_bolts, 
-        cleat, 
-        gasket, 
-        corner_pieces, 
-        weight
-    FROM duct_entries
-    WHERE project_id = ?
-''', (project_id,))
+    # Duct entries table
+    cur.execute('''
+        CREATE TABLE IF NOT EXISTS duct_entries (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            project_id INTEGER,
+            duct_no TEXT,
+            duct_type TEXT,
+            factor TEXT,
+            width1 REAL,
+            height1 REAL,
+            width2 REAL,
+            height2 REAL,
+            length_or_radius REAL,
+            quantity INTEGER,
+            degree_or_offset TEXT,
+            gauge TEXT,
+            area REAL DEFAULT 0,
+            nuts_bolts TEXT,
+            cleat TEXT,
+            gasket TEXT,
+            corner_pieces TEXT,
+            weight REAL DEFAULT 0,
+            FOREIGN KEY (project_id) REFERENCES projects(id)
+        )
+    ''')
 
     # Vendors
     cur.execute('''
@@ -150,6 +152,7 @@ def init_db():
         )
     ''')
 
+    # Recreate production_progress
     cur.execute("DROP TABLE IF EXISTS production_progress")
     cur.execute('''
         CREATE TABLE production_progress (
@@ -163,6 +166,7 @@ def init_db():
             FOREIGN KEY (project_id) REFERENCES projects(id)
         )
     ''')
+
     # Dummy employees
     dummy_employees = [
         ('VE/EMP/0001', 'Madhan Kumar', 'Engineer', '9876543210', 'madhan@example.com', 'default.jpg', '2023-06-01'),
@@ -210,12 +214,10 @@ def init_db():
     conn.commit()
     conn.close()
 
+# Auto-init DB on every request
 @app.before_request
 def setup_db_on_request():
     init_db()
-
-
-
 # ---------- ✅ Login ----------
 
 @app.route('/', methods=['GET', 'POST'])
