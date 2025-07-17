@@ -479,12 +479,16 @@ def open_project(project_id):
     conn = get_db()
     cur = conn.cursor()
 
-    # Fetch project info
+    # Fetch the selected project
     cur.execute("SELECT * FROM projects WHERE id = ?", (project_id,))
     project = cur.fetchone()
     if not project:
         flash("Project not found.", "danger")
         return redirect(url_for('projects'))
+
+    # Fetch all projects for table display
+    cur.execute("SELECT * FROM projects ORDER BY id DESC")
+    projects = cur.fetchall()
 
     # Fetch vendors
     cur.execute("SELECT * FROM vendors")
@@ -494,16 +498,13 @@ def open_project(project_id):
     cur.execute("SELECT * FROM duct_entries WHERE project_id = ?", (project_id,))
     duct_rows = cur.fetchall()
 
-    # Initialize
+    # Initialize totals
     ducts = []
     total_area = total_nuts = total_cleat = total_gasket = total_corner = total_weight = 0.0
     gauge_area_totals = {"24G": 0.0, "22G": 0.0, "20G": 0.0, "18G": 0.0}
 
-    # Process each duct row
     for row in duct_rows:
         d = dict(row)
-
-        # Parse fields safely
         area = float(d.get('area') or 0)
         nuts = float(d.get('nuts_bolts') or 0)
         cleat = float(d.get('cleat') or 0)
@@ -512,7 +513,6 @@ def open_project(project_id):
         weight = float(d.get('weight') or 0)
         gauge = d.get('gauge', '').strip()
 
-        # Totals
         total_area += area
         total_nuts += nuts
         total_cleat += cleat
@@ -520,24 +520,24 @@ def open_project(project_id):
         total_corner += corner
         total_weight += weight
 
-        # Area by gauge
         if gauge in gauge_area_totals:
             gauge_area_totals[gauge] += area
 
-        # Add back to dict
-        d['area'] = area
-        d['nuts_bolts'] = nuts
-        d['cleat'] = cleat
-        d['gasket'] = gasket
-        d['corner_pieces'] = corner
-        d['weight'] = weight
-
+        d.update({
+            'area': area,
+            'nuts_bolts': nuts,
+            'cleat': cleat,
+            'gasket': gasket,
+            'corner_pieces': corner,
+            'weight': weight
+        })
         ducts.append(d)
 
     conn.close()
 
     return render_template("projects.html",
                            project=project,
+                           projects=projects,  # ✅ Fix applied here
                            vendors=vendors,
                            ducts=ducts,
                            total_area=round(total_area, 2),
