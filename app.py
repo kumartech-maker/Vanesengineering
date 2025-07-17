@@ -32,28 +32,27 @@ def init_db():
         )
     ''')
 
-
-
+    # Summary table
     cur.execute('''
-    CREATE TABLE IF NOT EXISTS summary (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        project TEXT,
-        site TEXT,
-        stage TEXT,
-        area REAL,
-        progress INTEGER
-    )
-''')
+        CREATE TABLE IF NOT EXISTS summary (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            project TEXT,
+            site TEXT,
+            stage TEXT,
+            area REAL,
+            progress INTEGER
+        )
+    ''')
 
-cur.executemany('''
-    INSERT INTO summary (project, site, stage, area, progress)
-    VALUES (?, ?, ?, ?, ?)
-''', [
-    ('A-123', 'Chennai', 'Sheet Cutting', 320, 50),
-    ('A-123', 'Chennai', 'Boxing', 150, 25),
-    ('B-456', 'Salem', 'Assembly', 410, 70),
-    ('C-789', 'Hyd', 'Dispatch', 100, 90)
-])
+    cur.executemany('''
+        INSERT INTO summary (project, site, stage, area, progress)
+        VALUES (?, ?, ?, ?, ?)
+    ''', [
+        ('A-123', 'Chennai', 'Sheet Cutting', 320, 50),
+        ('A-123', 'Chennai', 'Boxing', 150, 25),
+        ('B-456', 'Salem', 'Assembly', 410, 70),
+        ('C-789', 'Hyd', 'Dispatch', 100, 90)
+    ])
 
     # Employees table
     cur.execute('''
@@ -76,6 +75,10 @@ cur.executemany('''
             password TEXT
         )
     ''')
+
+    conn.commit()
+    conn.close()
+
 
     # Employee login
     cur.execute('''
