@@ -704,10 +704,11 @@ def add_duct():
 
 @app.route("/edit_duct/<int:entry_id>", methods=["GET", "POST"])
 
-def (entry_id):
+def get_entry(entry_id):
     conn = get_db()
     conn.row_factory = sqlite3.Row
     cur = conn.cursor()
+    # your code here
 
     cur.execute("SELECT * FROM duct_entries WHERE id = ?", (entry_id,))
     entry = cur.fetchone()
