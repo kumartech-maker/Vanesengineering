@@ -26,7 +26,7 @@
             <label for="project_id" class="form-label">Select Project</label>
             <select id="project_id" name="project_id" class="form-select" required>
                 {% for project in projects %}
-                    <option value="{{ project.id }}">{{ project.project_name }}</option>
+                    <option value="{{ project.id }}">{{ project.project_code }}</option>
                 {% endfor %}
             </select>
         </div>
