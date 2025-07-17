@@ -760,109 +760,118 @@ def delete_duct(entry_id):
     return redirect(url_for("open_project", project_id=project_id))
 
 # ---------- ✅ Export PDF ----------
-
 @app.route('/export_pdf/<int:project_id>')
 def export_pdf(project_id):
     from flask import send_file
     from reportlab.pdfgen import canvas
-    from reportlab.lib.pagesizes import A4
+    from reportlab.lib.pagesizes import A4, landscape
     from reportlab.platypus import Table, TableStyle
     from reportlab.lib import colors
     from io import BytesIO
     from num2words import num2words
     import os
+    import sqlite3
 
     buffer = BytesIO()
-    p = canvas.Canvas(buffer, pagesize=A4)
-    width, height = A4
+    p = canvas.Canvas(buffer, pagesize=landscape(A4))
+    width, height = landscape(A4)
 
     conn = sqlite3.connect('database.db')
     c = conn.cursor()
     c.execute("SELECT client_name, site_location, engineer_name, mobile, start_date, end_date FROM projects WHERE id = ?", (project_id,))
     proj = c.fetchone()
-    conn.close()
-
-    client_name = proj[0] if proj else "Project"
-    site_location = proj[1] if proj else ""
-    engineer_name = proj[2] if proj else ""
-    mobile = proj[3] if proj else ""
-    start_date = proj[4] if proj else ""
-    end_date = proj[5] if proj else ""
+    client_name, site_location, engineer_name, mobile, start_date, end_date = proj or ("", "", "", "", "", "")
 
     # Header
     logo_path = os.path.join("static", "logo.png")
     if os.path.exists(logo_path):
-        p.drawImage(logo_path, 50, height - 80, width=80, preserveAspectRatio=True, mask='auto')
+        p.drawImage(logo_path, 40, height - 80, width=80, preserveAspectRatio=True, mask='auto')
 
     p.setFont("Helvetica-Bold", 16)
-    p.drawString(200, height - 50, "Vanes Engineering Pvt Ltd")
+    p.drawString(150, height - 50, "Vanes Engineering Pvt Ltd")
     p.setFont("Helvetica", 10)
-    p.drawString(200, height - 65, "No. 23, Industrial Estate, Chennai")
-    p.drawString(200, height - 78, "Email: info@vanesengineering.com | Phone: +91-98765-43210")
+    p.drawString(150, height - 65, "No. 23, Industrial Estate, Chennai")
+    p.drawString(150, height - 78, "Email: info@vanesengineering.com | Phone: +91-98765-43210")
 
-    p.setFont("Helvetica-Bold", 12)
-    p.drawString(50, height - 110, f"Client: {client_name}")
-    p.drawString(300, height - 110, f"Site: {site_location}")
-    p.drawString(50, height - 125, f"Engineer: {engineer_name}")
-    p.drawString(300, height - 125, f"Mobile: {mobile}")
-    p.drawString(50, height - 140, f"Duration: {start_date} to {end_date}")
+    p.setFont("Helvetica-Bold", 11)
+    p.drawString(40, height - 110, f"Client: {client_name}")
+    p.drawString(350, height - 110, f"Site: {site_location}")
+    p.drawString(40, height - 125, f"Engineer: {engineer_name}")
+    p.drawString(350, height - 125, f"Mobile: {mobile}")
+    p.drawString(40, height - 140, f"Duration: {start_date} to {end_date}")
 
-    conn = sqlite3.connect('database.db')
-    c = conn.cursor()
-    c.execute("SELECT duct_no, duct_type, width1, height1, quantity, area, weight FROM duct_entries WHERE project_id = ?", (project_id,))
+    # Duct data
+    c.execute('''
+        SELECT duct_no, duct_type, width1, height1, length, quantity, deg, factor, gauge,
+               area, sq24, sq22, sq20, sq18, nuts, cleat, gasket, weight
+        FROM duct_entries
+        WHERE project_id = ?
+    ''', (project_id,))
     entries = c.fetchall()
     conn.close()
 
-    data = [["Duct No", "Type", "Width", "Height", "Qty", "Area", "Weight"]]
-    total_qty = total_area = total_weight = 0
-    for row in entries:
-        w = float(row[2] or 0)
-        h = float(row[3] or 0)
-        qty = float(row[4] or 0)
-        area = float(row[5] or 0)
-        weight = float(row[6] or 0)
-        data.append([row[0], row[1], w, h, qty, area, weight])
-        total_qty += qty
-        total_area += area
-        total_weight += weight
-    data.append(["", "", "", "Total", total_qty, round(total_area, 2), round(total_weight, 2)])
+    headers = ["Duct No", "Type", "W", "H", "L", "Qty", "Deg", "Factor", "Gauge",
+               "Area", "24G", "22G", "20G", "18G", "Nuts", "Cleat", "Gasket", "Weight"]
 
-    table = Table(data, colWidths=[60, 55, 50, 50, 50, 60, 60])
+    data = [headers]
+    totals = [0.0] * len(headers)
+
+    for row in entries:
+        row_filled = []
+        for i, val in enumerate(row):
+            try:
+                val = float(val)
+                row_filled.append(round(val, 2))
+                if i in [2, 3, 4, 5, 6, 7, 9, 10, 11, 12, 13, 14, 15, 16, 17]:
+                    totals[i] += float(val)
+            except:
+                row_filled.append(val if val else "")
+        data.append(row_filled)
+
+    total_row = [""] * len(headers)
+    total_row[3] = "Total"
+    for i in range(len(headers)):
+        if isinstance(totals[i], float) and totals[i] > 0:
+            total_row[i] = round(totals[i], 2)
+    data.append(total_row)
+
+    table = Table(data, repeatRows=1, colWidths=[50]*len(headers))
     table.setStyle(TableStyle([
         ('BACKGROUND', (0, 0), (-1, 0), colors.lightgrey),
-        ('GRID', (0, 0), (-1, -1), 1, colors.black),
         ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
         ('FONTNAME', (0, -1), (-1, -1), 'Helvetica-Bold'),
-        ('ALIGN', (0, 0), (-1, -1), 'CENTER')
+        ('GRID', (0, 0), (-1, -1), 0.5, colors.black),
+        ('FONTSIZE', (0, 0), (-1, -1), 6),
+        ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
     ]))
-    table.wrapOn(p, width, height)
-    table.drawOn(p, 50, height - 190 - 25 * len(data))
 
-    def convert_to_words(value):
+    table.wrapOn(p, width, height)
+    y_position = height - 170
+    table.drawOn(p, 40, y_position - 12 * len(data))
+
+    def to_words(val):
         try:
-            int_part = int(value)
-            decimal_part = int(round((value - int_part) * 100))
-            return f"{num2words(int_part).capitalize()} point {num2words(decimal_part)}"
+            return f"{num2words(int(val)).capitalize()} point {num2words(int(round((val - int(val)) * 100)))}"
         except:
             return "Not available"
 
-    area_words = convert_to_words(round(total_area, 2))
-    weight_words = convert_to_words(round(total_weight, 2))
+    total_area = totals[9]
+    total_weight = totals[17]
 
-    p.setFont("Helvetica-Bold", 10)
-    p.drawString(50, height - 210 - 25 * len(data), f"Total Area in Words: {area_words} sq.m")
-    p.drawString(50, height - 225 - 25 * len(data), f"Total Weight in Words: {weight_words} kg")
+    p.setFont("Helvetica-Bold", 8)
+    p.drawString(40, 80, f"Total Area in Words: {to_words(total_area)} sq.m")
+    p.drawString(350, 80, f"Total Weight in Words: {to_words(total_weight)} kg")
 
-    p.setFont("Helvetica", 10)
-    p.drawString(50, 80, "Engineer Signature: __________________")
-    p.drawString(300, 80, "Client Signature: __________________")
+    p.setFont("Helvetica", 9)
+    p.drawString(40, 60, "Engineer Signature: __________________")
+    p.drawString(350, 60, "Client Signature: __________________")
 
     p.showPage()
     p.save()
     buffer.seek(0)
 
     return send_file(buffer, as_attachment=True,
-                     download_name=f"{client_name}_duct_sheet.pdf",
+                     download_name=f"{client_name}_duct_table.pdf",
                      mimetype='application/pdf')
 
 
