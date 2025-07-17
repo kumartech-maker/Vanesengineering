@@ -1679,41 +1679,44 @@ def export_attendance_excel():
 
 
 # 🔽 Add the download route after other routes
-@app.route('/download_all_data')
-def download_all_data():
-    import csv
-    from io import StringIO
-    from flask import Response
-
+@app.route('/debug_data')
+def debug_data():
+    from flask import Markup
     conn = get_db()
     cur = conn.cursor()
 
-    all_tables = ["projects", "vendors", "duct_entries"]
-    output = StringIO()
-    writer = csv.writer(output)
+    tables = ["projects", "vendors", "duct_entries", "employees", "attendance"]
+    html = "<h2>📊 Stored Data in All Tables</h2>"
 
-    for table in all_tables:
-        writer.writerow([f"Table: {table}"])
+    for table in tables:
+        html += f"<h3>Table: {table}</h3><table border='1' cellpadding='5'><tr>"
+
         try:
             cur.execute(f"SELECT * FROM {table}")
             rows = cur.fetchall()
-            if rows:
-                writer.writerow(rows[0].keys())  # headers
-                for row in rows:
-                    writer.writerow([row[k] for k in row.keys()])
-            else:
-                writer.writerow(["No data found"])
+
+            if not rows:
+                html += "</tr><tr><td colspan='99'>No data</td></tr></table>"
+                continue
+
+            # Table headers
+            for col in rows[0].keys():
+                html += f"<th>{col}</th>"
+            html += "</tr>"
+
+            # Table rows
+            for row in rows:
+                html += "<tr>"
+                for val in row:
+                    html += f"<td>{val}</td>"
+                html += "</tr>"
+            html += "</table>"
+
         except Exception as e:
-            writer.writerow([f"Error reading table: {str(e)}"])
-        writer.writerow([])
+            html += f"<tr><td colspan='99'>❌ Error reading table '{table}': {e}</td></tr></table>"
 
     conn.close()
-
-    output.seek(0)
-    return Response(output.getvalue(),
-                    mimetype="text/csv",
-                    headers={"Content-Disposition": "attachment; filename=all_data.csv"})
-
+    return Markup(html)
 
 
 
