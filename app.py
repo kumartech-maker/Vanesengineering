@@ -803,12 +803,11 @@ def export_pdf(project_id):
     conn = sqlite3.connect('database.db')
     c = conn.cursor()
 
-    # Project Info
+    # Fetch project details
     c.execute("SELECT client_name, site_location, engineer_name, mobile, start_date, end_date FROM projects WHERE id = ?", (project_id,))
     proj = c.fetchone()
     client_name, site_location, engineer_name, mobile, start_date, end_date = proj or ("", "", "", "", "", "")
 
-    # Header
     logo_path = os.path.join("static", "logo.png")
     if os.path.exists(logo_path):
         p.drawImage(logo_path, 40, height - 80, width=80, preserveAspectRatio=True, mask='auto')
@@ -826,59 +825,43 @@ def export_pdf(project_id):
     p.drawString(350, height - 125, f"Mobile: {mobile}")
     p.drawString(40, height - 140, f"Duration: {start_date} to {end_date}")
 
-    # Duct Entries with gauge area handling
+    # Fetch duct entries
     c.execute('''
-        SELECT duct_no, duct_type, width1, height1, length_or_radius, quantity, degree_or_offset, factor, gauge,
-               area, nuts_bolts, cleat, gasket, corner_pieces, weight
+        SELECT duct_no, duct_type, width1, height1, length_or_radius, quantity,
+               degree_or_offset, factor, gauge, area, sq24, sq22, sq20, sq18,
+               nuts_bolts, cleat, gasket, weight
         FROM duct_entries
         WHERE project_id = ?
     ''', (project_id,))
-    rows = c.fetchall()
+    entries = c.fetchall()
     conn.close()
 
     headers = ["Duct No", "Type", "W", "H", "L/R", "Qty", "Deg", "Factor", "Gauge",
-               "Area", "24G", "22G", "20G", "18G", "Nuts", "Cleat", "Gasket", "Corner", "Weight"]
+               "Area", "24G", "22G", "20G", "18G", "Nuts", "Cleat", "Gasket", "Weight"]
+
     data = [headers]
-    totals = [0] * len(headers)
+    totals = [0.0] * len(headers)
 
-    for r in rows:
-        duct_no, duct_type, w, h, l, qty, deg, factor, gauge, area, nuts, cleat, gasket, corner, weight = r
-
-        # Determine gauge area
-        area_24 = area_22 = area_20 = area_18 = 0
-        if gauge.strip() == "24G":
-            area_24 = area
-        elif gauge.strip() == "22G":
-            area_22 = area
-        elif gauge.strip() == "20G":
-            area_20 = area
-        elif gauge.strip() == "18G":
-            area_18 = area
-
-        row_data = [
-            duct_no, duct_type, w, h, l, qty, deg, factor, gauge,
-            round(area, 2), round(area_24, 2), round(area_22, 2), round(area_20, 2), round(area_18, 2),
-            nuts, cleat, gasket, corner, weight
-        ]
-
-        for i in range(len(row_data)):
+    for row in entries:
+        filled_row = []
+        for i, val in enumerate(row):
             try:
-                if isinstance(row_data[i], (int, float)):
-                    totals[i] += float(row_data[i])
+                num = float(val)
+                filled_row.append(round(num, 2))
+                if i in [5, 9, 10, 11, 12, 13, 14, 17]:  # Qty, Area, 24G, 22G, 20G, 18G, Nuts, Weight
+                    totals[i] += num
             except:
-                pass
+                filled_row.append(val if val else "")
+        data.append(filled_row)
 
-        data.append(row_data)
-
-    # Total Row
+    # Add total row
     total_row = [""] * len(headers)
-    total_row[1] = "TOTAL"
-    for i in range(len(totals)):
-        if isinstance(totals[i], float) or isinstance(totals[i], int):
+    total_row[3] = "Total"
+    for i in range(len(headers)):
+        if isinstance(totals[i], float) and totals[i] > 0:
             total_row[i] = round(totals[i], 2)
     data.append(total_row)
 
-    # Draw table
     table = Table(data, repeatRows=1, colWidths=[45] * len(headers))
     table.setStyle(TableStyle([
         ('BACKGROUND', (0, 0), (-1, 0), colors.lightgrey),
@@ -888,9 +871,10 @@ def export_pdf(project_id):
         ('FONTSIZE', (0, 0), (-1, -1), 6),
         ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
     ]))
+
     table.wrapOn(p, width, height)
     table_height = 12 * len(data)
-    table.drawOn(p, 40, height - 160 - table_height)
+    table.drawOn(p, 40, height - 170 - table_height)
 
     def to_words(val):
         try:
@@ -898,9 +882,12 @@ def export_pdf(project_id):
         except:
             return "Not available"
 
+    total_area = totals[9]
+    total_weight = totals[17]
+
     p.setFont("Helvetica-Bold", 8)
-    p.drawString(40, 80, f"Total Area in Words: {to_words(totals[9])} sq.m")
-    p.drawString(350, 80, f"Total Weight in Words: {to_words(totals[19])} kg")
+    p.drawString(40, 80, f"Total Area in Words: {to_words(total_area)} sq.m")
+    p.drawString(350, 80, f"Total Weight in Words: {to_words(total_weight)} kg")
 
     p.setFont("Helvetica", 9)
     p.drawString(40, 60, "Engineer Signature: __________________")
