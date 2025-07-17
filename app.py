@@ -399,7 +399,6 @@ def get_vendor_info(vendor_id):
 
 # ---------- ✅ View All Projects ----------
 @app.route('/projects')
-@role_required('md', 'de')
 def projects():
     conn = get_db()
     cur = conn.cursor()
@@ -430,7 +429,6 @@ def projects():
 
 
 @app.route('/project/edit/<int:project_id>', methods=['GET', 'POST'])
-@role_required('md', 'de')
 def edit_project(project_id):
     conn = get_db_connection()
     cur = conn.cursor()
@@ -479,7 +477,6 @@ def edit_project(project_id):
     return render_template('edit_project.html', project=project, vendors=vendors)
 # ---------- ✅ Create Project ----------
 @app.route('/create_project', methods=['POST'])
-@role_required('md', 'de')
 def create_project():
     if 'user' not in session:
         return redirect(url_for('login'))
@@ -540,7 +537,6 @@ def create_project():
 # ---------- ✅ Add Measurement Info to Project ----------
 
 @app.route('/add_measurement', methods=['POST'])
-@role_required('md', 'de')
 def add_measurement():
     project_id = request.form['project_id']
     client_name = request.form['client_name']
@@ -561,7 +557,6 @@ def add_measurement():
 
 # ---------- ✅ Open Specific Project and Duct Entries ----------
 @app.route('/project/<int:project_id>')
-@role_required('md', 'de')
 def open_project(project_id):
     conn = get_db()
     cur = conn.cursor()
@@ -646,7 +641,6 @@ def open_project(project_id):
 # ---------- ✅ Add Duct Entry ----------
 
 @app.route('/add_duct', methods=['POST'])
-@role_required('md', 'de')
 def add_duct():
     import math
     project_id = request.form['project_id']
@@ -723,7 +717,6 @@ def add_duct():
 
 @app.route("/edit_duct/<int:entry_id>", methods=["GET", "POST"])
 
-@role_required('md',  'de')
 def (entry_id):
     conn = get_db()
     conn.row_factory = sqlite3.Row
@@ -814,7 +807,6 @@ def (entry_id):
 # ---------- ✅ Update Duct Entry (Recalculate Area) ----------
 
 @app.route("/update_duct/<int:entry_id>", methods=["POST"])
-@role_required('md', 'de')
 def update_duct(entry_id):
     import math
     conn = get_db()
@@ -901,7 +893,6 @@ def update_duct(entry_id):
 # ---------- ✅ Delete Duct Entry ----------
 
 @app.route("/delete_duct/<int:entry_id>", methods=["POST"])
-@role_required('md', 'de')
 def delete_duct(entry_id):
     conn = get_db()
     cur = conn.cursor()
@@ -922,7 +913,6 @@ def delete_duct(entry_id):
 
 # ---------- ✅ Export PDF ----------
 @app.route('/export_pdf/<int:project_id>')
-@role_required('md','de')
 def export_pdf(project_id):
     from flask import send_file
     from reportlab.pdfgen import canvas
@@ -1061,7 +1051,6 @@ def export_pdf(project_id):
 # ---------- ✅ Export Excel ----------
 
 @app.route("/export_excel/<int:project_id>")
-@role_required('md', 'de')
 def export_excel(project_id):
     try:
         conn = sqlite3.connect("database.db")
@@ -1086,7 +1075,6 @@ def export_excel(project_id):
 
 # ---------- ✅ Production View ----------
 @app.route("/production/<int:project_id>")
-@role_required('md', 'de')
 def production(project_id):
     conn = get_db()
     conn.row_factory = sqlite3.Row
@@ -1160,7 +1148,6 @@ def production(project_id):
 
 
 @app.route("/update_production/<int:project_id>", methods=["POST"])
-@role_required('md', 'de')
 def update_production(project_id):
     sheet = float(request.form.get("sheet_cutting") or 0)
     plasma = float(request.form.get("plasma_fabrication") or 0)
@@ -1186,7 +1173,6 @@ def update_production(project_id):
 # ---------- ✅ Production Overview ----------
 
 @app.route("/production_overview")
-@role_required('md', 'pm', 'de')
 def production_overview():
     conn = get_db()
     cur = conn.cursor()
@@ -1218,7 +1204,6 @@ def get_summary_data():
 
 # ---------- ✅ Summary Placeholder ----------
 @app.route("/summary", methods=["GET", "POST"])
-@role_required('md', 'pm', 'de')
 def summary():
     conn = get_db()
     cur = conn.cursor()
