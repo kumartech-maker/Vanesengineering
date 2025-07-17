@@ -1,142 +1,114 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>Summary Report</title>
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <meta charset="UTF-8">
+    <title>Project Summary</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        .signature-box {
+            border: 1px dashed #ccc;
+            padding: 10px;
+            margin-bottom: 15px;
+        }
+        .progress-input {
+            width: 70px;
+            display: inline-block;
+        }
+    </style>
 </head>
-<body class="p-4">
-  <h2 class="mb-4">Project Summary</h2>
+<body class="container mt-4">
+    <h2 class="mb-4">Project Summary Report</h2>
 
-  <form method="post" enctype="multipart/form-data" class="row g-3 mb-4">
-    <div class="col-md-3">
-      <input type="file" name="mdSignature" class="form-control" required>
-      <label class="form-label">Managing Director Signature</label>
-    </div>
-    <div class="col-md-3">
-      <input type="file" name="pmSignature" class="form-control" required>
-      <label class="form-label">Project Manager Signature</label>
-    </div>
-    <div class="col-md-3 align-self-end">
-      <button class="btn btn-primary">Export to PDF</button>
-    </div>
-  </form>
+    <form action="/summary" method="POST" enctype="multipart/form-data">
+        <!-- Project Dropdown -->
+        <div class="mb-3">
+            <label for="project_id" class="form-label">Select Project</label>
+            <select id="project_id" name="project_id" class="form-select" required>
+                {% for project in projects %}
+                    <option value="{{ project.id }}">{{ project.project_name }}</option>
+                {% endfor %}
+            </select>
+        </div>
 
-  <div class="row mb-3">
-    <div class="col-md-6">
-      <input type="text" id="searchInput" class="form-control" placeholder="Search by Project or Site...">
-    </div>
-    <div class="col-md-4">
-      <select id="stageFilter" class="form-select">
-        <option value="">Filter by Stage</option>
-        <option>Sheet Cutting</option>
-        <option>Boxing</option>
-        <option>Assembly</option>
-        <option>Dispatch</option>
-      </select>
-    </div>
-  </div>
+        <!-- Diagram Upload -->
+        <div class="mb-3">
+            <label for="diagram" class="form-label">Upload Source Diagram</label>
+            <input type="file" name="diagram" id="diagram" class="form-control" accept="image/*" required>
+        </div>
 
-  <div class="table-responsive">
-    <table class="table table-bordered table-striped" id="summaryTable">
-      <thead class="table-dark">
-        <tr>
-          <th>Project</th>
-          <th>Site</th>
-          <th>Stage</th>
-          <th>Area (sq.m)</th>
-          <th>Progress (%)</th>
-        </tr>
-      </thead>
-      <tbody>
-        {% for row in data %}
-        <tr>
-          <td>{{ row.project }}</td>
-          <td>{{ row.site }}</td>
-          <td>{{ row.stage }}</td>
-          <td>{{ row.area }}</td>
-          <td>{{ row.progress }}</td>
-        </tr>
-        {% endfor %}
-      </tbody>
-    </table>
-  </div>
+        <!-- SQ Meter Entry -->
+        <h5>Area (in sq.m) by Gauge</h5>
+        <div class="row g-3 mb-4">
+            {% for gauge in ['24g', '22g', '20g', '18g'] %}
+            <div class="col-md-3">
+                <label>{{ gauge }}</label>
+                <input type="number" step="0.1" name="area_{{ gauge }}" class="form-control" required>
+            </div>
+            {% endfor %}
+        </div>
 
-  <hr class="my-4">
+        <!-- 5 Stages Progress -->
+        <h5>Stage Progress (%)</h5>
+        <div class="row g-3 mb-4">
+            {% for stage in ['Sheet Cutting', 'Plasma Fabrication', 'Boxing & Assembly', 'Quality Checking', 'Dispatch'] %}
+            <div class="col-md-4">
+                <label>{{ stage }}</label>
+                <input type="number" name="progress_{{ loop.index }}" class="form-control progress-input" min="0" max="100" required> %
+            </div>
+            {% endfor %}
+        </div>
 
-  <div class="row">
-    <div class="col-md-6">
-      <canvas id="progressChart"></canvas>
-    </div>
-    <div class="col-md-6">
-      <canvas id="areaChart"></canvas>
-    </div>
-  </div>
+        <!-- Signature Uploads -->
+        <h5>Signatures</h5>
+        <div class="row">
+            <div class="col-md-6">
+                <div class="signature-box">
+                    <label for="mdSignature">Managing Director Signature</label>
+                    <input type="file" name="mdSignature" class="form-control" accept="image/*" required>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="signature-box">
+                    <label for="pmSignature">Project Manager Signature</label>
+                    <input type="file" name="pmSignature" class="form-control" accept="image/*" required>
+                </div>
+            </div>
+        </div>
 
-  <script>
-    const searchInput = document.getElementById('searchInput');
-    const stageFilter = document.getElementById('stageFilter');
-    const tableRows = document.querySelectorAll("#summaryTable tbody tr");
+        <!-- Submit Button -->
+        <div class="text-end mt-3">
+            <button type="submit" class="btn btn-primary">Generate Summary</button>
+        </div>
+    </form>
 
-    function filterTable() {
-      const searchText = searchInput.value.toLowerCase();
-      const stage = stageFilter.value;
+    <!-- Graph Placeholder (loaded from backend in GET mode) -->
+    {% if graph_data %}
+    <hr class="mt-5">
+    <h4>Progress Overview Graph</h4>
+    <canvas id="progressChart" width="800" height="400"></canvas>
 
-      tableRows.forEach(row => {
-        const cells = row.getElementsByTagName('td');
-        const matchesSearch = cells[0].innerText.toLowerCase().includes(searchText) ||
-                              cells[1].innerText.toLowerCase().includes(searchText);
-        const matchesStage = !stage || cells[2].innerText === stage;
+    <script>
+        const chartData = {{ graph_data|tojson }};
+        const ctx = document.getElementById('progressChart').getContext('2d');
 
-        row.style.display = (matchesSearch && matchesStage) ? "" : "none";
-      });
-    }
-
-    searchInput.addEventListener("keyup", filterTable);
-    stageFilter.addEventListener("change", filterTable);
-
-    // Charts (example with dummy data, replace with backend if needed)
-    const ctx1 = document.getElementById('progressChart').getContext('2d');
-    const ctx2 = document.getElementById('areaChart').getContext('2d');
-
-    const labels = {{ data|map(attribute='project')|unique|list|tojson }};
-    const progressData = {};
-    const areaData = {};
-
-    {% for row in data %}
-      const key = "{{ row.project }}";
-      if (!progressData[key]) progressData[key] = 0;
-      if (!areaData[key]) areaData[key] = 0;
-      progressData[key] += {{ row.progress }};
-      areaData[key] += {{ row.area }};
-    {% endfor %}
-
-    const progressChart = new Chart(ctx1, {
-      type: 'bar',
-      data: {
-        labels: Object.keys(progressData),
-        datasets: [{
-          label: 'Total Progress (%)',
-          data: Object.values(progressData),
-          backgroundColor: 'rgba(54, 162, 235, 0.6)',
-        }]
-      },
-      options: { responsive: true, plugins: { title: { display: true, text: 'Project Progress' } } }
-    });
-
-    const areaChart = new Chart(ctx2, {
-      type: 'pie',
-      data: {
-        labels: Object.keys(areaData),
-        datasets: [{
-          label: 'Total Area',
-          data: Object.values(areaData),
-          backgroundColor: ['#36A2EB', '#FFCE56', '#FF6384', '#8BC34A'],
-        }]
-      },
-      options: { responsive: true, plugins: { title: { display: true, text: 'Area per Project' } } }
-    });
-  </script>
+        new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: chartData.labels,
+                datasets: chartData.datasets
+            },
+            options: {
+                responsive: true,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        max: 100
+                    }
+                }
+            }
+        });
+    </script>
+    {% endif %}
 </body>
 </html>
