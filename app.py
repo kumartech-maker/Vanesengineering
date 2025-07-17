@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, redirect, url_for, flash, session, send_file, jsonify, Response
+from flask import Flask, render_template, request, redirect, url_for, flash, session, send_file, jsonify
 from datetime import datetime
 import sqlite3
 import os
@@ -7,29 +7,23 @@ import math
 from num2words import num2words
 import csv
 from io import StringIO
+from flask import Response, send_file
 
 app = Flask(__name__)
 app.secret_key = 'secretkey'
 
-# ✅ Correct database connection function
 def get_db():
     conn = sqlite3.connect("database.db")
     conn.row_factory = sqlite3.Row
     return conn
 
-# Optional: If you want to maintain compatibility with existing code using get_db_connection
 def get_db_connection():
     return get_db()
 
-# Optional: Initialize DB (create tables if needed)
 def init_db():
     conn = get_db()
     cur = conn.cursor()
-    # You can define your table creation here
-    conn.commit()
-    conn.close()
 
-    # Users
     cur.execute('''
         CREATE TABLE IF NOT EXISTS users (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -41,7 +35,6 @@ def init_db():
         )
     ''')
 
-    # Vendors
     cur.execute('''
         CREATE TABLE IF NOT EXISTS vendors (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -65,7 +58,6 @@ def init_db():
         )
     ''')
 
-    # Employees
     cur.execute('''
         CREATE TABLE IF NOT EXISTS employees (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -98,7 +90,6 @@ def init_db():
         )
     ''')
 
-    # Projects
     cur.execute('''
         CREATE TABLE IF NOT EXISTS projects (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -122,7 +113,6 @@ def init_db():
         )
     ''')
 
-    # Duct Entries
     cur.execute('''
         CREATE TABLE IF NOT EXISTS duct_entries (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -148,7 +138,6 @@ def init_db():
         )
     ''')
 
-    # Production Progress
     cur.execute("DROP TABLE IF EXISTS production_progress")
     cur.execute('''
         CREATE TABLE production_progress (
@@ -163,7 +152,6 @@ def init_db():
         )
     ''')
 
-    # Attendance
     cur.execute('''
         CREATE TABLE IF NOT EXISTS attendance (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -176,7 +164,6 @@ def init_db():
         )
     ''')
 
-    # Summary Reports
     cur.execute("""
         CREATE TABLE IF NOT EXISTS summary_reports (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -196,7 +183,6 @@ def init_db():
         )
     """)
 
-    # Dummy Summary Report Insert (Optional)
     cur.execute('''
         INSERT OR IGNORE INTO summary_reports (
             project_id, diagram,
@@ -209,7 +195,6 @@ def init_db():
         45.0, 40.0, 35.0, 30.0, 20.0, 60.0
     ))
 
-    # Dummy Employees
     dummy_employees = [
         ('VE/EMP/0001', 'Madhan Kumar', 'Engineer', '9876543210', 'madhan@example.com', 'default.jpg', '2023-06-01'),
         ('VE/EMP/0002', 'Rajesh K', 'Supervisor', '9876543211', 'rajesh@example.com', 'default.jpg', '2023-07-10'),
@@ -221,7 +206,6 @@ def init_db():
             VALUES (?, ?, ?, ?, ?, ?, ?)
         ''', emp)
 
-    # Dummy Attendance
     today = datetime.today().strftime('%Y-%m-%d')
     dummy_attendance = [
         ('VE/EMP/0001', today, 'Present', '09:00', '18:00'),
@@ -234,13 +218,11 @@ def init_db():
             VALUES (?, ?, ?, ?, ?)
         ''', record)
 
-    # Default Admin
     cur.execute('''
         INSERT OR IGNORE INTO users (email, name, role, contact, password)
         VALUES (?, ?, ?, ?, ?)
     ''', ("admin@ducting.com", "Admin", "Admin", "9999999999", "admin123"))
 
-    # Default Vendor
     cur.execute('''
         INSERT OR IGNORE INTO vendors (id, name, gst, address, bank_name, account_number, ifsc)
         VALUES (?, ?, ?, ?, ?, ?, ?)
@@ -258,7 +240,6 @@ def init_db():
 def setup_db_on_request():
     init_db()
 
-#🔐 Mock Database for Users
 users_db = [
     {"name": "MD User", "email": "md@company.com", "password": "md123", "role": "md"},
     {"name": "Project Manager", "email": "pm@company.com", "password": "pm123", "role": "pm"},
