@@ -378,28 +378,28 @@ def projects():
     conn = get_db()
     cur = conn.cursor()
 
-    # JOIN to get vendor_name
+    # Correct join using actual column name from vendors (change `name` if needed)
     cur.execute("""
-        SELECT p.*, v.vendor_name 
+        SELECT p.*, v.name AS vendor_name
         FROM projects p
         LEFT JOIN vendors v ON p.vendor_id = v.id
         ORDER BY p.id DESC
     """)
     projects = cur.fetchall()
 
-    # Get vendors for dropdown
+    # Also fetch vendors list
     cur.execute("SELECT * FROM vendors ORDER BY id DESC")
     vendors = cur.fetchall()
 
+    conn.close()
+
     project = projects[0] if projects else None
 
-    conn.close()
     return render_template('projects.html',
                            projects=projects,
                            vendors=vendors,
                            project=project,
                            enquiry_id="ENQ" + str(datetime.now().timestamp()).replace(".", ""))
-
 # ---------- ✅ Create Project ----------
 @app.route('/create_project', methods=['POST'])
 def create_project():
