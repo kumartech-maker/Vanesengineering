@@ -1,82 +1,68 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <title>Attendance Register</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
-  <style>
-    body {
-      background-color: #f8f9fa;
-    }
-    .table th, .table td {
-      vertical-align: middle;
-    }
-  </style>
-</head>
-<body>
-<div class="container mt-4">
-  <h3 class="mb-4">📋 Employee Attendance</h3>
-
-  {% with messages = get_flashed_messages(with_categories=true) %}
-    {% if messages %}
-      {% for category, message in messages %}
-        <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
-          {{ message }}
-          <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-        </div>
-      {% endfor %}
-    {% endif %}
-  {% endwith %}
-
-  {% if session['role'] in ['md', 'pm'] %}
-  <form method="POST" action="/mark_attendance">
-    <div class="mb-3">
-      <label for="date" class="form-label">📅 Date</label>
-      <input type="date" class="form-control" name="date" required>
-    </div>
-
-    <table class="table table-bordered">
-      <thead class="table-light">
-        <tr>
-          <th>Emp ID</th>
-          <th>Name</th>
-          <th>Department</th>
-          <th>Role</th>
-          <th>Status</th>
-        </tr>
-      </thead>
-      <tbody>
-        {% for emp in employees %}
-        <tr>
-          <td>{{ emp.emp_id }}</td>
-          <td>{{ emp.name }}</td>
-          <td>{{ emp.department }}</td>
-          <td>{{ emp.role }}</td>
-          <td>
-            <select name="status_{{ emp.emp_id }}" class="form-select" required>
-              <option value="Present">Present</option>
-              <option value="Absent">Absent</option>
-              <option value="Leave">Leave</option>
-            </select>
-          </td>
-        </tr>
-        {% endfor %}
-      </tbody>
-    </table>
-
-    <button type="submit" class="btn btn-success">✅ Submit Attendance</button>
-    <a href="javascript:history.back()" class="btn btn-secondary">🔙 Back</a>
-    <a href="/dashboard" class="btn btn-outline-dark">🏠 Dashboard</a>
-  </form>
-  {% else %}
-  <div class="alert alert-warning mt-4">
-    ⚠️ You do not have permission to mark attendance.
-  </div>
-  {% endif %}
-
+<!DOCTYPE html>  <html lang="en">  
+<head>  
+  <meta charset="UTF-8">  
+  <title>Attendance Register</title>  
+  <meta name="viewport" content="width=device-width, initial-scale=1">  
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">  
+  <style>  
+    body {  
+      background-color: #f8f9fa;  
+    }  
+    .table th, .table td {  
+      vertical-align: middle;  
+    }  
+  </style>  
+</head>  
+<body>  
+<div class="container mt-4">  
+  <h3 class="mb-4">📋 Employee Attendance</h3>  {% with messages = get_flashed_messages(with_categories=true) %}
+{% if messages %}
+{% for category, message in messages %}
+<div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+{{ message }}
+<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
 </div>
+{% endfor %}
+{% endif %}
+{% endwith %}
 
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
-</body>
+  <form method="POST" action="/mark_attendance">  
+    <div class="mb-3">  
+      <label for="date" class="form-label">📅 Date</label>  
+      <input type="date" class="form-control" name="date" required>  
+    </div>  <table class="table table-bordered">  
+  <thead class="table-light">  
+    <tr>  
+      <th>Emp ID</th>  
+      <th>Name</th>  
+      <th>Department</th>  
+      <th>Role</th>  
+      <th>Status</th>  
+    </tr>  
+  </thead>  
+  <tbody>  
+    {% for emp in employees %}  
+    <tr>  
+      <td>{{ emp.emp_id }}</td>  
+      <td>{{ emp.name }}</td>  
+      <td>{{ emp.department }}</td>  
+      <td>{{ emp.role }}</td>  
+      <td>  
+        <select name="status_{{ emp.emp_id }}" class="form-select" required>  
+          <option value="Present">Present</option>  
+          <option value="Absent">Absent</option>  
+          <option value="Leave">Leave</option>  
+        </select>  
+      </td>  
+    </tr>  
+    {% endfor %}  
+  </tbody>  
+</table>  
+
+<button type="submit" class="btn btn-success">✅ Submit Attendance</button>  
+<a href="javascript:history.back()" class="btn btn-secondary">🔙 Back</a>  
+<a href="/dashboard" class="btn btn-outline-dark">🏠 Dashboard</a>
+
+  </form>  
+</div>  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>  </body>  
 </html>
