@@ -400,6 +400,56 @@ def projects():
                            vendors=vendors,
                            project=project,
                            enquiry_id="ENQ" + str(datetime.now().timestamp()).replace(".", ""))
+
+
+
+@app.route('/project/edit/<int:project_id>', methods=['GET', 'POST'])
+def edit_project(project_id):
+    conn = get_db_connection()
+    cur = conn.cursor()
+
+    if request.method == 'POST':
+        project_code = request.form['project_code']
+        vendor_id = request.form['vendor_id']
+        start_date = request.form['start_date']
+        end_date = request.form['end_date']
+        location = request.form['location']
+        incharge = request.form['incharge']
+        notes = request.form['notes']
+        enquiry_id = request.form['enquiry_id']
+        client_name = request.form['client_name']
+        site_location = request.form['site_location']
+        engineer_name = request.form['engineer_name']
+        mobile = request.form['mobile']
+        status = request.form['status']
+        total_sqm = request.form.get('total_sqm', 0)
+
+        cur.execute('''
+            UPDATE projects SET
+                project_code = ?, vendor_id = ?, start_date = ?, end_date = ?,
+                location = ?, incharge = ?, notes = ?, enquiry_id = ?,
+                client_name = ?, site_location = ?, engineer_name = ?, mobile = ?,
+                status = ?, total_sqm = ?
+            WHERE id = ?
+        ''', (
+            project_code, vendor_id, start_date, end_date, location, incharge,
+            notes, enquiry_id, client_name, site_location, engineer_name, mobile,
+            status, total_sqm, project_id
+        ))
+
+        conn.commit()
+        conn.close()
+        return redirect(url_for('projects'))
+
+    # GET: fetch project details
+    cur.execute('SELECT * FROM projects WHERE id = ?', (project_id,))
+    project = cur.fetchone()
+
+    cur.execute('SELECT * FROM vendors')
+    vendors = cur.fetchall()
+
+    conn.close()
+    return render_template('edit_project.html', project=project, vendors=vendors)
 # ---------- ✅ Create Project ----------
 @app.route('/create_project', methods=['POST'])
 def create_project():
