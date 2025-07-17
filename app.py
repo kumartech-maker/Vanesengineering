@@ -825,19 +825,32 @@ def export_pdf(project_id):
     p.drawString(350, height - 125, f"Mobile: {mobile}")
     p.drawString(40, height - 140, f"Duration: {start_date} to {end_date}")
 
-    # Fetch duct entries
-    c.execute('''
-        SELECT duct_no, duct_type, width1, height1, length_or_radius, quantity,
-               degree_or_offset, factor, gauge, area, sq24, sq22, sq20, sq18,
-               nuts_bolts, cleat, gasket, weight
-        FROM duct_entries
-        WHERE project_id = ?
-    ''', (project_id,))
+    # Dynamically get column names
+    c.execute("PRAGMA table_info(duct_entries)")
+    all_columns = [row[1] for row in c.fetchall()]
+
+    # Required columns for export
+    required = ["duct_no", "duct_type", "width1", "height1", "length_or_radius", "quantity",
+                "degree_or_offset", "factor", "gauge", "area", "sq24", "sq22", "sq20", "sq18",
+                "nuts_bolts", "cleat", "gasket", "weight"]
+
+    # Filter only available columns
+    available_cols = [col for col in required if col in all_columns]
+    col_str = ", ".join(available_cols)
+
+    # Fetch data
+    query = f"SELECT {col_str} FROM duct_entries WHERE project_id = ?"
+    c.execute(query, (project_id,))
     entries = c.fetchall()
     conn.close()
 
+    # Column Headers
     headers = ["Duct No", "Type", "W", "H", "L/R", "Qty", "Deg", "Factor", "Gauge",
                "Area", "24G", "22G", "20G", "18G", "Nuts", "Cleat", "Gasket", "Weight"]
+
+    # Filter headers based on available columns
+    header_map = dict(zip(required, headers))
+    headers = [header_map[col] for col in available_cols]
 
     data = [headers]
     totals = [0.0] * len(headers)
@@ -848,20 +861,23 @@ def export_pdf(project_id):
             try:
                 num = float(val)
                 filled_row.append(round(num, 2))
-                if i in [5, 9, 10, 11, 12, 13, 14, 17]:  # Qty, Area, 24G, 22G, 20G, 18G, Nuts, Weight
+                # Check if this column is one to total
+                if available_cols[i] in ["quantity", "area", "sq24", "sq22", "sq20", "sq18", "nuts_bolts", "weight"]:
                     totals[i] += num
             except:
                 filled_row.append(val if val else "")
         data.append(filled_row)
 
-    # Add total row
+    # Total row
     total_row = [""] * len(headers)
-    total_row[3] = "Total"
-    for i in range(len(headers)):
-        if isinstance(totals[i], float) and totals[i] > 0:
+    if "height1" in available_cols:
+        total_row[available_cols.index("height1")] = "Total"
+    for i in range(len(totals)):
+        if totals[i] > 0:
             total_row[i] = round(totals[i], 2)
     data.append(total_row)
 
+    # Table drawing
     table = Table(data, repeatRows=1, colWidths=[45] * len(headers))
     table.setStyle(TableStyle([
         ('BACKGROUND', (0, 0), (-1, 0), colors.lightgrey),
@@ -871,7 +887,6 @@ def export_pdf(project_id):
         ('FONTSIZE', (0, 0), (-1, -1), 6),
         ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
     ]))
-
     table.wrapOn(p, width, height)
     table_height = 12 * len(data)
     table.drawOn(p, 40, height - 170 - table_height)
@@ -882,12 +897,18 @@ def export_pdf(project_id):
         except:
             return "Not available"
 
-    total_area = totals[9]
-    total_weight = totals[17]
+    # Word conversion
+    if "area" in available_cols:
+        area_index = available_cols.index("area")
+        total_area = totals[area_index]
+        p.setFont("Helvetica-Bold", 8)
+        p.drawString(40, 80, f"Total Area in Words: {to_words(total_area)} sq.m")
 
-    p.setFont("Helvetica-Bold", 8)
-    p.drawString(40, 80, f"Total Area in Words: {to_words(total_area)} sq.m")
-    p.drawString(350, 80, f"Total Weight in Words: {to_words(total_weight)} kg")
+    if "weight" in available_cols:
+        weight_index = available_cols.index("weight")
+        total_weight = totals[weight_index]
+        p.setFont("Helvetica-Bold", 8)
+        p.drawString(350, 80, f"Total Weight in Words: {to_words(total_weight)} kg")
 
     p.setFont("Helvetica", 9)
     p.drawString(40, 60, "Engineer Signature: __________________")
@@ -900,9 +921,6 @@ def export_pdf(project_id):
     return send_file(buffer, as_attachment=True,
                      download_name=f"{client_name}_duct_table.pdf",
                      mimetype='application/pdf')
-
-
-
 # ---------- ✅ Export Excel ----------
 
 @app.route("/export_excel/<int:project_id>")
