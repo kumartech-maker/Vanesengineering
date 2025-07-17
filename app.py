@@ -1075,6 +1075,27 @@ def production_overview():
     conn.close()
     return render_template("production_overview.html", projects=projects)
 
+def get_summary_data():
+    conn = get_db_connection()
+    cur = conn.cursor()
+
+    cur.execute('SELECT * FROM projects')
+    projects = cur.fetchall()
+
+    cur.execute('SELECT * FROM production_progress')
+    production = cur.fetchall()
+
+    cur.execute('SELECT * FROM duct_entries')
+    ducts = cur.fetchall()
+
+    conn.close()
+
+    return {
+        'projects': projects,
+        'production': production,
+        'ducts': ducts
+    }
+
 # ---------- ✅ Summary Placeholder ----------
 @app.route("/summary", methods=["GET", "POST"])
 def summary():
