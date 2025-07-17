@@ -145,11 +145,10 @@
     {% for proj in projects %}
     <tr>
       <td>{{ proj.project_code }}</td>
-      <td>{{ proj.client_name or '' }}</td>
-      <td>{{ proj.vendor_name or '' }}</td>
-      <td>{{ proj.start_date }}</td>
-      <td>{{ proj.end_date }}</td>
-      <td>{{ proj.status }}</td>
+<td>{{ proj.vendor_name or '' }}</td>
+<td>{{ proj.start_date }}</td>
+<td>{{ proj.end_date }}</td>
+<td>{{ proj.status }}</td>
       <td>
         <a href="{{ url_for('open_project', project_id=proj.id) }}" class="btn btn-sm btn-primary">Open</a>
       </td>
