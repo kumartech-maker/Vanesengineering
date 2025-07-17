@@ -32,6 +32,29 @@ def init_db():
         )
     ''')
 
+
+
+    cur.execute('''
+    CREATE TABLE IF NOT EXISTS summary (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        project TEXT,
+        site TEXT,
+        stage TEXT,
+        area REAL,
+        progress INTEGER
+    )
+''')
+
+cur.executemany('''
+    INSERT INTO summary (project, site, stage, area, progress)
+    VALUES (?, ?, ?, ?, ?)
+''', [
+    ('A-123', 'Chennai', 'Sheet Cutting', 320, 50),
+    ('A-123', 'Chennai', 'Boxing', 150, 25),
+    ('B-456', 'Salem', 'Assembly', 410, 70),
+    ('C-789', 'Hyd', 'Dispatch', 100, 90)
+])
+
     # Employees table
     cur.execute('''
         CREATE TABLE IF NOT EXISTS employees (
@@ -1054,10 +1077,68 @@ def production_overview():
     return render_template("production_overview.html", projects=projects)
 
 # ---------- ✅ Summary Placeholder ----------
-
-@app.route('/summary')
+@app.route("/summary", methods=["GET", "POST"])
 def summary():
-    return "<h2>Summary Coming Soon...</h2>"
+    if request.method == "POST":
+        md_sig = request.files.get("mdSignature")
+        pm_sig = request.files.get("pmSignature")
+
+        if not md_sig or not pm_sig:
+            return "Both signatures required", 400
+
+        md_bytes = md_sig.read()
+        pm_bytes = pm_sig.read()
+
+        summary_data = get_summary_data()
+
+        buffer = BytesIO()
+        pdf = canvas.Canvas(buffer, pagesize=landscape(A4))
+        width, height = landscape(A4)
+
+        pdf.setFont("Helvetica-Bold", 16)
+        pdf.drawString(30, height - 40, "Project Summary Report")
+
+        data = [["Project", "Site", "Stage", "Area (sq.m)", "Progress (%)"]]
+        for row in summary_data:
+            data.append([
+                row["project"],
+                row["site"],
+                row["stage"],
+                str(row["area"]),
+                f'{row["progress"]} %'
+            ])
+
+        table = Table(data, colWidths=[100, 100, 120, 100, 100])
+        table.setStyle(TableStyle([
+            ('BACKGROUND', (0, 0), (-1, 0), colors.darkblue),
+            ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+            ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+            ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+            ('FONTSIZE', (0, 0), (-1, -1), 10),
+            ('BOTTOMPADDING', (0, 0), (-1, 0), 8),
+            ('GRID', (0, 0), (-1, -1), 0.5, colors.grey),
+        ]))
+        table.wrapOn(pdf, width, height)
+        table.drawOn(pdf, 30, height - 300)
+
+        def draw_signature(img_bytes, x, y, label):
+            pdf.setFont("Helvetica", 10)
+            pdf.drawString(x, y + 50, label)
+            img = Image.open(io.BytesIO(img_bytes)).resize((120, 40))
+            img_buffer = BytesIO()
+            img.save(img_buffer, format="PNG")
+            pdf.drawInlineImage(img_buffer, x, y, width=120, height=40)
+
+        draw_signature(md_bytes, 50, 40, "Managing Director")
+        draw_signature(pm_bytes, 250, 40, "Project Manager")
+
+        pdf.save()
+        buffer.seek(0)
+        return send_file(buffer, as_attachment=True, download_name="summary_report.pdf", mimetype='application/pdf')
+
+    summary_data = get_summary_data()
+    return render_template("summary.html", data=summary_data)
+    
 
 # ---------- ✅ Submit Full Project and Move to Production ----------
 
