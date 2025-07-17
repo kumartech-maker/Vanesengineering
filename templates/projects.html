@@ -129,8 +129,8 @@
 
   <!-- Project Table -->
 <div class="table-responsive mb-4">
-  <table class="table table-bordered">
-  <thead>
+  <table class="table table-bordered table-hover">
+  <thead class="table-dark text-center">
     <tr>
       <th>Project Code</th>
       <th>Client Name</th>
@@ -142,20 +142,24 @@
     </tr>
   </thead>
   <tbody>
-    {% for proj in projects %}
+    {% for project in projects %}
     <tr>
-      <td>{{ proj.project_code }}</td>
-<td>{{ proj.vendor_name or '' }}</td>
-<td>{{ proj.start_date }}</td>
-<td>{{ proj.end_date }}</td>
-<td>{{ proj.status }}</td>
+      <td>{{ project.project_code }}</td>
+      <td>{{ project.client_name }}</td>
+      <td>{{ project.vendor_name }}</td>
+      <td>{{ project.start_date }}</td>
+      <td>{{ project.end_date }}</td>
+      <td>{{ project.status }}</td>
       <td>
-        <a href="{{ url_for('open_project', project_id=proj.id) }}" class="btn btn-sm btn-primary">Open</a>
+        <a href="{{ url_for('view_project', project_id=project.id) }}" class="btn btn-sm btn-primary">Open</a>
+        <a href="{{ url_for('edit_project', project_id=project.id) }}" class="btn btn-sm btn-warning">Edit</a>
+        <a href="{{ url_for('delete_project', project_id=project.id) }}" class="btn btn-sm btn-danger">Delete</a>
       </td>
     </tr>
     {% endfor %}
   </tbody>
   </table>
+  
 </div>
 
 {% if project %}
