@@ -802,15 +802,16 @@ def export_pdf(project_id):
 
     # Duct data
     c.execute('''
-        SELECT duct_no, duct_type, width1, height1, length, quantity, deg, factor, gauge,
-               area, sq24, sq22, sq20, sq18, nuts, cleat, gasket, weight
+        SELECT duct_no, duct_type, width1, height1, length_or_radius, quantity, degree_or_offset, factor, gauge,
+               area, 0 as sq24, 0 as sq22, 0 as sq20, 0 as sq18,
+               nuts_bolts, cleat, gasket, weight
         FROM duct_entries
         WHERE project_id = ?
     ''', (project_id,))
     entries = c.fetchall()
     conn.close()
 
-    headers = ["Duct No", "Type", "W", "H", "L", "Qty", "Deg", "Factor", "Gauge",
+    headers = ["Duct No", "Type", "W", "H", "L/R", "Qty", "Deg", "Factor", "Gauge",
                "Area", "24G", "22G", "20G", "18G", "Nuts", "Cleat", "Gasket", "Weight"]
 
     data = [headers]
@@ -822,7 +823,7 @@ def export_pdf(project_id):
             try:
                 val = float(val)
                 row_filled.append(round(val, 2))
-                if i in [2, 3, 4, 5, 6, 7, 9, 10, 11, 12, 13, 14, 15, 16, 17]:
+                if i in [2, 3, 4, 5, 9, 10, 11, 12, 13, 14, 17]:
                     totals[i] += float(val)
             except:
                 row_filled.append(val if val else "")
@@ -835,7 +836,7 @@ def export_pdf(project_id):
             total_row[i] = round(totals[i], 2)
     data.append(total_row)
 
-    table = Table(data, repeatRows=1, colWidths=[50]*len(headers))
+    table = Table(data, repeatRows=1, colWidths=[45] * len(headers))
     table.setStyle(TableStyle([
         ('BACKGROUND', (0, 0), (-1, 0), colors.lightgrey),
         ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
@@ -873,7 +874,6 @@ def export_pdf(project_id):
     return send_file(buffer, as_attachment=True,
                      download_name=f"{client_name}_duct_table.pdf",
                      mimetype='application/pdf')
-
 
 
 
