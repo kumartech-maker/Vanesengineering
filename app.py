@@ -792,7 +792,6 @@ def export_pdf(project_id):
     from reportlab.platypus import Table, TableStyle
     from reportlab.lib import colors
     from io import BytesIO
-    from num2words import num2words
     import os
     import sqlite3
 
@@ -803,124 +802,85 @@ def export_pdf(project_id):
     conn = sqlite3.connect('database.db')
     c = conn.cursor()
 
-    # Fetch project details
-    c.execute("SELECT client_name, site_location, engineer_name, mobile, start_date, end_date FROM projects WHERE id = ?", (project_id,))
+    # Fetch project info
+    c.execute("SELECT client_name, site_location FROM projects WHERE id = ?", (project_id,))
     proj = c.fetchone()
-    client_name, site_location, engineer_name, mobile, start_date, end_date = proj or ("", "", "", "", "", "")
+    client_name, site_location = proj if proj else ("", "")
 
+    # Logo and header
     logo_path = os.path.join("static", "logo.png")
     if os.path.exists(logo_path):
-        p.drawImage(logo_path, 40, height - 80, width=80, preserveAspectRatio=True, mask='auto')
+        p.drawImage(logo_path, 40, height - 80, width=80, preserveAspectRatio=True)
 
     p.setFont("Helvetica-Bold", 16)
     p.drawString(150, height - 50, "Vanes Engineering Pvt Ltd")
-    p.setFont("Helvetica", 10)
-    p.drawString(150, height - 65, "No. 23, Industrial Estate, Chennai")
-    p.drawString(150, height - 78, "Email: info@vanesengineering.com | Phone: +91-98765-43210")
+    p.setFont("Helvetica", 9)
+    p.drawString(150, height - 65, "Ducting Live Table Export")
+    p.setFont("Helvetica-Bold", 10)
+    p.drawString(40, height - 95, f"Client: {client_name}")
+    p.drawString(350, height - 95, f"Site: {site_location}")
 
-    p.setFont("Helvetica-Bold", 11)
-    p.drawString(40, height - 110, f"Client: {client_name}")
-    p.drawString(350, height - 110, f"Site: {site_location}")
-    p.drawString(40, height - 125, f"Engineer: {engineer_name}")
-    p.drawString(350, height - 125, f"Mobile: {mobile}")
-    p.drawString(40, height - 140, f"Duration: {start_date} to {end_date}")
+    # Headers & fields (exactly as live table)
+    headers = ["Duct No", "Type", "W", "H", "L/R", "Qty", "Deg", "Factor", "Gauge", "Area",
+               "24G", "22G", "20G", "18G", "Nuts", "Cleat", "Gasket", "Weight"]
+    fields = ["duct_no", "duct_type", "width1", "height1", "length_or_radius", "quantity",
+              "degree_or_offset", "factor", "gauge", "area", "sq24", "sq22", "sq20", "sq18",
+              "nuts_bolts", "cleat", "gasket", "weight"]
 
-    # Dynamically get column names
-    c.execute("PRAGMA table_info(duct_entries)")
-    all_columns = [row[1] for row in c.fetchall()]
-
-    # Required columns for export
-    required = ["duct_no", "duct_type", "width1", "height1", "length_or_radius", "quantity",
-                "degree_or_offset", "factor", "gauge", "area", "sq24", "sq22", "sq20", "sq18",
-                "nuts_bolts", "cleat", "gasket", "weight"]
-
-    # Filter only available columns
-    available_cols = [col for col in required if col in all_columns]
-    col_str = ", ".join(available_cols)
-
-    # Fetch data
-    query = f"SELECT {col_str} FROM duct_entries WHERE project_id = ?"
-    c.execute(query, (project_id,))
-    entries = c.fetchall()
+    # Fetch all duct entries
+    c.execute(f"SELECT {','.join(fields)} FROM duct_entries WHERE project_id = ?", (project_id,))
+    rows = c.fetchall()
     conn.close()
 
-    # Column Headers
-    headers = ["Duct No", "Type", "W", "H", "L/R", "Qty", "Deg", "Factor", "Gauge",
-               "Area", "24G", "22G", "20G", "18G", "Nuts", "Cleat", "Gasket", "Weight"]
-
-    # Filter headers based on available columns
-    header_map = dict(zip(required, headers))
-    headers = [header_map[col] for col in available_cols]
-
     data = [headers]
-    totals = [0.0] * len(headers)
+    totals = [0] * len(fields)
 
-    for row in entries:
-        filled_row = []
+    for row in rows:
+        formatted_row = []
         for i, val in enumerate(row):
-            try:
-                num = float(val)
-                filled_row.append(round(num, 2))
-                # Check if this column is one to total
-                if available_cols[i] in ["quantity", "area", "sq24", "sq22", "sq20", "sq18", "nuts_bolts", "weight"]:
-                    totals[i] += num
-            except:
-                filled_row.append(val if val else "")
-        data.append(filled_row)
+            if isinstance(val, (int, float)):
+                formatted_row.append(round(val, 2))
+                if fields[i] in ['quantity', 'area', 'sq24', 'sq22', 'sq20', 'sq18', 'nuts_bolts', 'weight']:
+                    totals[i] += val
+            else:
+                formatted_row.append(val if val is not None else "")
+        data.append(formatted_row)
 
-    # Total row
+    # Append Total row
     total_row = [""] * len(headers)
-    if "height1" in available_cols:
-        total_row[available_cols.index("height1")] = "Total"
-    for i in range(len(totals)):
-        if totals[i] > 0:
+    total_row[headers.index("H")] = "Total"
+    for i, field in enumerate(fields):
+        if field in ['quantity', 'area', 'sq24', 'sq22', 'sq20', 'sq18', 'nuts_bolts', 'weight']:
             total_row[i] = round(totals[i], 2)
     data.append(total_row)
 
-    # Table drawing
+    # Draw table
     table = Table(data, repeatRows=1, colWidths=[45] * len(headers))
     table.setStyle(TableStyle([
         ('BACKGROUND', (0, 0), (-1, 0), colors.lightgrey),
+        ('GRID', (0, 0), (-1, -1), 0.25, colors.black),
         ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
         ('FONTNAME', (0, -1), (-1, -1), 'Helvetica-Bold'),
-        ('GRID', (0, 0), (-1, -1), 0.5, colors.black),
         ('FONTSIZE', (0, 0), (-1, -1), 6),
         ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
     ]))
     table.wrapOn(p, width, height)
     table_height = 12 * len(data)
-    table.drawOn(p, 40, height - 170 - table_height)
-
-    def to_words(val):
-        try:
-            return f"{num2words(int(val)).capitalize()} point {num2words(int(round((val - int(val)) * 100)))}"
-        except:
-            return "Not available"
-
-    # Word conversion
-    if "area" in available_cols:
-        area_index = available_cols.index("area")
-        total_area = totals[area_index]
-        p.setFont("Helvetica-Bold", 8)
-        p.drawString(40, 80, f"Total Area in Words: {to_words(total_area)} sq.m")
-
-    if "weight" in available_cols:
-        weight_index = available_cols.index("weight")
-        total_weight = totals[weight_index]
-        p.setFont("Helvetica-Bold", 8)
-        p.drawString(350, 80, f"Total Weight in Words: {to_words(total_weight)} kg")
+    table.drawOn(p, 40, height - 130 - table_height)
 
     p.setFont("Helvetica", 9)
-    p.drawString(40, 60, "Engineer Signature: __________________")
-    p.drawString(350, 60, "Client Signature: __________________")
+    p.drawString(40, 40, "Engineer Signature: __________________")
+    p.drawString(350, 40, "Client Signature: __________________")
 
     p.showPage()
     p.save()
     buffer.seek(0)
-
     return send_file(buffer, as_attachment=True,
                      download_name=f"{client_name}_duct_table.pdf",
                      mimetype='application/pdf')
+    
+    
+ 
 # ---------- ✅ Export Excel ----------
 
 @app.route("/export_excel/<int:project_id>")
