@@ -457,35 +457,59 @@ def open_project(project_id):
     cur.execute("SELECT * FROM duct_entries WHERE project_id = ?", (project_id,))
     duct_rows = cur.fetchall()
 
-    # Convert and compute
+    # Initialize
     ducts = []
+    total_area = total_nuts = total_cleat = total_gasket = total_corner = total_weight = 0.0
+    gauge_area_totals = {"24G": 0.0, "22G": 0.0, "20G": 0.0, "18G": 0.0}
+
+    # Process each duct row
     for row in duct_rows:
         d = dict(row)
-        d['area'] = float(d.get('area') or 0)
-        d['nuts_bolts'] = float(d.get('nuts_bolts') or 0)
-        d['cleat'] = float(d.get('cleat') or 0)
-        d['gasket'] = float(d.get('gasket') or 0)
-        d['corner_pieces'] = float(d.get('corner_pieces') or 0)
-        d['weight'] = float(d.get('weight') or 0)
+
+        # Parse fields safely
+        area = float(d.get('area') or 0)
+        nuts = float(d.get('nuts_bolts') or 0)
+        cleat = float(d.get('cleat') or 0)
+        gasket = float(d.get('gasket') or 0)
+        corner = float(d.get('corner_pieces') or 0)
+        weight = float(d.get('weight') or 0)
+        gauge = d.get('gauge', '').strip()
+
+        # Totals
+        total_area += area
+        total_nuts += nuts
+        total_cleat += cleat
+        total_gasket += gasket
+        total_corner += corner
+        total_weight += weight
+
+        # Area by gauge
+        if gauge in gauge_area_totals:
+            gauge_area_totals[gauge] += area
+
+        # Add back to dict
+        d['area'] = area
+        d['nuts_bolts'] = nuts
+        d['cleat'] = cleat
+        d['gasket'] = gasket
+        d['corner_pieces'] = corner
+        d['weight'] = weight
+
         ducts.append(d)
 
-    total_area = sum(d['area'] for d in ducts)
-    total_nuts = sum(d['nuts_bolts'] for d in ducts)
-    total_cleat = sum(d['cleat'] for d in ducts)
-    total_gasket = sum(d['gasket'] for d in ducts)
-    total_corner = sum(d['corner_pieces'] for d in ducts)
-
     conn.close()
+
     return render_template("projects.html",
                            project=project,
                            vendors=vendors,
                            ducts=ducts,
-                           total_area=total_area,
-                           total_nuts=total_nuts,
-                           total_cleat=total_cleat,
-                           total_gasket=total_gasket,
-                           total_corner=total_corner)
-
+                           total_area=round(total_area, 2),
+                           total_nuts=round(total_nuts, 2),
+                           total_cleat=round(total_cleat, 2),
+                           total_gasket=round(total_gasket, 2),
+                           total_corner=round(total_corner, 2),
+                           total_weight=round(total_weight, 2),
+                           gauge_area_totals=gauge_area_totals)
 
 # ---------- ✅ Add Duct Entry ----------
 
