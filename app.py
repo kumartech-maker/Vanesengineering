@@ -12,7 +12,6 @@ from flask import Response, send_file
 
 
 
-
 app = Flask(__name__)
 app.secret_key = 'secretkey'
 
@@ -20,10 +19,6 @@ def get_db():
     conn = sqlite3.connect("database.db")
     conn.row_factory = sqlite3.Row
     return conn
-
-
-def get_db_connection():
-    return get_db()
 
 def init_db():
     conn = get_db()
@@ -176,7 +171,6 @@ def init_db():
         )
     ''')
 
-    # Summary
     # Summary Reports
     cur.execute("""
         CREATE TABLE IF NOT EXISTS summary_reports (
@@ -259,17 +253,14 @@ def init_db():
 def setup_db_on_request():
     init_db()
 
-
 #🔐 Mock Database for Users
-
 users_db = [
-{"name": "MD User", "email": "md@company.com", "password": "md123", "role": "md"},
-{"name": "Project Manager", "email": "pm@company.com", "password": "pm123", "role": "pm"},
-{"name": "Design Engineer", "email": "de@company.com", "password": "de123", "role": "de"}
+    {"name": "MD User", "email": "md@company.com", "password": "md123", "role": "md"},
+    {"name": "Project Manager", "email": "pm@company.com", "password": "pm123", "role": "pm"},
+    {"name": "Design Engineer", "email": "de@company.com", "password": "de123", "role": "de"}
 ]
 
 #---------- ✅ Login ----------
-
 @app.route('/', methods=['GET', 'POST'])
 def login():
     if request.method == 'POST':
@@ -279,14 +270,14 @@ def login():
         # 🔍 Search in mock database  
         user = next((u for u in users_db if u['email'] == email and u['password'] == password), None)
 
-        if user:  
-            session['user'] = user['name']  
-            session['role'] = user['role']  
-            flash("✅ Login successful!", "success")  
-            return redirect(url_for('dashboard'))  
-        else:  
-            flash("❌ Invalid credentials!", "danger")  
-            return redirect(url_for('login'))  
+        if user:
+            session['user'] = user['name']
+            session['role'] = user['role']
+            flash("✅ Login successful!", "success")
+            return redirect(url_for('dashboard'))
+        else:
+            flash("❌ Invalid credentials!", "danger")
+            return redirect(url_for('login'))
 
     return render_template("login.html")
 
