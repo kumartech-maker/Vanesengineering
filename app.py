@@ -93,25 +93,24 @@ def init_db():
     cur.execute('''
         CREATE TABLE IF NOT EXISTS projects (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
+            enquiry_id TEXT,
             project_code TEXT,
             vendor_id INTEGER,
             quotation_ro TEXT,
+            location TEXT,
+            contact_number TEXT,
+            email TEXT,
             start_date TEXT,
             end_date TEXT,
-            location TEXT,
             incharge TEXT,
+            status TEXT DEFAULT 'new',
             notes TEXT,
             file_name TEXT,
-            enquiry_id TEXT,
-            client_name TEXT,
-            site_location TEXT,
-            engineer_name TEXT,
-            mobile TEXT,
-            status TEXT DEFAULT 'new',
             total_sqm REAL DEFAULT 0,
             FOREIGN KEY(vendor_id) REFERENCES vendors(id)
         )
     ''')
+
 
     cur.execute('''
         CREATE TABLE IF NOT EXISTS duct_entries (
@@ -369,7 +368,7 @@ def projects():
     conn = get_db()
     cur = conn.cursor()
 
-    # Correct join using actual column name from vendors (change `name` if needed)
+    # Fetch all projects with their associated vendor names
     cur.execute("""
         SELECT p.*, v.name AS vendor_name
         FROM projects p
@@ -378,20 +377,23 @@ def projects():
     """)
     projects = cur.fetchall()
 
-    # Also fetch vendors list
+    # Fetch all vendors to populate dropdowns
     cur.execute("SELECT * FROM vendors ORDER BY id DESC")
     vendors = cur.fetchall()
 
     conn.close()
 
-    project = projects[0] if projects else None
+    # Default selected project (first one in list, if available)
+    selected_project = projects[0] if projects else None
+
+    # Generate unique enquiry ID using timestamp
+    enquiry_id = "ENQ" + datetime.now().strftime("%Y%m%d%H%M%S")
 
     return render_template('projects.html',
                            projects=projects,
                            vendors=vendors,
-                           project=project,
-                           enquiry_id="ENQ" + str(datetime.now().timestamp()).replace(".", ""))
-
+                           project=selected_project,
+                           enquiry_id=enquiry_id)
 
 
 @app.route('/project/edit/<int:project_id>', methods=['GET', 'POST'])
@@ -412,6 +414,7 @@ def edit_project(project_id):
         site_location = request.form['site_location']
         engineer_name = request.form['engineer_name']
         mobile = request.form['mobile']
+        email = request.form.get('email')  # Optional
         status = request.form['status']
         total_sqm = request.form.get('total_sqm', 0)
 
@@ -420,27 +423,29 @@ def edit_project(project_id):
                 project_code = ?, vendor_id = ?, start_date = ?, end_date = ?,
                 location = ?, incharge = ?, notes = ?, enquiry_id = ?,
                 client_name = ?, site_location = ?, engineer_name = ?, mobile = ?,
-                status = ?, total_sqm = ?
+                email = ?, status = ?, total_sqm = ?
             WHERE id = ?
         ''', (
             project_code, vendor_id, start_date, end_date, location, incharge,
             notes, enquiry_id, client_name, site_location, engineer_name, mobile,
-            status, total_sqm, project_id
+            email, status, total_sqm, project_id
         ))
 
         conn.commit()
         conn.close()
         return redirect(url_for('projects'))
 
-    # GET: fetch project details
+    # GET: Load current project + vendor list
     cur.execute('SELECT * FROM projects WHERE id = ?', (project_id,))
     project = cur.fetchone()
 
-    cur.execute('SELECT * FROM vendors')
+    cur.execute('SELECT * FROM vendors ORDER BY id DESC')
     vendors = cur.fetchall()
 
     conn.close()
     return render_template('edit_project.html', project=project, vendors=vendors)
+
+
 # ---------- ✅ Create Project ----------
 @app.route('/create_project', methods=['POST'])
 def create_project():
@@ -450,42 +455,45 @@ def create_project():
     try:
         vendor_id = request.form['vendor_id']
         project_name = request.form['project_name']
-        enquiry_no = request.form['enquiry_no']
+        enquiry_id = request.form['enquiry_id']
+        quotation_ro = request.form.get('quotation_ro', '')
+        location = request.form['location']
         start_date = request.form['start_date']
         end_date = request.form['end_date']
         incharge = request.form['incharge']
         notes = request.form['notes']
+        contact_number = request.form.get('contact_number', '')
+        email = request.form.get('email', '')
         file = request.files.get('drawing_file')
-        file_name = None
 
+        file_name = None
         if file and file.filename != '':
             uploads_dir = os.path.join('static', 'uploads')
             os.makedirs(uploads_dir, exist_ok=True)
             file_name = file.filename
             file.save(os.path.join(uploads_dir, file_name))
 
-        # ✅ Connect to DB
         conn = get_db()
         cur = conn.cursor()
 
-        # ✅ Insert project without project_code
+        # Insert base project data
         cur.execute('''
             INSERT INTO projects (
                 vendor_id, quotation_ro, start_date, end_date,
                 location, incharge, notes, file_name,
-                enquiry_id, client_name
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                enquiry_id, client_name, mobile, email
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         ''', (
-            vendor_id, '', start_date, end_date,
-            '', incharge, notes, file_name,
-            enquiry_no, project_name
+            vendor_id, quotation_ro, start_date, end_date,
+            location, incharge, notes, file_name,
+            enquiry_id, project_name, contact_number, email
         ))
 
         project_id = cur.lastrowid
 
-        # ✅ Generate custom project code: VE/2526/E001
-        custom_year = 2526  # Change this if you want dynamic logic
-        project_code = f"VE/{custom_year}/E{str(project_id).zfill(3)}"
+        # Generate project_code = VE/2526/E001
+        year_code = 2526
+        project_code = f"VE/{year_code}/E{str(project_id).zfill(3)}"
 
         cur.execute("UPDATE projects SET project_code = ? WHERE id = ?", (project_code, project_id))
 
@@ -499,7 +507,6 @@ def create_project():
         import traceback
         traceback.print_exc()
         return "❌ Failed to create project", 400
-
 # ---------- ✅ Add Measurement Info to Project ----------
 
 @app.route('/add_measurement', methods=['POST'])
@@ -512,11 +519,20 @@ def add_measurement():
 
     conn = get_db()
     cur = conn.cursor()
+
+    # Update basic project info and move project to "preparation" status
     cur.execute('''
         UPDATE projects SET
-        client_name = ?, site_location = ?, engineer_name = ?, mobile = ?, status = ?
+            client_name = ?, 
+            site_location = ?, 
+            engineer_name = ?, 
+            mobile = ?, 
+            status = ?
         WHERE id = ?
-    ''', (client_name, site_location, engineer_name, mobile, 'preparation', project_id))
+    ''', (
+        client_name, site_location, engineer_name, mobile, 'preparation', project_id
+    ))
+
     conn.commit()
     conn.close()
     return '', 200
@@ -527,7 +543,7 @@ def open_project(project_id):
     conn = get_db()
     cur = conn.cursor()
 
-    # Get selected project with vendor name
+    # ✅ Get selected project with vendor name
     cur.execute("""
         SELECT p.*, v.name as vendor_name
         FROM projects p
@@ -540,7 +556,7 @@ def open_project(project_id):
         flash("Project not found.", "danger")
         return redirect(url_for('projects'))
 
-    # All projects with vendor names
+    # ✅ All projects for the left-side list
     cur.execute("""
         SELECT p.*, v.name as vendor_name
         FROM projects p
@@ -549,13 +565,15 @@ def open_project(project_id):
     """)
     projects = cur.fetchall()
 
+    # ✅ All vendors for dropdown
     cur.execute("SELECT * FROM vendors")
     vendors = cur.fetchall()
 
+    # ✅ Duct entries linked to this project
     cur.execute("SELECT * FROM duct_entries WHERE project_id = ?", (project_id,))
     duct_rows = cur.fetchall()
 
-    # Totals
+    # ✅ Totals calculation
     ducts = []
     total_area = total_nuts = total_cleat = total_gasket = total_corner = total_weight = 0.0
     gauge_area_totals = {"24G": 0.0, "22G": 0.0, "20G": 0.0, "18G": 0.0}
@@ -570,6 +588,7 @@ def open_project(project_id):
         weight = float(d.get('weight') or 0)
         gauge = (d.get('gauge') or '').strip()
 
+        # Totals
         total_area += area
         total_nuts += nuts
         total_cleat += cleat
@@ -577,9 +596,11 @@ def open_project(project_id):
         total_corner += corner
         total_weight += weight
 
+        # Area by gauge
         if gauge in gauge_area_totals:
             gauge_area_totals[gauge] += area
 
+        # Add parsed values to row
         d.update({
             'area': area,
             'nuts_bolts': nuts,
@@ -591,6 +612,7 @@ def open_project(project_id):
         ducts.append(d)
 
     conn.close()
+
     return render_template("projects.html",
                            project=project,
                            projects=projects,
@@ -682,13 +704,12 @@ def add_duct():
 # ---------- ✅ Edit Duct Entry ----------
 
 @app.route("/edit_duct/<int:entry_id>", methods=["GET", "POST"])
-
 def get_entry(entry_id):
     conn = get_db()
     conn.row_factory = sqlite3.Row
     cur = conn.cursor()
-    # your code here
 
+    # 🔎 Fetch the duct entry to edit
     cur.execute("SELECT * FROM duct_entries WHERE id = ?", (entry_id,))
     entry = cur.fetchone()
     if not entry:
@@ -697,6 +718,7 @@ def get_entry(entry_id):
 
     project_id = entry["project_id"]
 
+    # 📝 Form Submission
     if request.method == "POST":
         data = {
             "duct_no": request.form.get("duct_no"),
@@ -717,6 +739,7 @@ def get_entry(entry_id):
             "corner_pieces": request.form.get("corner_pieces")
         }
 
+        # ✅ Update the duct entry
         cur.execute("""
             UPDATE duct_entries SET
                 duct_no = :duct_no,
@@ -743,15 +766,19 @@ def get_entry(entry_id):
         flash("✅ Entry updated successfully", "success")
         return redirect(url_for('open_project', project_id=project_id))
 
-    # Fetch data to re-render form in edit mode
+    # ⏪ Re-render edit page if GET method
     cur.execute("SELECT * FROM projects WHERE id = ?", (project_id,))
     project = cur.fetchone()
+
     cur.execute("SELECT * FROM vendors")
     vendors = cur.fetchall()
+
     cur.execute("SELECT * FROM duct_entries WHERE project_id = ?", (project_id,))
     entries = cur.fetchall()
 
-    def safe_float(val): return float(val) if val else 0
+    # 📊 Totals
+    def safe_float(val): return float(val or 0)
+
     total_area = sum(safe_float(d['area']) for d in entries)
     total_nuts = sum(safe_float(d['nuts_bolts']) for d in entries)
     total_cleat = sum(safe_float(d['cleat']) for d in entries)
@@ -759,6 +786,8 @@ def get_entry(entry_id):
     total_corner = sum(safe_float(d['corner_pieces']) for d in entries)
 
     conn.close()
+
+    # 📤 Render with pre-filled edit form
     return render_template("projects.html",
                            project=project,
                            vendors=vendors,
@@ -769,7 +798,6 @@ def get_entry(entry_id):
                            total_cleat=round(total_cleat, 2),
                            total_gasket=round(total_gasket, 2),
                            total_corner=round(total_corner, 2))
-
 
 # ---------- ✅ Update Duct Entry (Recalculate Area) ----------
 
