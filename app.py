@@ -171,16 +171,30 @@ def init_db():
     ''')
 
     # Summary
-    cur.execute('''
-        CREATE TABLE IF NOT EXISTS summary (
+    
+
+    cur.execute("""
+        CREATE TABLE IF NOT EXISTS summary_reports (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
-            project TEXT,
-            site TEXT,
-            stage TEXT,
-            area REAL,
-            progress INTEGER
+            project_id TEXT NOT NULL,
+            diagram TEXT,
+            area_24g REAL DEFAULT 0,
+            area_22g REAL DEFAULT 0,
+            area_20g REAL DEFAULT 0,
+            area_18g REAL DEFAULT 0,
+
+            sheet_cutting REAL DEFAULT 0,
+            plasma_fabrication REAL DEFAULT 0,
+            boxing_assembly REAL DEFAULT 0,
+            quality_checking REAL DEFAULT 0,
+            dispatch REAL DEFAULT 0,
+            overall_progress REAL DEFAULT 0,
+
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )
-    ''')
+    """)
+
+
 
     # Insert Dummy Summary
     cur.executemany('''
@@ -1103,17 +1117,39 @@ def get_summary_data():
 # ---------- ✅ Summary Placeholder ----------
 @app.route("/summary", methods=["GET", "POST"])
 def summary():
+    conn = get_db()
+    cur = conn.cursor()
+
+    cur.execute("SELECT id, project_name FROM projects")
+    projects = cur.fetchall()
+
     if request.method == "POST":
-        md_sig = request.files.get("mdSignature")
-        pm_sig = request.files.get("pmSignature")
+        project_id = request.form.get("project_id")
+        source_diagram = request.files.get("source_diagram")
+        md_sig = request.files.get("md_signature")
+        pm_sig = request.files.get("pm_signature")
 
-        if not md_sig or not pm_sig:
-            return "Both signatures required", 400
+        # Area per gauge
+        gauges = ['24g', '22g', '20g', '18g']
+        areas = {g: float(request.form.get(g, 0)) for g in gauges}
 
-        md_bytes = md_sig.read()
-        pm_bytes = pm_sig.read()
+        # Stages progress
+        stages = {
+            'Sheet Cutting': float(request.form.get('sheet_cutting', 0)),
+            'Plasma Fabrication': float(request.form.get('plasma_fabrication', 0)),
+            'Boxing & Assembly': float(request.form.get('boxing_assembly', 0)),
+            'Quality Checking': float(request.form.get('quality_checking', 0)),
+            'Dispatch': float(request.form.get('dispatch', 0)),
+        }
+        overall = round(sum(stages.values()) / len(stages), 2)
 
-        summary_data = get_summary_data()['projects']
+        # Load images
+        from io import BytesIO
+        from PIL import Image
+        from reportlab.pdfgen import canvas
+        from reportlab.lib.pagesizes import A4, landscape
+        from reportlab.platypus import Table, TableStyle
+        from reportlab.lib import colors
 
         buffer = BytesIO()
         pdf = canvas.Canvas(buffer, pagesize=landscape(A4))
@@ -1122,47 +1158,65 @@ def summary():
         pdf.setFont("Helvetica-Bold", 16)
         pdf.drawString(30, height - 40, "Project Summary Report")
 
-        data = [["Project Name", "Enquiry No", "Start Date", "End Date", "Incharge"]]
-        for row in summary_data:
-            data.append([
-                row["project_name"],
-                row["enquiry_no"],
-                row["start_date"],
-                row["end_date"],
-                row["incharge"]
-            ])
+        y = height - 80
+        pdf.setFont("Helvetica", 12)
+        pdf.drawString(30, y, f"Project ID: {project_id}")
+        y -= 20
 
-        table = Table(data, colWidths=[120] * len(data[0]))
+        # Gauge table
+        data = [["Gauge", "Area (sq.m)"]] + [[k.upper(), str(v)] for k, v in areas.items()]
+        table = Table(data, colWidths=[100, 150])
         table.setStyle(TableStyle([
             ('BACKGROUND', (0, 0), (-1, 0), colors.darkblue),
             ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
             ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
             ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
-            ('FONTSIZE', (0, 0), (-1, -1), 10),
-            ('BOTTOMPADDING', (0, 0), (-1, 0), 8),
             ('GRID', (0, 0), (-1, -1), 0.5, colors.grey),
         ]))
         table.wrapOn(pdf, width, height)
-        table.drawOn(pdf, 30, height - 300)
+        table.drawOn(pdf, 30, y - 100)
+        y -= 120
 
-        def draw_signature(img_bytes, x, y, label):
+        # Stage progress table
+        data2 = [["Stage", "Progress (%)"]] + [[k, str(v)] for k, v in stages.items()] + [["Overall", f"{overall} %"]]
+        table2 = Table(data2, colWidths=[200, 150])
+        table2.setStyle(TableStyle([
+            ('BACKGROUND', (0, 0), (-1, 0), colors.green),
+            ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+            ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+            ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+            ('GRID', (0, 0), (-1, -1), 0.5, colors.grey),
+        ]))
+        table2.wrapOn(pdf, width, height)
+        table2.drawOn(pdf, 300, y - 100)
+
+        # Draw signatures
+        def draw_signature(img, x, y, label):
+            img = Image.open(BytesIO(img.read())).resize((120, 40))
+            img_io = BytesIO()
+            img.save(img_io, format="PNG")
+            img_io.seek(0)
             pdf.setFont("Helvetica", 10)
-            pdf.drawString(x, y + 50, label)
-            img = Image.open(io.BytesIO(img_bytes)).resize((120, 40))
-            img_buffer = BytesIO()
-            img.save(img_buffer, format="PNG")
-            pdf.drawInlineImage(img_buffer, x, y, width=120, height=40)
+            pdf.drawString(x, y + 45, label)
+            pdf.drawInlineImage(img_io, x, y, width=120, height=40)
 
-        draw_signature(md_bytes, 50, 40, "Managing Director")
-        draw_signature(pm_bytes, 250, 40, "Project Manager")
+        draw_signature(md_sig, 50, 40, "Managing Director")
+        draw_signature(pm_sig, 250, 40, "Project Manager")
+
+        # Optional: embed source diagram if needed
+        if source_diagram:
+            img = Image.open(BytesIO(source_diagram.read())).resize((150, 100))
+            img_io = BytesIO()
+            img.save(img_io, format="PNG")
+            img_io.seek(0)
+            pdf.drawString(600, height - 300, "Source Diagram")
+            pdf.drawInlineImage(img_io, 600, height - 420, width=150, height=100)
 
         pdf.save()
         buffer.seek(0)
-        return send_file(buffer, as_attachment=True, download_name="summary_report.pdf", mimetype='application/pdf')
+        return send_file(buffer, as_attachment=True, download_name="summary_report.pdf", mimetype="application/pdf")
 
-    summary_data = get_summary_data()['projects']
-    return render_template("summary.html", data=summary_data)
-
+    return render_template("summary.html", projects=projects)
 # ---------- ✅ Submit Full Project and Move to Production ----------
 
 @app.route('/submit_all/<project_id>', methods=['POST'])
