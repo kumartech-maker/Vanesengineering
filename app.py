@@ -538,7 +538,7 @@ def open_project(project_id):
 
     # Get selected project with vendor name
     cur.execute("""
-        SELECT p.*, v.vendor_name 
+        SELECT p.*, v.name as vendor_name
         FROM projects p
         LEFT JOIN vendors v ON p.vendor_id = v.id
         WHERE p.id = ?
@@ -551,7 +551,7 @@ def open_project(project_id):
 
     # All projects with vendor names
     cur.execute("""
-        SELECT p.*, v.vendor_name 
+        SELECT p.*, v.name as vendor_name
         FROM projects p
         LEFT JOIN vendors v ON p.vendor_id = v.id
         ORDER BY p.id DESC
@@ -612,6 +612,7 @@ def open_project(project_id):
                            total_corner=round(total_corner, 2),
                            total_weight=round(total_weight, 2),
                            gauge_area_totals=gauge_area_totals)
+
 # ---------- ✅ Add Duct Entry ----------
 
 @app.route('/add_duct', methods=['POST'])
