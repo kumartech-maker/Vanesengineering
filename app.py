@@ -19,126 +19,15 @@ def init_db():
     conn = get_db()
     cur = conn.cursor()
 
-    # Attendance table
+    # Users
     cur.execute('''
-        CREATE TABLE IF NOT EXISTS attendance (
+        CREATE TABLE IF NOT EXISTS users (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
-            emp_id TEXT NOT NULL,
-            date TEXT NOT NULL,
-            status TEXT DEFAULT 'Absent',
-            check_in TEXT,
-            check_out TEXT,
-            FOREIGN KEY (emp_id) REFERENCES employees(emp_id)
-        )
-    ''')
-
-    # Summary table
-    cur.execute('''
-        CREATE TABLE IF NOT EXISTS summary (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            project TEXT,
-            site TEXT,
-            stage TEXT,
-            area REAL,
-            progress INTEGER
-        )
-    ''')
-
-    cur.executemany('''
-        INSERT INTO summary (project, site, stage, area, progress)
-        VALUES (?, ?, ?, ?, ?)
-    ''', [
-        ('A-123', 'Chennai', 'Sheet Cutting', 320, 50),
-        ('A-123', 'Chennai', 'Boxing', 150, 25),
-        ('B-456', 'Salem', 'Assembly', 410, 70),
-        ('C-789', 'Hyd', 'Dispatch', 100, 90)
-    ])
-
-    # Employees table
-    cur.execute('''
-        CREATE TABLE IF NOT EXISTS employees (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            emp_id TEXT,
             name TEXT,
-            gender TEXT,
-            dob TEXT,
-            blood_group TEXT,
-            department TEXT,
-            designation TEXT,
+            role TEXT,
             contact TEXT,
-            phone TEXT,
-            email TEXT,
-            join_date TEXT,
-            address TEXT,
-            role TEXT,
-            photo_filename TEXT,
+            email TEXT UNIQUE,
             password TEXT
-        )
-    ''')
-
-    conn.commit()
-    conn.close()
-
-
-    # Employee login
-    cur.execute('''
-        CREATE TABLE IF NOT EXISTS employee_logins (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            employee_id TEXT UNIQUE,
-            username TEXT UNIQUE,
-            password_hash TEXT,
-            role TEXT,
-            FOREIGN KEY (employee_id) REFERENCES employees(employee_id)
-        )
-    ''')
-
-    # Projects table
-    cur.execute('''
-        CREATE TABLE IF NOT EXISTS projects (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            project_code TEXT,
-            vendor_id INTEGER,
-            quotation_ro TEXT,
-            start_date TEXT,
-            end_date TEXT,
-            location TEXT,
-            incharge TEXT,
-            notes TEXT,
-            file_name TEXT,
-            enquiry_id TEXT,
-            client_name TEXT,
-            site_location TEXT,
-            engineer_name TEXT,
-            mobile TEXT,
-            status TEXT DEFAULT 'new',
-            total_sqm REAL DEFAULT 0,
-            FOREIGN KEY(vendor_id) REFERENCES vendors(id)
-        )
-    ''')
-
-    # Duct entries table
-    cur.execute('''
-        CREATE TABLE IF NOT EXISTS duct_entries (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            project_id INTEGER,
-            duct_no TEXT,
-            duct_type TEXT,
-            factor TEXT,
-            width1 REAL,
-            height1 REAL,
-            width2 REAL,
-            height2 REAL,
-            length_or_radius REAL,
-            quantity INTEGER,
-            degree_or_offset TEXT,
-            gauge TEXT,
-            area REAL DEFAULT 0,
-            nuts_bolts TEXT,
-            cleat TEXT,
-            gasket TEXT,
-            corner_pieces TEXT,
-            weight REAL DEFAULT 0,
-            FOREIGN KEY (project_id) REFERENCES projects(id)
         )
     ''')
 
@@ -166,19 +55,90 @@ def init_db():
         )
     ''')
 
-    # Users
+    # Employees
     cur.execute('''
-        CREATE TABLE IF NOT EXISTS users (
+        CREATE TABLE IF NOT EXISTS employees (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
+            emp_id TEXT,
             name TEXT,
-            role TEXT,
+            gender TEXT,
+            dob TEXT,
+            blood_group TEXT,
+            department TEXT,
+            designation TEXT,
             contact TEXT,
-            email TEXT UNIQUE,
+            phone TEXT,
+            email TEXT,
+            join_date TEXT,
+            address TEXT,
+            role TEXT,
+            photo_filename TEXT,
             password TEXT
         )
     ''')
 
-    # Recreate production_progress
+    cur.execute('''
+        CREATE TABLE IF NOT EXISTS employee_logins (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            employee_id TEXT UNIQUE,
+            username TEXT UNIQUE,
+            password_hash TEXT,
+            role TEXT,
+            FOREIGN KEY (employee_id) REFERENCES employees(employee_id)
+        )
+    ''')
+
+    # Projects
+    cur.execute('''
+        CREATE TABLE IF NOT EXISTS projects (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            project_code TEXT,
+            vendor_id INTEGER,
+            quotation_ro TEXT,
+            start_date TEXT,
+            end_date TEXT,
+            location TEXT,
+            incharge TEXT,
+            notes TEXT,
+            file_name TEXT,
+            enquiry_id TEXT,
+            client_name TEXT,
+            site_location TEXT,
+            engineer_name TEXT,
+            mobile TEXT,
+            status TEXT DEFAULT 'new',
+            total_sqm REAL DEFAULT 0,
+            FOREIGN KEY(vendor_id) REFERENCES vendors(id)
+        )
+    ''')
+
+    # Duct Entries
+    cur.execute('''
+        CREATE TABLE IF NOT EXISTS duct_entries (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            project_id INTEGER,
+            duct_no TEXT,
+            duct_type TEXT,
+            factor TEXT,
+            width1 REAL,
+            height1 REAL,
+            width2 REAL,
+            height2 REAL,
+            length_or_radius REAL,
+            quantity INTEGER,
+            degree_or_offset TEXT,
+            gauge TEXT,
+            area REAL DEFAULT 0,
+            nuts_bolts TEXT,
+            cleat TEXT,
+            gasket TEXT,
+            corner_pieces TEXT,
+            weight REAL DEFAULT 0,
+            FOREIGN KEY (project_id) REFERENCES projects(id)
+        )
+    ''')
+
+    # Production Progress
     cur.execute("DROP TABLE IF EXISTS production_progress")
     cur.execute('''
         CREATE TABLE production_progress (
@@ -193,40 +153,74 @@ def init_db():
         )
     ''')
 
-    # Dummy employees
+    # Attendance
+    cur.execute('''
+        CREATE TABLE IF NOT EXISTS attendance (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            emp_id TEXT NOT NULL,
+            date TEXT NOT NULL,
+            status TEXT DEFAULT 'Absent',
+            check_in TEXT,
+            check_out TEXT,
+            FOREIGN KEY (emp_id) REFERENCES employees(emp_id)
+        )
+    ''')
+
+    # Summary
+    cur.execute('''
+        CREATE TABLE IF NOT EXISTS summary (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            project TEXT,
+            site TEXT,
+            stage TEXT,
+            area REAL,
+            progress INTEGER
+        )
+    ''')
+
+    # Insert Dummy Summary
+    cur.executemany('''
+        INSERT OR IGNORE INTO summary (project, site, stage, area, progress)
+        VALUES (?, ?, ?, ?, ?)
+    ''', [
+        ('A-123', 'Chennai', 'Sheet Cutting', 320, 50),
+        ('A-123', 'Chennai', 'Boxing', 150, 25),
+        ('B-456', 'Salem', 'Assembly', 410, 70),
+        ('C-789', 'Hyd', 'Dispatch', 100, 90)
+    ])
+
+    # Dummy Employees
     dummy_employees = [
         ('VE/EMP/0001', 'Madhan Kumar', 'Engineer', '9876543210', 'madhan@example.com', 'default.jpg', '2023-06-01'),
         ('VE/EMP/0002', 'Rajesh K', 'Supervisor', '9876543211', 'rajesh@example.com', 'default.jpg', '2023-07-10'),
         ('VE/EMP/0003', 'Priya R', 'Designer', '9876543212', 'priya@example.com', 'default.jpg', '2024-01-15')
     ]
-
     for emp in dummy_employees:
         cur.execute('''
             INSERT OR IGNORE INTO employees (emp_id, name, role, phone, email, photo_filename, join_date)
             VALUES (?, ?, ?, ?, ?, ?, ?)
         ''', emp)
 
-    # Dummy attendance
+    # Dummy Attendance
     today = datetime.today().strftime('%Y-%m-%d')
     dummy_attendance = [
         ('VE/EMP/0001', today, 'Present', '09:00', '18:00'),
         ('VE/EMP/0002', today, 'Absent', '', ''),
         ('VE/EMP/0003', today, 'Present', '09:15', '17:45')
     ]
-
     for record in dummy_attendance:
         cur.execute('''
             INSERT INTO attendance (emp_id, date, status, check_in, check_out)
             VALUES (?, ?, ?, ?, ?)
         ''', record)
 
-    # Default admin
+    # Default Admin
     cur.execute('''
         INSERT OR IGNORE INTO users (email, name, role, contact, password)
         VALUES (?, ?, ?, ?, ?)
     ''', ("admin@ducting.com", "Admin", "Admin", "9999999999", "admin123"))
 
-    # Default vendor
+    # Default Vendor
     cur.execute('''
         INSERT OR IGNORE INTO vendors (id, name, gst, address, bank_name, account_number, ifsc)
         VALUES (?, ?, ?, ?, ?, ?, ?)
@@ -240,10 +234,12 @@ def init_db():
     conn.commit()
     conn.close()
 
-# Auto-init DB on every request
 @app.before_request
 def setup_db_on_request():
     init_db()
+    
+            
+            
 # ---------- ✅ Login ----------
 
 @app.route('/', methods=['GET', 'POST'])
