@@ -22,35 +22,41 @@
 
   <table id="projectTable" class="table table-bordered table-striped">
     <thead class="table-dark">
-      <tr>
-        <th>Enquiry ID</th>
-        <th>Project Name</th>
-        <th>Quotation</th>
-        <th>Vendor</th>
-        <th>Location</th>
-        <th>Start</th>
-        <th>End</th>
-        <th>Incharge</th>
-        <th>Contact</th>
-        <th>Email</th>
-      </tr>
-    </thead>
-    <tbody>
-      {% for proj in projects %}
-      <tr>
-        <td>{{ proj.enquiry_id }}</td>
-        <td>{{ proj.project_name }}</td>
-        <td>{{ proj.quotation_ro }}</td>
-        <td>{{ proj.vendor_name }}</td>
-        <td>{{ proj.location }}</td>
-        <td>{{ proj.start_date }}</td>
-        <td>{{ proj.end_date }}</td>
-        <td>{{ proj.incharge }}</td>
-        <td>{{ proj.contact_number }}</td>
-        <td>{{ proj.email }}</td>
-      </tr>
-      {% endfor %}
-    </tbody>
+  <tr>
+    <th>Enquiry ID</th>
+    <th>Project Name</th>
+    <th>Quotation</th>
+    <th>Vendor</th>
+    <th>Location</th>
+    <th>Start</th>
+    <th>End</th>
+    <th>Incharge</th>
+    <th>Contact</th>
+    <th>Email</th>
+    <th>Actions</th>
+  </tr>
+</thead>
+<tbody>
+  {% for proj in projects %}
+  <tr>
+    <td>{{ proj.enquiry_id }}</td>
+    <td>{{ proj.project_name }}</td>
+    <td>{{ proj.quotation_ro }}</td>
+    <td>{{ proj.vendor_name }}</td>
+    <td>{{ proj.location }}</td>
+    <td>{{ proj.start_date }}</td>
+    <td>{{ proj.end_date }}</td>
+    <td>{{ proj.incharge }}</td>
+    <td>{{ proj.contact_number }}</td>
+    <td>{{ proj.email }}</td>
+    <td>
+      <a href="/edit_project/{{ proj.id }}" class="btn btn-sm btn-warning">Edit</a>
+      <a href="/delete_project/{{ proj.id }}" class="btn btn-sm btn-danger" onclick="return confirm('Are you sure?')">Delete</a>
+      <a href="/measurement_sheet/{{ proj.id }}" class="btn btn-sm btn-info">Add Sheet</a>
+    </td>
+  </tr>
+  {% endfor %}
+</tbody>
   </table>
 </div>
 
