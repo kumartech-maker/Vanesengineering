@@ -453,75 +453,54 @@ def create_project():
         return redirect(url_for('login'))
 
     try:
-        # ---------- 📝 Fetch form data ----------
-        vendor_id = request.form['vendor_id']
-        project_name = request.form['project_name']
-        enquiry_id = request.form['enquiry_id']
-        quotation_ro = request.form.get('quotation_ro', '')
-        location = request.form['location']
-        start_date = request.form['start_date']
-        end_date = request.form['end_date']
-        incharge = request.form['incharge']
-        notes = request.form.get('notes', '')
-        contact_number = request.form.get('contact_number', '')
-        email = request.form.get('email', '')
-        file = request.files.get('drawing_file')
+        project_name = request.form.get('project_name')
+        vendor_id = request.form.get('vendor_id')
+        quotation_ro = request.form.get('quotation_ro')
+        location = request.form.get('location')
+        start_date = request.form.get('start_date')
+        end_date = request.form.get('end_date')
+        incharge = request.form.get('incharge')
+        contact_number = request.form.get('contact_number')
+        email = request.form.get('email')
+        notes = request.form.get('notes')
+        status = "pending"
 
-        # ---------- 📌 Debug prints ----------
-        print("📌 FORM DATA:")
-        print("Vendor ID:", vendor_id)
-        print("Project Name:", project_name)
-        print("Enquiry ID:", enquiry_id)
-        print("Quotation:", quotation_ro)
-        print("Location:", location)
-        print("Start Date:", start_date, "End Date:", end_date)
-        print("Incharge:", incharge)
-        print("Notes:", notes)
-        print("Mobile:", contact_number)
-        print("Email:", email)
-        print("File:", file.filename if file else "No File")
+        # Handle file upload
+        drawing_file = request.files.get('drawing_file')
+        drawing_filename = None
+        if drawing_file and drawing_file.filename != "":
+            drawing_filename = secure_filename(drawing_file.filename)
+            file_path = os.path.join(app.config['UPLOAD_FOLDER'], drawing_filename)
+            drawing_file.save(file_path)
 
-        # ---------- 📁 Handle file upload ----------
-        file_name = None
-        if file and file.filename != '':
-            uploads_dir = os.path.join('static', 'uploads')
-            os.makedirs(uploads_dir, exist_ok=True)
-            file_name = file.filename
-            file_path = os.path.join(uploads_dir, file_name)
-            file.save(file_path)
-
-        # ---------- 💾 Insert into database ----------
+        # Insert into DB
         conn = get_db()
         cur = conn.cursor()
         cur.execute('''
-            INSERT INTO projects (
-                vendor_id, quotation_ro, start_date, end_date,
-                location, incharge, notes, file_name,
-                enquiry_id, client_name, mobile, email
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-        ''', (
-            vendor_id, quotation_ro, start_date, end_date,
-            location, incharge, notes, file_name,
-            enquiry_id, project_name, contact_number, email
-        ))
+            INSERT INTO projects 
+            (client_name, vendor_id, quotation_ro, location, start_date, end_date, 
+             incharge, contact_number, email, notes, drawing_file, status)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        ''', (project_name, vendor_id, quotation_ro, location, start_date, end_date,
+              incharge, contact_number, email, notes, drawing_filename, status))
+        conn.commit()
 
+        # Generate enquiry ID after insert
         project_id = cur.lastrowid
+        enquiry_id = f"ENQ-{str(project_id).zfill(4)}"
 
-        # ---------- 🔢 Generate project code ----------
-        year_code = 2526
-        project_code = f"VE/{year_code}/E{str(project_id).zfill(3)}"
-        cur.execute("UPDATE projects SET project_code = ? WHERE id = ?", (project_code, project_id))
-
+        # Update enquiry_id in that project row
+        cur.execute("UPDATE projects SET enquiry_id = ? WHERE id = ?", (enquiry_id, project_id))
         conn.commit()
         conn.close()
 
-        flash("✅ Project added successfully!", "success")
+        flash("Project created successfully.", "success")
         return redirect(url_for('projects'))
 
     except Exception as e:
-        import traceback
-        traceback.print_exc()
-        return f"❌ Failed to create project: {str(e)}", 400
+        print("Error creating project:", e)
+        flash("❌ Failed to create project", "danger")
+        return redirect(url_for('projects'))
 # ---------- ✅ Add Measurement Info to Project ----------
 
 @app.route('/add_measurement', methods=['POST'])
