@@ -465,41 +465,41 @@ def create_project():
         notes = request.form.get('notes')
         status = "pending"
 
-        # Handle file upload
+        # Handle drawing file
         drawing_file = request.files.get('drawing_file')
         drawing_filename = None
-        if drawing_file and drawing_file.filename != "":
+        if drawing_file and drawing_file.filename:
             drawing_filename = secure_filename(drawing_file.filename)
             file_path = os.path.join(app.config['UPLOAD_FOLDER'], drawing_filename)
             drawing_file.save(file_path)
 
-        # Insert into DB
+        # DB Insert
         conn = get_db()
         cur = conn.cursor()
         cur.execute('''
             INSERT INTO projects 
-            (client_name, vendor_id, quotation_ro, location, start_date, end_date, 
+            (client_name, vendor_id, quotation_ro, location, start_date, end_date,
              incharge, contact_number, email, notes, drawing_file, status)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-        ''', (project_name, vendor_id, quotation_ro, location, start_date, end_date,
-              incharge, contact_number, email, notes, drawing_filename, status))
+        ''', (
+            project_name, vendor_id, quotation_ro, location, start_date, end_date,
+            incharge, contact_number, email, notes, drawing_filename, status
+        ))
         conn.commit()
 
-        # Generate enquiry ID after insert
+        # Generate and update Enquiry ID
         project_id = cur.lastrowid
         enquiry_id = f"ENQ-{str(project_id).zfill(4)}"
-
-        # Update enquiry_id in that project row
         cur.execute("UPDATE projects SET enquiry_id = ? WHERE id = ?", (enquiry_id, project_id))
         conn.commit()
-        conn.close()
 
-        flash("Project created successfully.", "success")
+        conn.close()
+        flash("✅ Project created successfully.", "success")
         return redirect(url_for('projects'))
 
     except Exception as e:
-        print("Error creating project:", e)
-        flash("❌ Failed to create project", "danger")
+        print("❌ Error creating project:", e)
+        flash("❌ Failed to create project.", "danger")
         return redirect(url_for('projects'))
 # ---------- ✅ Add Measurement Info to Project ----------
 
