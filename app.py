@@ -446,28 +446,27 @@ def edit_project(project_id):
 
 # ---------- ✅ Create Project ----------
 # ---------- ✅ Save New Project ----------
-@app.route('/projects')
-def projects():
+@app.route('/create_project', methods=['POST'])
+def create_project():
     if 'user' not in session:
         return redirect(url_for('login'))
 
-    vendors = db.session.execute(text("SELECT * FROM vendor ORDER BY id DESC")).mappings().all()
-    projects = db.session.execute(text("""
-        SELECT project.*, vendor.name AS vendor_name
-        FROM project
-        LEFT JOIN vendor ON project.vendor_id = vendor.id
-        ORDER BY project.id DESC
-    """)).mappings().all()
+    data = request.form
 
-    # Generate new enquiry ID
-    last = db.session.execute(text("SELECT MAX(id) FROM project")).scalar()
-    new_id = (last or 0) + 1
-    enquiry_id = f"VE/ENQ/{str(new_id).zfill(4)}"
+    stmt = text("""
+        INSERT INTO project (
+            enquiry_id, project_name, quotation_ro, vendor_id, location,
+            start_date, end_date, incharge, contact_number, email
+        ) VALUES (
+            :enquiry_id, :project_name, :quotation_ro, :vendor_id, :location,
+            :start_date, :end_date, :incharge, :contact_number, :email
+        )
+    """)
+    db.session.execute(stmt, data)
+    db.session.commit()
 
-    return render_template("projects.html",
-                           vendors=vendors,
-                           projects=projects,
-                           new_enquiry_id=enquiry_id)
+    return redirect(url_for('projects'))
+
 # ---------- ✅ Add Measurement Info to Project ----------
 
 @app.route('/add_measurement', methods=['POST'])
