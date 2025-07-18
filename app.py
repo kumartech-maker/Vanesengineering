@@ -373,9 +373,9 @@ def get_vendor_info(vendor_id):
 @app.route('/projects')
 def projects():
     conn = get_db()
+    conn.row_factory = sqlite3.Row
     cur = conn.cursor()
 
-    # Fetch all projects with vendor name
     cur.execute("""
         SELECT p.*, v.name AS vendor_name
         FROM projects p
@@ -384,11 +384,9 @@ def projects():
     """)
     projects = cur.fetchall()
 
-    # All vendors for dropdown
     cur.execute("SELECT * FROM vendors ORDER BY id DESC")
     vendors = cur.fetchall()
 
-    # Generate unique enquiry ID like VE/TN/E001
     cur.execute("SELECT MAX(id) FROM projects")
     last_id = cur.fetchone()[0]
     new_id = (last_id or 0) + 1
@@ -396,13 +394,7 @@ def projects():
 
     conn.close()
 
-    selected_project = projects[0] if projects else None
-
-    return render_template('projects.html',
-                           projects=projects,
-                           vendors=vendors,
-                           project=selected_project,
-                           new_enquiry_id=enquiry_id)
+    return render_template('projects.html', projects=projects, vendors=vendors, new_enquiry_id=enquiry_id)
 
 @app.route('/project/edit/<int:project_id>', methods=['GET', 'POST'])
 def edit_project(project_id):
@@ -458,10 +450,11 @@ def edit_project(project_id):
 # ---------- ✅ Save New Project ----------
 @app.route('/create_project', methods=['POST'])
 def create_project():
-    data = request.form
     conn = get_db()
-    conn.row_factory = sqlite3.Row  # Ensure row dict access
+    conn.row_factory = sqlite3.Row
     cur = conn.cursor()
+
+    data = request.form
 
     cur.execute("""
         INSERT INTO projects (enquiry_id, project_name, quotation_ro, vendor_id, location, contact_number, email, incharge, start_date, end_date)
@@ -480,7 +473,6 @@ def create_project():
     ))
     conn.commit()
 
-    # Fetch inserted project with vendor name
     last_id = cur.lastrowid
     cur.execute("""
         SELECT p.*, v.name AS vendor_name
@@ -488,9 +480,8 @@ def create_project():
         LEFT JOIN vendors v ON p.vendor_id = v.id
         WHERE p.id = ?
     """, (last_id,))
-    project = cur.fetchone()
+    p = cur.fetchone()
 
-    # Generate next enquiry_id
     cur.execute("SELECT MAX(id) FROM projects")
     next_id = (cur.fetchone()[0] or 0) + 1
     next_enquiry_id = f"VE/TN/E{str(next_id).zfill(3)}"
@@ -500,17 +491,16 @@ def create_project():
     return jsonify({
         'status': 'success',
         'project': {
-            'id': last_id,
-            'enquiry_id': project['enquiry_id'],
-            'project_name': project['project_name'],
-            'quotation_ro': project['quotation_ro'],
-            'vendor_name': project['vendor_name'],
-            'location': project['location'],
-            'contact_number': project['contact_number'],
-            'email': project['email'],
-            'incharge': project['incharge'],
-            'start_date': project['start_date'],
-            'end_date': project['end_date'],
+            'enquiry_id': p['enquiry_id'],
+            'project_name': p['project_name'],
+            'quotation_ro': p['quotation_ro'],
+            'vendor_name': p['vendor_name'],
+            'location': p['location'],
+            'contact_number': p['contact_number'],
+            'email': p['email'],
+            'incharge': p['incharge'],
+            'start_date': p['start_date'],
+            'end_date': p['end_date'],
             'next_enquiry_id': next_enquiry_id
         }
     })
