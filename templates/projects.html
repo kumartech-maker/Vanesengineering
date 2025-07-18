@@ -4,125 +4,113 @@
   <meta charset="UTF-8">
   <title>Projects</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
-  <link href="https://cdn.datatables.net/1.13.4/css/dataTables.bootstrap5.min.css" rel="stylesheet">
-  <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
   <style>
-    .readonly-input {
-      background-color: #e9ecef;
-      pointer-events: none;
+    .select2-container .select2-selection--single {
+      height: 38px;
     }
   </style>
 </head>
-<body class="bg-light">
-<div class="container py-4">
+<body class="p-4">
+  <div class="container">
+    <h2 class="mb-4">New Project Entry</h2>
+    <form action="/create_project" method="POST" class="row g-3">
+      <div class="col-md-4">
+        <label>Enquiry ID</label>
+        <input type="text" class="form-control" name="enquiry_id" value="{{ new_enquiry_id }}" readonly>
+      </div>
 
-  <!-- Project Form -->
-  <div class="card mb-4">
-    <div class="card-header fw-bold">Create New Project</div>
-    <div class="card-body">
-      <form method="POST" action="/create_project">
-        <div class="row mb-3">
-          <div class="col-md-4">
-            <label>Enquiry ID</label>
-            <input type="text" name="enquiry_id" class="form-control readonly-input" value="{{ new_enquiry_id }}" readonly required>
-          </div>
-          <div class="col-md-4">
-            <label>Project Name</label>
-            <input type="text" name="project_name" class="form-control" required>
-          </div>
-          <div class="col-md-4">
-            <label>Quotation RO</label>
-            <input type="text" name="quotation_ro" class="form-control" required>
-          </div>
-        </div>
+      <div class="col-md-8">
+        <label>Vendor</label>
+        <select name="vendor_id" id="vendor_id" class="form-select" required>
+          <option value="">-- Select Vendor --</option>
+          {% for v in vendors %}
+            <option value="{{ v.id }}" data-gst="{{ v.gst_number }}" data-address="{{ v.address }}">
+              {{ v.name }}
+            </option>
+          {% endfor %}
+        </select>
+      </div>
 
-        <div class="row mb-3">
-          <div class="col-md-4">
-            <label>Vendor</label>
-            <select name="vendor_id" id="vendorSelect" class="form-select" required>
-              <option value="">-- Select Vendor --</option>
-              {% for v in vendors %}
-              <option value="{{ v.id }}" data-gst="{{ v.gst_number }}" data-address="{{ v.address }}">{{ v.name }}</option>
-              {% endfor %}
-            </select>
-          </div>
-          <div class="col-md-4">
-            <label>GST Number</label>
-            <input type="text" id="gstNumber" class="form-control readonly-input" readonly>
-          </div>
-          <div class="col-md-4">
-            <label>Vendor Address</label>
-            <input type="text" id="vendorAddress" class="form-control readonly-input" readonly>
-          </div>
-        </div>
+      <div class="col-md-6">
+        <label>GST Number</label>
+        <input type="text" id="gst_number" class="form-control" readonly>
+      </div>
 
-        <div class="row mb-3">
-          <div class="col-md-4">
-            <label>Location</label>
-            <input type="text" name="location" class="form-control" required>
-          </div>
-          <div class="col-md-4">
-            <label>Contact Number</label>
-            <input type="text" name="contact_number" class="form-control" required>
-          </div>
-          <div class="col-md-4">
-            <label>Email</label>
-            <input type="email" name="email" class="form-control" required>
-          </div>
-        </div>
+      <div class="col-md-6">
+        <label>Vendor Address</label>
+        <input type="text" id="address" class="form-control" readonly>
+      </div>
 
-        <div class="row mb-3">
-          <div class="col-md-4">
-            <label>Incharge</label>
-            <input type="text" name="incharge" class="form-control" required>
-          </div>
-          <div class="col-md-4">
-            <label>Start Date</label>
-            <input type="date" name="start_date" class="form-control" required>
-          </div>
-          <div class="col-md-4">
-            <label>End Date</label>
-            <input type="date" name="end_date" class="form-control" required>
-          </div>
-        </div>
+      <div class="col-md-6">
+        <label>Project Name</label>
+        <input type="text" name="project_name" class="form-control" required>
+      </div>
 
-        <div class="text-end">
-          <button type="submit" class="btn btn-success">Save Project</button>
-        </div>
-      </form>
-    </div>
-  </div>
+      <div class="col-md-6">
+        <label>Quotation / RO</label>
+        <input type="text" name="quotation_ro" class="form-control">
+      </div>
 
-  <!-- Project List -->
-  <div class="card">
-    <div class="card-header fw-bold">Project List</div>
-    <div class="card-body">
-      <table id="projectsTable" class="table table-bordered table-striped">
-        <thead class="table-light">
+      <div class="col-md-6">
+        <label>Location</label>
+        <input type="text" name="location" class="form-control">
+      </div>
+
+      <div class="col-md-6">
+        <label>Incharge</label>
+        <input type="text" name="incharge" class="form-control">
+      </div>
+
+      <div class="col-md-6">
+        <label>Contact Number</label>
+        <input type="text" name="contact_number" class="form-control">
+      </div>
+
+      <div class="col-md-6">
+        <label>Email</label>
+        <input type="email" name="email" class="form-control">
+      </div>
+
+      <div class="col-md-6">
+        <label>Start Date</label>
+        <input type="date" name="start_date" class="form-control">
+      </div>
+
+      <div class="col-md-6">
+        <label>End Date</label>
+        <input type="date" name="end_date" class="form-control">
+      </div>
+
+      <div class="col-12">
+        <button type="submit" class="btn btn-success">Create Project</button>
+      </div>
+    </form>
+
+    <hr class="my-4">
+
+    <h4 class="mb-3">Project List</h4>
+    <div class="table-responsive">
+      <table class="table table-bordered table-striped">
+        <thead class="table-dark">
           <tr>
-            <th>#</th>
             <th>Enquiry ID</th>
-            <th>Project</th>
-            <th>Quotation</th>
+            <th>Project Name</th>
             <th>Vendor</th>
             <th>Location</th>
-            <th>Incharge</th>
             <th>Start</th>
             <th>End</th>
           </tr>
         </thead>
         <tbody>
-          {% for project in projects %}
+          {% for p in projects %}
           <tr>
-            <td>{{ loop.index }}</td>
-            <td>{{ project.enquiry_id }}</td>
-            <td>{{ project.project_name }}</td>
-            <td>{{ project.quotation_ro }}</td>
-            <td>{{ project.vendor_name }}</td>
-            <td>{{ project.location }}</td>
-            <td>{{ project.incharge }}</td>
-            <td>{{ project.start_date }}</td>
-            <td>{{ project.end_date }}</td>
+            <td>{{ p.enquiry_id }}</td>
+            <td>{{ p.project_name }}</td>
+            <td>{{ p.vendor_name }}</td>
+            <td>{{ p.location }}</td>
+            <td>{{ p.start_date }}</td>
+            <td>{{ p.end_date }}</td>
           </tr>
           {% endfor %}
         </tbody>
@@ -130,31 +118,18 @@
     </div>
   </div>
 
-</div>
+  <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+  <script>
+    $(document).ready(function () {
+      $('#vendor_id').select2();
 
-<!-- Scripts -->
-<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
-<script src="https://cdn.datatables.net/1.13.4/js/jquery.dataTables.min.js"></script>
-<script src="https://cdn.datatables.net/1.13.4/js/dataTables.bootstrap5.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
-
-<script>
-  $(document).ready(function () {
-    $('#projectsTable').DataTable();
-
-    $('#vendorSelect').select2({
-      placeholder: "Select a vendor",
-      allowClear: true,
-      width: '100%'
+      $('#vendor_id').on('change', function () {
+        const selected = $(this).find('option:selected');
+        $('#gst_number').val(selected.data('gst') || '');
+        $('#address').val(selected.data('address') || '');
+      });
     });
-
-    $('#vendorSelect').on('change', function () {
-      let selected = $(this).find(':selected');
-      $('#gstNumber').val(selected.data('gst') || '');
-      $('#vendorAddress').val(selected.data('address') || '');
-    });
-  });
-</script>
+  </script>
 </body>
 </html>
