@@ -13,15 +13,10 @@
   </style>
 </head>
 <body>
-<div class="container mt-5">
-  <h2 class="mb-4">Projects</h2>
+<div class="container mt-4">
+  <h2>Projects</h2>
 
-  <!-- Button to trigger modal -->
-  <button class="btn btn-primary mb-3" data-bs-toggle="modal" data-bs-target="#projectModal">
-    + Add New Project
-  </button>
-
-  <!-- Flash Messages -->
+  <!-- Flash messages -->
   {% with messages = get_flashed_messages(with_categories=true) %}
     {% if messages %}
       {% for category, message in messages %}
@@ -33,8 +28,110 @@
     {% endif %}
   {% endwith %}
 
+  <!-- Button trigger modal -->
+  <button class="btn btn-primary my-3" data-bs-toggle="modal" data-bs-target="#projectModal">
+    + Add Project
+  </button>
+
+  <!-- Project Modal -->
+  <div class="modal fade" id="projectModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-dialog-scrollable">
+      <div class="modal-content">
+        <form method="POST" action="{{ url_for('create_project') }}" enctype="multipart/form-data">
+          <div class="modal-header">
+            <h5 class="modal-title">Create New Project</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+          </div>
+          <div class="modal-body">
+            <div class="row mb-3">
+              <div class="col-md-4">
+                <label>Enquiry ID</label>
+                <input type="text" name="enquiry_id" class="form-control" value="{{ new_enquiry_id }}" readonly>
+              </div>
+              <div class="col-md-4">
+                <label>Project Name</label>
+                <input type="text" name="project_name" class="form-control" required>
+              </div>
+              <div class="col-md-4">
+                <label>Quotation / RO</label>
+                <input type="text" name="quotation_ro" class="form-control">
+              </div>
+            </div>
+
+            <div class="row mb-3">
+              <div class="col-md-6">
+                <label>Select Vendor</label>
+                <select id="vendor_id" name="vendor_id" class="form-control select2" required>
+                  <option value="">-- Select Vendor --</option>
+                  {% for vendor in vendors %}
+                    <option value="{{ vendor.id }}" data-gst="{{ vendor.gst }}" data-address="{{ vendor.address }}">
+                      {{ vendor.name }}
+                    </option>
+                  {% endfor %}
+                </select>
+              </div>
+              <div class="col-md-3">
+                <label>Vendor GST</label>
+                <input type="text" name="vendor_gst" id="vendor_gst" class="form-control" readonly>
+              </div>
+              <div class="col-md-3">
+                <label>Vendor Address</label>
+                <input type="text" name="vendor_address" id="vendor_address" class="form-control" readonly>
+              </div>
+            </div>
+
+            <div class="row mb-3">
+              <div class="col-md-6">
+                <label>Project Location</label>
+                <input type="text" name="location" class="form-control">
+              </div>
+              <div class="col-md-3">
+                <label>Start Date</label>
+                <input type="date" name="start_date" class="form-control">
+              </div>
+              <div class="col-md-3">
+                <label>End Date</label>
+                <input type="date" name="end_date" class="form-control">
+              </div>
+            </div>
+
+            <div class="row mb-3">
+              <div class="col-md-4">
+                <label>Incharge</label>
+                <input type="text" name="incharge" class="form-control">
+              </div>
+              <div class="col-md-4">
+                <label>Contact</label>
+                <input type="text" name="contact_number" class="form-control">
+              </div>
+              <div class="col-md-4">
+                <label>Email</label>
+                <input type="email" name="email" class="form-control">
+              </div>
+            </div>
+
+            <div class="row mb-3">
+              <div class="col-md-6">
+                <label>Drawing Upload</label>
+                <input type="file" name="drawing_file" class="form-control">
+              </div>
+              <div class="col-md-6">
+                <label>Notes</label>
+                <input type="text" name="notes" class="form-control">
+              </div>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button type="submit" class="btn btn-success">Save Project</button>
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
   <!-- Projects Table -->
-  <table class="table table-bordered">
+  <table class="table table-bordered mt-4">
     <thead class="table-light">
       <tr>
         <th>Enquiry ID</th>
@@ -66,117 +163,20 @@
   </table>
 </div>
 
-<!-- Project Modal -->
-<div class="modal fade" id="projectModal" tabindex="-1" aria-labelledby="projectModalLabel" aria-hidden="true">
-  <div class="modal-dialog modal-xl">
-    <div class="modal-content">
-      <form method="POST" action="{{ url_for('create_project') }}" enctype="multipart/form-data">
-        <div class="modal-header">
-          <h5 class="modal-title">New Project</h5>
-          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-        </div>
-        <div class="modal-body">
-          <div class="row mb-3">
-            <div class="col-md-4">
-              <label>Enquiry ID</label>
-              <input type="text" name="enquiry_id" class="form-control" value="{{ generated_enquiry_id }}" readonly>
-            </div>
-            <div class="col-md-4">
-              <label>Project Name</label>
-              <input type="text" name="project_name" class="form-control" required>
-            </div>
-            <div class="col-md-4">
-              <label>Quotation / RO</label>
-              <input type="text" name="quotation_ro" class="form-control">
-            </div>
-          </div>
-
-          <div class="row mb-3">
-            <div class="col-md-6">
-              <label>Select Vendor</label>
-              <select id="vendor_id" name="vendor_id" class="form-control select2" required>
-                <option value="">-- Select Vendor --</option>
-                {% for vendor in vendors %}
-                  <option value="{{ vendor.id }}" data-gst="{{ vendor.gst }}" data-address="{{ vendor.address }}">
-                    {{ vendor.name }}
-                  </option>
-                {% endfor %}
-              </select>
-            </div>
-            <div class="col-md-3">
-              <label>Vendor GST</label>
-              <input type="text" name="vendor_gst" id="vendor_gst" class="form-control" readonly>
-            </div>
-            <div class="col-md-3">
-              <label>Vendor Address</label>
-              <input type="text" name="vendor_address" id="vendor_address" class="form-control" readonly>
-            </div>
-          </div>
-
-          <div class="row mb-3">
-            <div class="col-md-6">
-              <label>Project Location</label>
-              <input type="text" name="location" class="form-control">
-            </div>
-            <div class="col-md-3">
-              <label>Start Date</label>
-              <input type="date" name="start_date" class="form-control">
-            </div>
-            <div class="col-md-3">
-              <label>End Date</label>
-              <input type="date" name="end_date" class="form-control">
-            </div>
-          </div>
-
-          <div class="row mb-3">
-            <div class="col-md-4">
-              <label>Incharge</label>
-              <input type="text" name="incharge" class="form-control">
-            </div>
-            <div class="col-md-4">
-              <label>Contact</label>
-              <input type="text" name="contact_number" class="form-control">
-            </div>
-            <div class="col-md-4">
-              <label>Email</label>
-              <input type="email" name="email" class="form-control">
-            </div>
-          </div>
-
-          <div class="row mb-3">
-            <div class="col-md-6">
-              <label>Drawing Upload</label>
-              <input type="file" name="drawing_file" class="form-control">
-            </div>
-            <div class="col-md-6">
-              <label>Notes</label>
-              <input type="text" name="notes" class="form-control">
-            </div>
-          </div>
-        </div>
-        <div class="modal-footer">
-          <button type="submit" class="btn btn-success">Save Project</button>
-          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-        </div>
-      </form>
-    </div>
-  </div>
-</div>
-
 <!-- Scripts -->
 <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
 <script>
-  $(document).ready(function() {
+  $(document).ready(function () {
     $('.select2').select2();
 
-    $('#vendor_id').on('change', function() {
-      let selected = $(this).find('option:selected');
-      $('#vendor_gst').val(selected.data('gst'));
-      $('#vendor_address').val(selected.data('address'));
+    $('#vendor_id').on('change', function () {
+      const selected = $(this).find('option:selected');
+      $('#vendor_gst').val(selected.data('gst') || '');
+      $('#vendor_address').val(selected.data('address') || '');
     });
   });
 </script>
 </body>
-            </html>
+</html>
