@@ -372,26 +372,22 @@ def get_vendor_info(vendor_id):
 # ---------- ✅ View All Projects ----------
 @app.route('/projects')
 def projects():
-    if 'user' not in session:
-        return redirect(url_for('login'))
-
     conn = get_db()
     cur = conn.cursor()
-
     cur.execute("""
-        SELECT p.*, v.name AS vendor_name
-        FROM project p
-        LEFT JOIN vendor v ON p.vendor_id = v.id
-        ORDER BY p.id DESC
+      SELECT p.*, v.name AS vendor_name FROM projects p
+      LEFT JOIN vendors v ON p.vendor_id = v.id
+      ORDER BY p.id DESC
     """)
     projects = cur.fetchall()
-
-    cur.execute("SELECT * FROM vendor ORDER BY id DESC")
+    cur.execute("SELECT * FROM vendors ORDER BY id DESC")
     vendors = cur.fetchall()
-
+    cur.execute("SELECT MAX(id) FROM projects")
+    new_id = (cur.fetchone()[0] or 0) + 1
+    enquiry_id = f"VE/TN/E{str(new_id).zfill(3)}"
     conn.close()
-
-    return render_template("projects.html", projects=projects, vendors=vendors)
+    return render_template('projects.html',
+      projects=projects, vendors=vendors, new_enquiry_id=enquiry_id)
 @app.route('/project/edit/<int:project_id>', methods=['GET', 'POST'])
 def edit_project(project_id):
     conn = get_db_connection()
@@ -446,24 +442,39 @@ def edit_project(project_id):
 # ---------- ✅ Save New Project ----------
 @app.route('/create_project', methods=['POST'])
 def create_project():
-    if 'user' not in session:
-        return redirect(url_for('login'))
-
-    data = request.form
-
-    stmt = text("""
-        INSERT INTO project (
-            enquiry_id, project_name, quotation_ro, vendor_id, location,
-            start_date, end_date, incharge, contact_number, email
-        ) VALUES (
-            :enquiry_id, :project_name, :quotation_ro, :vendor_id, :location,
-            :start_date, :end_date, :incharge, :contact_number, :email
-        )
-    """)
-    db.session.execute(stmt, data)
-    db.session.commit()
-
-    return redirect(url_for('projects'))
+    conn = get_db(); cur = conn.cursor()
+    # generate Enquiry ID server-side for consistency
+    cur.execute("SELECT MAX(id) FROM projects")
+    new_id = (cur.fetchone()[0] or 0) + 1
+    enquiry_id = f"VE/TN/E{str(new_id).zfill(3)}"
+    cur.execute("""
+      INSERT INTO projects (enquiry_id, project_name, quotation_ro, vendor_id, location,
+      start_date, end_date, incharge, contact_number, email)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    """, (
+      enquiry_id, request.form['project_name'], request.form.get('quotation_ro'),
+      request.form['vendor_id'], request.form['location'],
+      request.form.get('start_date'), request.form.get('end_date'),
+      request.form.get('incharge'), request.form.get('contact_number'),
+      request.form.get('email')
+    ))
+    conn.commit()
+    pid = cur.lastrowid
+    cur.execute("SELECT name FROM vendors WHERE id = ?", (request.form['vendor_id'],))
+    vendor_name = cur.fetchone()[0]
+    conn.close()
+    return jsonify(status='success', project={
+      'id': pid, 'enquiry_id': enquiry_id,
+      'project_name': request.form['project_name'],
+      'quotation_ro': request.form.get('quotation_ro'),
+      'vendor_name': vendor_name,
+      'location': request.form['location'],
+      'start_date': request.form.get('start_date'),
+      'end_date': request.form.get('end_date'),
+      'incharge': request.form.get('incharge'),
+      'contact_number': request.form.get('contact_number'),
+      'email': request.form.get('email'),
+    })
 
 # ---------- ✅ Add Measurement Info to Project ----------
 
