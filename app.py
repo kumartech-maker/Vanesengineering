@@ -458,65 +458,62 @@ def edit_project(project_id):
 # ---------- ✅ Save New Project ----------
 @app.route('/create_project', methods=['POST'])
 def create_project():
-    if 'user' not in session:
-        return jsonify({'status': 'unauthorized'})
-
+    data = request.form
     conn = get_db()
+    conn.row_factory = sqlite3.Row  # Ensure row dict access
     cur = conn.cursor()
 
-    try:
-        # Get form data
-        project_name = request.form['project_name']
-        quotation = request.form['quotation_ro']
-        vendor_id = request.form['vendor_id']
-        location = request.form['location']
-        start_date = request.form['start_date']
-        end_date = request.form['end_date']
-        incharge = request.form['incharge']
-        contact = request.form['contact_number']
-        email = request.form['email']
+    cur.execute("""
+        INSERT INTO projects (enquiry_id, project_name, quotation_ro, vendor_id, location, contact_number, email, incharge, start_date, end_date)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    """, (
+        data['enquiry_id'],
+        data['project_name'],
+        data['quotation_ro'],
+        data['vendor_id'],
+        data['location'],
+        data['contact_number'],
+        data['email'],
+        data['incharge'],
+        data['start_date'],
+        data['end_date']
+    ))
+    conn.commit()
 
-        # Generate Enquiry ID (VE/TN/E001)
-        cur.execute("SELECT MAX(id) FROM projects")
-        last_id = cur.fetchone()[0]
-        new_id = (last_id or 0) + 1
-        enquiry_id = f"VE/TN/E{str(new_id).zfill(3)}"
+    # Fetch inserted project with vendor name
+    last_id = cur.lastrowid
+    cur.execute("""
+        SELECT p.*, v.name AS vendor_name
+        FROM projects p
+        LEFT JOIN vendors v ON p.vendor_id = v.id
+        WHERE p.id = ?
+    """, (last_id,))
+    project = cur.fetchone()
 
-        # Insert into DB
-        cur.execute("""
-            INSERT INTO projects (enquiry_id, project_name, quotation_ro, vendor_id, location, start_date, end_date, incharge, contact_number, email)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-        """, (enquiry_id, project_name, quotation, vendor_id, location, start_date, end_date, incharge, contact, email))
-        conn.commit()
+    # Generate next enquiry_id
+    cur.execute("SELECT MAX(id) FROM projects")
+    next_id = (cur.fetchone()[0] or 0) + 1
+    next_enquiry_id = f"VE/TN/E{str(next_id).zfill(3)}"
 
-        # Get vendor name
-        cur.execute("SELECT name FROM vendors WHERE id = ?", (vendor_id,))
-        vendor_name = cur.fetchone()[0] if cur.fetchone() else ""
+    conn.close()
 
-        # Response JSON
-        return jsonify({
-            'status': 'success',
-            'project': {
-                'id': new_id,
-                'enquiry_id': enquiry_id,
-                'project_name': project_name,
-                'quotation_ro': quotation,
-                'vendor_name': vendor_name,
-                'location': location,
-                'start_date': start_date,
-                'end_date': end_date,
-                'incharge': incharge,
-                'contact_number': contact,
-                'email': email
-            }
-        })
-
-    except Exception as e:
-        conn.rollback()
-        return jsonify({'status': 'error', 'message': str(e)})
-
-    finally:
-        conn.close()
+    return jsonify({
+        'status': 'success',
+        'project': {
+            'id': last_id,
+            'enquiry_id': project['enquiry_id'],
+            'project_name': project['project_name'],
+            'quotation_ro': project['quotation_ro'],
+            'vendor_name': project['vendor_name'],
+            'location': project['location'],
+            'contact_number': project['contact_number'],
+            'email': project['email'],
+            'incharge': project['incharge'],
+            'start_date': project['start_date'],
+            'end_date': project['end_date'],
+            'next_enquiry_id': next_enquiry_id
+        }
+    })
 # ---------- ✅ Add Measurement Info to Project ----------
 
 @app.route('/add_measurement', methods=['POST'])
