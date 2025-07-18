@@ -2,249 +2,218 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Project Management</title>
+  <title>Projects</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
-  <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
   <style>
-    .select2-container { width: 100% !important; }
-    .readonly-input { background-color: #f9f9f9; border: 1px solid #ccc; }
-    .modal .form-control, .modal .form-select { margin-bottom: 10px; }
-    .table td, .table th { vertical-align: middle; }
+    .select2-container .select2-selection--single {
+      height: 38px !important;
+    }
+    .readonly-input {
+      background-color: #f8f9fa;
+    }
   </style>
 </head>
 <body>
-<div class="container mt-5">
+<div class="container mt-4">
   <div class="d-flex justify-content-between align-items-center mb-3">
-    <h2>Projects</h2>
-    <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#projectModal">+ Add Project</button>
+    <h3 class="fw-bold">Project List</h3>
+    <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#projectModal">+ New Project</button>
   </div>
 
-  <!-- Search Bar -->
-  <input type="text" id="searchInput" class="form-control mb-3" placeholder="Search projects...">
-
-  <!-- Project Table -->
-  <div class="table-responsive">
-    <table class="table table-bordered table-hover" id="projectTable">
-      <thead class="table-light">
-        <tr>
-          <th>Enquiry ID</th>
-          <th>Project Name</th>
-          <th>Quotation</th>
-          <th>Vendor</th>
-          <th>Location</th>
-          <th>Start</th>
-          <th>End</th>
-          <th>Incharge</th>
-          <th>Contact</th>
-          <th>Email</th>
-          <th>Actions</th>
-        </tr>
-      </thead>
-      <tbody>
-        {% for p in projects %}
-        <tr id="row-{{ p.id }}">
-          <td>{{ p.enquiry_id }}</td>
-          <td class="editable">{{ p.project_name }}</td>
-          <td class="editable">{{ p.quotation_ro }}</td>
-          <td>{{ p.vendor_name }}</td>
-          <td class="editable">{{ p.location }}</td>
-          <td>{{ p.start_date }}</td>
-          <td>{{ p.end_date }}</td>
-          <td class="editable">{{ p.incharge }}</td>
-          <td>{{ p.contact_number }}</td>
-          <td>{{ p.email }}</td>
-          <td>
-            <button class="btn btn-sm btn-outline-primary" onclick="enableEdit('{{ p.id }}')">Edit</button>
-            <button class="btn btn-sm btn-success d-none" id="save-{{ p.id }}" onclick="saveEdit('{{ p.id }}')">Save</button>
-            <a href="/delete_project/{{ p.id }}" class="btn btn-sm btn-danger">Del</a>
-            <a href="/measurement_sheet/{{ p.id }}" class="btn btn-sm btn-info">Sheet</a>
-          </td>
-        </tr>
-        {% endfor %}
-      </tbody>
-    </table>
+  <!-- 🔹 Toast -->
+  <div class="position-fixed bottom-0 end-0 p-3" style="z-index: 11">
+    <div id="toastSuccess" class="toast align-items-center text-bg-success border-0" role="alert">
+      <div class="d-flex">
+        <div class="toast-body">Project Saved Successfully!</div>
+        <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+      </div>
+    </div>
   </div>
+
+  <!-- 🔹 Modal -->
+  <div class="modal fade" id="projectModal" tabindex="-1">
+    <div class="modal-dialog modal-xl">
+      <div class="modal-content">
+        <form id="projectForm">
+          <div class="modal-header">
+            <h5 class="modal-title">Add New Project</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+          </div>
+          <div class="modal-body row g-3">
+
+            <div class="col-md-4">
+              <label>Enquiry ID</label>
+              <input type="text" name="enquiry_id" id="enquiry_id" class="form-control readonly-input" readonly value="{{ new_enquiry_id }}">
+            </div>
+
+            <div class="col-md-4">
+              <label>Project Name</label>
+              <input type="text" name="project_name" class="form-control" required>
+            </div>
+
+            <div class="col-md-4">
+              <label>Quotation No</label>
+              <input type="text" name="quotation_ro" class="form-control" required>
+            </div>
+
+            <div class="col-md-6">
+              <label>Vendor</label>
+              <select name="vendor_id" id="vendorSelect" class="form-select" required>
+                <option value="">-- Select Vendor --</option>
+                {% for v in vendors %}
+                  <option value="{{ v.id }}" data-gst="{{ v.gst_number }}" data-address="{{ v.address }}">{{ v.name }}</option>
+                {% endfor %}
+              </select>
+            </div>
+
+            <div class="col-md-3">
+              <label>GST Number</label>
+              <input type="text" id="gstNumber" class="form-control readonly-input" readonly>
+            </div>
+
+            <div class="col-md-3">
+              <label>Address</label>
+              <input type="text" id="vendorAddress" class="form-control readonly-input" readonly>
+            </div>
+
+            <div class="col-md-6">
+              <label>Project Location</label>
+              <input type="text" name="location" class="form-control">
+            </div>
+
+            <div class="col-md-3">
+              <label>Contact Number</label>
+              <input type="text" name="contact_number" class="form-control">
+            </div>
+
+            <div class="col-md-3">
+              <label>Email</label>
+              <input type="email" name="email" class="form-control">
+            </div>
+
+            <div class="col-md-3">
+              <label>Incharge</label>
+              <input type="text" name="incharge" class="form-control">
+            </div>
+
+            <div class="col-md-3">
+              <label>Start Date</label>
+              <input type="date" name="start_date" class="form-control">
+            </div>
+
+            <div class="col-md-3">
+              <label>End Date</label>
+              <input type="date" name="end_date" class="form-control">
+            </div>
+
+          </div>
+          <div class="modal-footer">
+            <button type="submit" class="btn btn-success">Save Project</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- 🔹 Project Table -->
+  <table id="projectTable" class="table table-bordered mt-4">
+    <thead class="table-dark">
+      <tr>
+        <th>Enquiry ID</th>
+        <th>Project</th>
+        <th>Quotation</th>
+        <th>Vendor</th>
+        <th>Location</th>
+        <th>Contact</th>
+        <th>Email</th>
+        <th>Incharge</th>
+        <th>Start</th>
+        <th>End</th>
+      </tr>
+    </thead>
+    <tbody id="projectTableBody">
+      {% for p in projects %}
+      <tr>
+        <td>{{ p.enquiry_id }}</td>
+        <td>{{ p.project_name }}</td>
+        <td>{{ p.quotation_ro }}</td>
+        <td>{{ p.vendor_name }}</td>
+        <td>{{ p.location }}</td>
+        <td>{{ p.contact_number }}</td>
+        <td>{{ p.email }}</td>
+        <td>{{ p.incharge }}</td>
+        <td>{{ p.start_date }}</td>
+        <td>{{ p.end_date }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
 </div>
 
-<!-- Project Modal -->
-<div class="modal fade" id="projectModal" tabindex="-1">
-  <div class="modal-dialog modal-lg">
-    <form class="modal-content" id="projectForm">
-      <div class="modal-header">
-        <h5 class="modal-title">Add New Project</h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-      </div>
-      <div class="modal-body row g-2">
-        <div class="col-md-4">
-          <label>Enquiry ID</label>
-          <input type="text" name="enquiry_no" class="form-control readonly-input" readonly value="{{ new_enquiry_id }}">
-        </div>
-        <div class="col-md-4">
-          <label>Project Name</label>
-          <input type="text" name="project_name" class="form-control" required>
-        </div>
-        <div class="col-md-4">
-          <label>Quotation RO</label>
-          <input type="text" name="quotation_ro" class="form-control" required>
-        </div>
-
-        <div class="col-md-6">
-          <label>Vendor</label>
-          <select name="vendor_id" id="vendorSelect" class="form-select" required>
-            <option value="">-- Select Vendor --</option>
-            {% for v in vendors %}
-              <option value="{{ v.id }}" data-gst="{{ v.gst_number }}" data-address="{{ v.address }}">{{ v.name }}</option>
-            {% endfor %}
-          </select>
-        </div>
-        <div class="col-md-3">
-          <label>GST No</label>
-          <input type="text" id="vendorGST" class="form-control readonly-input" readonly>
-        </div>
-        <div class="col-md-3">
-          <label>Address</label>
-          <input type="text" id="vendorAddress" class="form-control readonly-input" readonly>
-        </div>
-
-        <div class="col-md-4">
-          <label>Location</label>
-          <input type="text" name="location" class="form-control" required>
-        </div>
-        <div class="col-md-4">
-          <label>Start Date</label>
-          <input type="date" name="start_date" class="form-control" required>
-        </div>
-        <div class="col-md-4">
-          <label>End Date</label>
-          <input type="date" name="end_date" class="form-control" required>
-        </div>
-        <div class="col-md-4">
-          <label>Incharge</label>
-          <input type="text" name="incharge" class="form-control">
-        </div>
-        <div class="col-md-4">
-          <label>Contact</label>
-          <input type="text" name="contact_number" class="form-control">
-        </div>
-        <div class="col-md-4">
-          <label>Email</label>
-          <input type="email" name="email" class="form-control">
-        </div>
-      </div>
-      <div class="modal-footer">
-        <button class="btn btn-success">Save Project</button>
-      </div>
-    </form>
-  </div>
-</div>
-
-<!-- Toast -->
-<div class="toast-container position-fixed bottom-0 end-0 p-3">
-  <div id="successToast" class="toast text-bg-success" data-bs-delay="3000">
-    <div class="toast-body">Project saved successfully!</div>
-  </div>
-</div>
-
-<!-- Scripts -->
+<!-- 🔹 JS & Scripts -->
 <script src="https://code.jquery.com/jquery-3.6.4.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
 
 <script>
-  // Search bar filter
-  $('#searchInput').on('keyup', function () {
-    const val = $(this).val().toLowerCase();
-    $('#projectTable tbody tr').filter(function () {
-      $(this).toggle($(this).text().toLowerCase().indexOf(val) > -1);
-    });
-  });
-
-  // Initialize Select2
   $(document).ready(function () {
-    $('#vendorSelect').select2({ dropdownParent: $('#projectModal') });
-  });
+    // Enable Select2
+    $('#vendorSelect').select2({
+      dropdownParent: $('#projectModal')
+    });
 
-  // Autofill GST and Address
-  $('#vendorSelect').on('change', function () {
-    const gst = $('option:selected', this).data('gst');
-    const addr = $('option:selected', this).data('address');
-    $('#vendorGST').val(gst);
-    $('#vendorAddress').val(addr);
-  });
+    // Autofill GST and Address when vendor changes
+    $('#vendorSelect').on('change', function () {
+      var selected = $(this).find(':selected');
+      $('#gstNumber').val(selected.data('gst'));
+      $('#vendorAddress').val(selected.data('address'));
+    });
 
-  // Handle AJAX Save
-  $('#projectForm').on('submit', function (e) {
-    e.preventDefault();
-    const formData = new FormData(this);
-    fetch('/create_project', {
-      method: 'POST',
-      body: formData
-    })
-    .then(res => res.json())
-    .then(data => {
-      if (data.status === 'success') {
-        const p = data.project;
-        const row = `
-          <tr id="row-${p.id}">
-            <td>${p.enquiry_id}</td>
-            <td class="editable">${p.project_name}</td>
-            <td class="editable">${p.quotation_ro}</td>
-            <td>${p.vendor_name}</td>
-            <td class="editable">${p.location}</td>
-            <td>${p.start_date}</td>
-            <td>${p.end_date}</td>
-            <td class="editable">${p.incharge}</td>
-            <td>${p.contact_number}</td>
-            <td>${p.email}</td>
-            <td>
-              <button class="btn btn-sm btn-outline-primary" onclick="enableEdit('${p.id}')">Edit</button>
-              <button class="btn btn-sm btn-success d-none" id="save-${p.id}" onclick="saveEdit('${p.id}')">Save</button>
-              <a href="/delete_project/${p.id}" class="btn btn-sm btn-danger">Del</a>
-              <a href="/measurement_sheet/${p.id}" class="btn btn-sm btn-info">Sheet</a>
-            </td>
-          </tr>
-        `;
-        $('#projectTable tbody').prepend(row);
-        $('#projectModal').modal('hide');
-        $('#projectForm')[0].reset();
-        $('#vendorSelect').val('').trigger('change');
-        new bootstrap.Toast(document.getElementById('successToast')).show();
-      }
+    // AJAX form submission
+    $('#projectForm').on('submit', function (e) {
+      e.preventDefault();
+
+      $.ajax({
+        url: '/create_project',
+        type: 'POST',
+        data: $(this).serialize(),
+        success: function (response) {
+          if (response.status === 'success') {
+            let p = response.project;
+
+            // Add new row to table
+            let row = `<tr>
+              <td>${p.enquiry_id}</td>
+              <td>${p.project_name}</td>
+              <td>${p.quotation_ro}</td>
+              <td>${p.vendor_name}</td>
+              <td>${p.location}</td>
+              <td>${p.contact_number}</td>
+              <td>${p.email}</td>
+              <td>${p.incharge}</td>
+              <td>${p.start_date}</td>
+              <td>${p.end_date}</td>
+            </tr>`;
+
+            $('#projectTableBody').prepend(row);
+            $('#projectModal').modal('hide');
+            $('#toastSuccess').toast('show');
+            $('#projectForm')[0].reset();
+            $('#vendorSelect').val(null).trigger('change');
+            $('#gstNumber, #vendorAddress').val('');
+
+            // Update enquiry_id for next entry
+            $('#enquiry_id').val(p.next_enquiry_id);
+          }
+        }
+      });
     });
   });
-
-  // Edit Inline
-  function enableEdit(id) {
-    const row = document.getElementById('row-' + id);
-    row.querySelectorAll('.editable').forEach(td => {
-      td.contentEditable = true;
-      td.classList.add('bg-warning');
-    });
-    document.getElementById('save-' + id).classList.remove('d-none');
-  }
-
-  function saveEdit(id) {
-    const row = document.getElementById('row-' + id);
-    const data = {};
-    row.querySelectorAll('.editable').forEach((td, i) => {
-      const fields = ['project_name', 'quotation_ro', 'location', 'incharge'];
-      data[fields[i]] = td.textContent.trim();
-      td.contentEditable = false;
-      td.classList.remove('bg-warning');
-    });
-
-    fetch(`/edit_project/${id}`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(data)
-    }).then(res => res.json()).then(resp => {
-      if (resp.status === 'success') {
-        new bootstrap.Toast(document.getElementById('successToast')).show();
-      }
-    });
-
-    document.getElementById('save-' + id).classList.add('d-none');
-  }
 </script>
 </body>
 </html>
+
+
+
+  
