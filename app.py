@@ -375,25 +375,23 @@ def projects():
     if 'user' not in session:
         return redirect(url_for('login'))
 
-    vendors = db.session.execute(text("SELECT * FROM vendor ORDER BY id DESC")).mappings().all()
-    projects = db.session.execute(text("""
-        SELECT project.*, vendor.name AS vendor_name
-        FROM project
-        LEFT JOIN vendor ON project.vendor_id = vendor.id
-        ORDER BY project.id DESC
-    """)).mappings().all()
+    conn = get_db()
+    cur = conn.cursor()
 
-    # Generate new enquiry ID
-    last = db.session.execute(text("SELECT MAX(id) FROM project")).scalar()
-    new_id = (last or 0) + 1
-    enquiry_id = f"VE/ENQ/{str(new_id).zfill(4)}"
+    cur.execute("""
+        SELECT p.*, v.name AS vendor_name
+        FROM project p
+        LEFT JOIN vendor v ON p.vendor_id = v.id
+        ORDER BY p.id DESC
+    """)
+    projects = cur.fetchall()
 
-    return render_template("projects.html",
-                           vendors=vendors,
-                           projects=projects,
-                           new_enquiry_id=enquiry_id)
+    cur.execute("SELECT * FROM vendor ORDER BY id DESC")
+    vendors = cur.fetchall()
 
+    conn.close()
 
+    return render_template("projects.html", projects=projects, vendors=vendors)
 @app.route('/project/edit/<int:project_id>', methods=['GET', 'POST'])
 def edit_project(project_id):
     conn = get_db_connection()
