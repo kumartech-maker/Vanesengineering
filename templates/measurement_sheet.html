@@ -3,93 +3,210 @@
 <head>
   <meta charset="UTF-8">
   <title>Measurement Sheet</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
   <style>
-    body { background-color: #f5f5f5; padding: 20px; }
-    .form-section, .table-section {
-      background: #fff;
-      padding: 20px;
-      border-radius: 12px;
-      box-shadow: 0 0 10px rgba(0,0,0,0.05);
+    input[type=number] {
+      width: 80px;
     }
-    .table th, .table td { vertical-align: middle; }
-    .btn-export { margin-right: 10px; }
+    .table thead th, .table tbody td {
+      vertical-align: middle;
+    }
+    .table input {
+      text-align: center;
+    }
+    .summary-table th, .summary-table td {
+      text-align: center;
+    }
   </style>
 </head>
-<body>
-  <div class="container-fluid">
+<body class="bg-light">
+  <div class="container mt-4">
+    <h3 class="text-center mb-4">Measurement Sheet</h3>
     <div class="row">
-      <!-- Duct Entry Form -->
-      <div class="col-md-5">
-        <div class="form-section">
-          <h4 class="mb-4">Duct Entry Form</h4>
-          <form method="POST" action="{{ url_for('add_duct_entry', project_id=project_id) }}">
-            <div class="mb-3">
-              <label for="duct_type" class="form-label">Duct Type</label>
-              <input type="text" class="form-control" id="duct_type" name="duct_type" required>
-            </div>
-            <div class="mb-3">
-              <label for="length" class="form-label">Length (mm)</label>
-              <input type="number" class="form-control" id="length" name="length" required>
-            </div>
-            <div class="mb-3">
-              <label for="width" class="form-label">Width (mm)</label>
-              <input type="number" class="form-control" id="width" name="width" required>
-            </div>
-            <div class="mb-3">
-              <label for="height" class="form-label">Height (mm)</label>
-              <input type="number" class="form-control" id="height" name="height">
-            </div>
-            <div class="mb-3">
-              <label for="gauge" class="form-label">Gauge</label>
-              <input type="text" class="form-control" id="gauge" name="gauge">
-            </div>
-            <button type="submit" class="btn btn-primary w-100">Add Entry</button>
-          </form>
-        </div>
+
+      <!-- Left Side: Duct Entry Form -->
+      <div class="col-md-8">
+        <table class="table table-bordered" id="ductTable">
+          <thead class="table-secondary">
+            <tr>
+              <th>Duct No</th>
+              <th>Type</th>
+              <th>W1</th>
+              <th>H1</th>
+              <th>W2</th>
+              <th>H2</th>
+              <th>Qty</th>
+              <th>Len/Radius</th>
+              <th>Deg/Offset</th>
+              <th>Factor</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody id="ductTableBody">
+            <tr>
+              <td><input type="text" class="form-control" name="duct_no[]"></td>
+              <td>
+                <select class="form-select" name="duct_type[]">
+                  <option value="ST">Straight</option>
+                  <option value="ELB">Elbow</option>
+                  <option value="OFFSET">Offset</option>
+                  <option value="RED">Transition</option>
+                  <option value="DUM">Dummy</option>
+                  <option value="SHOE">Shoe</option>
+                  <option value="VANES">Vanes</option>
+                </select>
+              </td>
+              <td><input type="number" class="form-control" name="w1[]" step="0.01"></td>
+              <td><input type="number" class="form-control" name="h1[]" step="0.01"></td>
+              <td><input type="number" class="form-control" name="w2[]" step="0.01"></td>
+              <td><input type="number" class="form-control" name="h2[]" step="0.01"></td>
+              <td><input type="number" class="form-control" name="qty[]" step="1" value="1"></td>
+              <td><input type="number" class="form-control" name="length[]" step="0.01"></td>
+              <td><input type="number" class="form-control" name="deg[]" step="0.01"></td>
+              <td><input type="number" class="form-control" name="factor[]" value="1" step="0.01"></td>
+              <td><button type="button" class="btn btn-sm btn-danger" onclick="removeRow(this)">Delete</button></td>
+            </tr>
+          </tbody>
+        </table>
+        <button type="button" class="btn btn-primary" onclick="addRow()">Add Row</button>
       </div>
 
-      <!-- Measurement Table with Export -->
-      <div class="col-md-7">
-        <div class="table-section">
-          <h4 class="mb-3">Measurement Data</h4>
-          <div class="mb-2">
-            <a href="{{ url_for('export_csv', project_id=project_id) }}" class="btn btn-secondary btn-sm btn-export">Export CSV</a>
-            <a href="{{ url_for('export_excel', project_id=project_id) }}" class="btn btn-success btn-sm btn-export">Export Excel</a>
-            <a href="{{ url_for('export_pdf', project_id=project_id) }}" class="btn btn-danger btn-sm btn-export">Export PDF</a>
-          </div>
-          <table class="table table-bordered table-hover">
-            <thead class="table-light">
-              <tr>
-                <th>#</th>
-                <th>Duct Type</th>
-                <th>Length</th>
-                <th>Width</th>
-                <th>Height</th>
-                <th>Gauge</th>
-                <th>Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {% for entry in duct_entries %}
-              <tr>
-                <td>{{ loop.index }}</td>
-                <td>{{ entry.duct_type }}</td>
-                <td>{{ entry.length }}</td>
-                <td>{{ entry.width }}</td>
-                <td>{{ entry.height }}</td>
-                <td>{{ entry.gauge }}</td>
-                <td>
-                  <a href="{{ url_for('update_duct', entry_id=entry.id) }}" class="btn btn-sm btn-outline-primary">Edit</a>
-                  <a href="{{ url_for('delete_duct', entry_id=entry.id) }}" class="btn btn-sm btn-outline-danger">Delete</a>
-                </td>
-              </tr>
-              {% endfor %}
-            </tbody>
-          </table>
-        </div>
+      <!-- Right Side: Totals -->
+      <div class="col-md-4">
+        <table class="table table-bordered text-center">
+          <thead class="table-dark">
+            <tr><th colspan="2">Total Area by Gauge</th></tr>
+          </thead>
+          <tbody>
+            <tr>
+              <th>24G</th>
+              <td id="total_24g_area">0.00</td>
+            </tr>
+            <tr>
+              <th>22G</th>
+              <td id="total_22g_area">0.00</td>
+            </tr>
+            <tr>
+              <th>20G</th>
+              <td id="total_20g_area">0.00</td>
+            </tr>
+            <tr>
+              <th>18G</th>
+              <td id="total_18g_area">0.00</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <table class="table table-bordered text-center mt-3">
+          <thead class="table-dark">
+            <tr><th colspan="2">Materials Summary</th></tr>
+          </thead>
+          <tbody>
+            <tr>
+              <th>Nuts & Bolts</th>
+              <td id="total_nuts">0</td>
+            </tr>
+            <tr>
+              <th>Cleats</th>
+              <td id="total_cleat">0</td>
+            </tr>
+            <tr>
+              <th>Gasket (m)</th>
+              <td id="total_gasket">0.00</td>
+            </tr>
+            <tr>
+              <th>Corner Pieces</th>
+              <td id="total_corner">0</td>
+            </tr>
+          </tbody>
+        </table>
       </div>
-    </div>
-  </div>
+
+      <!-- Scripts -->
+      <script>
+        function calculateRow(row) {
+          const ductType = row.querySelector('.type').value;
+          const w1 = parseFloat(row.querySelector('.w1').value) || 0;
+          const h1 = parseFloat(row.querySelector('.h1').value) || 0;
+          const w2 = parseFloat(row.querySelector('.w2').value) || 0;
+          const h2 = parseFloat(row.querySelector('.h2').value) || 0;
+          const qty = parseFloat(row.querySelector('.qty').value) || 0;
+          const len = parseFloat(row.querySelector('.len').value) || 0;
+          const deg = parseFloat(row.querySelector('.deg').value) || 0;
+          const factor = parseFloat(row.querySelector('.factor').value) || 1;
+
+          let area = 0;
+
+          if (ductType === 'ST') {
+            area = 2 * (w1 + h1) / 1000 * (len / 1000) * qty;
+          } else if (ductType === 'RED') {
+            area = (w1 + h1 + w2 + h2) / 1000 * (len / 1000) * qty * factor;
+          } else if (ductType === 'DUM') {
+            area = (w1 * h1) / 1000000 * qty;
+          } else if (ductType === 'OFFSET') {
+            area = (w1 + h1 + w2 + h2) / 1000 * ((len + deg) / 1000) * qty * factor;
+          } else if (ductType === 'SHOE') {
+            area = (w1 + h1) * 2 / 1000 * (len / 1000) * qty * factor;
+          } else if (ductType === 'VANES') {
+            area = w1 / 1000 * (2 * Math.PI * (w1 / 1000) / 4) * qty;
+          } else if (ductType === 'ELB') {
+            area = 2 * (w1 + h1) / 1000 * ((h1 / 2 / 1000) + (len / 1000) * (Math.PI * (deg / 180))) * qty * factor;
+          }
+
+          // Determine gauge
+          let gauge = '18g';
+          if (w1 <= 751 && h1 <= 751) gauge = '24g';
+          else if (w1 <= 1201 && h1 <= 1201) gauge = '22g';
+          else if (w1 <= 1800 && h1 <= 1800) gauge = '20g';
+
+          // Material calculations
+          const nuts = qty * 4;
+          const cleatFactor = { '24g': 4, '22g': 8, '20g': 10 }[gauge] || 12;
+          const cleat = qty * cleatFactor;
+          const gasket = (w1 + h1 + w2 + h2) / 1000 * qty;
+          const corner = ductType === 'DUM' ? 0 : qty * 8;
+
+          return { gauge, area, nuts, cleat, gasket, corner };
+        }
+
+        function updateTotals() {
+          const rows = document.querySelectorAll('#sheet_table tbody tr');
+          const areaByGauge = { '24g': 0, '22g': 0, '20g': 0, '18g': 0 };
+          let totalNuts = 0, totalCleat = 0, totalGasket = 0, totalCorner = 0;
+
+          rows.forEach(row => {
+            const data = calculateRow(row);
+            areaByGauge[data.gauge] += data.area;
+            totalNuts += data.nuts;
+            totalCleat += data.cleat;
+            totalGasket += data.gasket;
+            totalCorner += data.corner;
+          });
+
+          document.getElementById('total_24g_area').textContent = areaByGauge['24g'].toFixed(2);
+          document.getElementById('total_22g_area').textContent = areaByGauge['22g'].toFixed(2);
+          document.getElementById('total_20g_area').textContent = areaByGauge['20g'].toFixed(2);
+          document.getElementById('total_18g_area').textContent = areaByGauge['18g'].toFixed(2);
+
+          document.getElementById('total_nuts').textContent = totalNuts;
+          document.getElementById('total_cleat').textContent = totalCleat;
+          document.getElementById('total_gasket').textContent = totalGasket.toFixed(2);
+          document.getElementById('total_corner').textContent = totalCorner;
+        }
+
+        // Recalculate on any input change
+        document.addEventListener('input', function (e) {
+          if (e.target.closest('tr')) updateTotals();
+        });
+
+        // Initial calculation on page load
+        window.onload = updateTotals;
+      </script>
+
+      </div> <!-- End of row -->
+  </div> <!-- End of container -->
 </body>
 </html>
+
+      
