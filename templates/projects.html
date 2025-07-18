@@ -53,82 +53,94 @@
   <!-- Project Modal -->
   <div class="modal fade" id="projectModal" tabindex="-1" aria-labelledby="projectModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-lg">
-      <form method="POST" action="/create_project" enctype="multipart/form-data" class="modal-content">
-        <div class="modal-header">
-          <h5 class="modal-title">Create New Project</h5>
-          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-        </div>
-        <div class="modal-body">
-          <div class="row g-2">
-            <div class="col-md-4">
-              <label>Enquiry ID</label>
-              <input type="text" name="enquiry_no" value="{{ new_enquiry_id }}" class="form-control" readonly>
-            </div>
-            <div class="col-md-4">
-              <label>Project Name</label>
-              <input type="text" name="project_name" class="form-control" required>
-            </div>
-            <div class="col-md-4">
-              <label>Quotation / RO</label>
-              <input type="text" name="quotation" class="form-control">
-            </div>
-            <div class="col-md-4">
-              <label>Select Vendor</label>
-              <select name="vendor_id" id="vendorSelect" class="form-control" onchange="fillVendorDetails(this)" required>
-                <option value="">-- Select Vendor --</option>
-                {% for vendor in vendors %}
-                  <option value="{{ vendor[0] }}" data-gst="{{ vendor[2] }}" data-address="{{ vendor[3] }}">
-                    {{ vendor[1] }}
-                  </option>
-                {% endfor %}
-              </select>
-            </div>
-            <div class="col-md-4">
-              <label>Vendor GST</label>
-              <input type="text" id="vendorGst" class="form-control" readonly>
-            </div>
-            <div class="col-md-4">
-              <label>Vendor Address</label>
-              <input type="text" id="vendorAddress" class="form-control" readonly>
-            </div>
-            <div class="col-md-4">
-              <label>Project Location</label>
-              <input type="text" name="project_location" class="form-control">
-            </div>
-            <div class="col-md-4">
-              <label>Start Date</label>
-              <input type="date" name="start_date" class="form-control">
-            </div>
-            <div class="col-md-4">
-              <label>End Date</label>
-              <input type="date" name="end_date" class="form-control">
-            </div>
-            <div class="col-md-4">
-              <label>Incharge</label>
-              <input type="text" name="incharge" class="form-control">
-            </div>
-            <div class="col-md-4">
-              <label>Contact</label>
-              <input type="text" name="contact" class="form-control">
-            </div>
-            <div class="col-md-4">
-              <label>Email</label>
-              <input type="email" name="email" class="form-control">
-            </div>
-            <div class="col-md-4">
-              <label>Drawing Upload</label>
-              <input type="file" name="drawing_file" class="form-control">
-            </div>
-            <div class="col-md-8">
-              <label>Notes</label>
-              <textarea name="notes" class="form-control"></textarea>
-            </div>
-          </div>
-        </div>
-        <div class="modal-footer">
-          <button type="submit" class="btn btn-success">Save Project</button>
-          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-        </div>
+      <form method="POST" action="{{ url_for('create_project') }}" enctype="multipart/form-data">
+  <div class="row g-2">
+
+    <div class="col-md-4">
+      <label>Enquiry ID</label>
+      <input type="text" name="enquiry_id" class="form-control" value="{{ enquiry_id }}" readonly>
+    </div>
+
+    <div class="col-md-4">
+      <label>Project Name</label>
+      <input type="text" name="project_name" class="form-control" required>
+    </div>
+
+    <div class="col-md-4">
+      <label>Quotation / RO</label>
+      <input type="text" name="quotation_ro" class="form-control">
+    </div>
+
+    <div class="col-md-4">
+      <label>Select Vendor</label>
+      <select name="vendor_id" class="form-control" required onchange="fillVendorDetails(this)">
+        <option value="">-- Select Vendor --</option>
+        {% for vendor in vendors %}
+          <option value="{{ vendor.id }}"
+                  data-gst="{{ vendor.gst }}"
+                  data-address="{{ vendor.address }}">
+            {{ vendor.name }}
+          </option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <div class="col-md-4">
+      <label>Vendor GST</label>
+      <input type="text" name="vendor_gst" id="vendor_gst" class="form-control" readonly>
+    </div>
+
+    <div class="col-md-4">
+      <label>Vendor Address</label>
+      <input type="text" name="vendor_address" id="vendor_address" class="form-control" readonly>
+    </div>
+
+    <div class="col-md-4">
+      <label>Project Location</label>
+      <input type="text" name="location" class="form-control">
+    </div>
+
+    <div class="col-md-4">
+      <label>Start Date</label>
+      <input type="date" name="start_date" class="form-control">
+    </div>
+
+    <div class="col-md-4">
+      <label>End Date</label>
+      <input type="date" name="end_date" class="form-control">
+    </div>
+
+    <div class="col-md-4">
+      <label>Incharge</label>
+      <input type="text" name="incharge" class="form-control">
+    </div>
+
+    <div class="col-md-4">
+      <label>Contact</label>
+      <input type="text" name="contact_number" class="form-control">
+    </div>
+
+    <div class="col-md-4">
+      <label>Email</label>
+      <input type="email" name="email" class="form-control">
+    </div>
+
+    <div class="col-md-4">
+      <label>Drawing Upload</label>
+      <input type="file" name="drawing_file" class="form-control">
+    </div>
+
+    <div class="col-md-8">
+      <label>Notes</label>
+      <textarea name="notes" class="form-control"></textarea>
+    </div>
+
+  </div>
+
+  <div class="mt-3 text-end">
+    <button type="submit" class="btn btn-success">Save Project</button>
+    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+  </div>
       </form>
     </div>
   </div>
