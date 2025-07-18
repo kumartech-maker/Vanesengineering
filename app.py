@@ -453,53 +453,53 @@ def create_project():
         return redirect(url_for('login'))
 
     try:
-        project_name = request.form.get('project_name')
-        vendor_id = request.form.get('vendor_id')
-        quotation_ro = request.form.get('quotation_ro')
-        location = request.form.get('location')
-        start_date = request.form.get('start_date')
-        end_date = request.form.get('end_date')
-        incharge = request.form.get('incharge')
-        contact_number = request.form.get('contact_number')
-        email = request.form.get('email')
-        notes = request.form.get('notes')
-        status = "pending"
-
-        # Handle drawing file
+        project_name = request.form['project_name']
+        vendor_id = request.form['vendor_id']
+        quotation_ro = request.form['quotation_ro']
+        location = request.form['location']
+        start_date = request.form['start_date']
+        end_date = request.form['end_date']
+        incharge = request.form['incharge']
+        contact_number = request.form['contact_number']
+        email = request.form['email']
+        notes = request.form['notes']
         drawing_file = request.files.get('drawing_file')
+
+        # Save drawing file
         drawing_filename = None
-        if drawing_file and drawing_file.filename:
+        if drawing_file and drawing_file.filename != '':
             drawing_filename = secure_filename(drawing_file.filename)
-            file_path = os.path.join(app.config['UPLOAD_FOLDER'], drawing_filename)
-            drawing_file.save(file_path)
+            drawing_path = os.path.join('static/uploads', drawing_filename)
+            drawing_file.save(drawing_path)
 
-        # DB Insert
-        conn = get_db()
-        cur = conn.cursor()
-        cur.execute('''
-            INSERT INTO projects 
-            (project_name, vendor_id, quotation_ro, location, start_date, end_date,
-             incharge, contact_number, email, notes, drawing_file, status)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-        ''', (
-            project_name, vendor_id, quotation_ro, location, start_date, end_date,
-            incharge, contact_number, email, notes, drawing_filename, status
+        # Insert into DB without enquiry_id first
+        cur = mysql.connection.cursor()
+        cur.execute("""
+            INSERT INTO projects (
+                project_name, vendor_id, quotation_ro, location, start_date,
+                end_date, incharge, contact_number, email, notes, drawing_file
+            ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+        """, (
+            project_name, vendor_id, quotation_ro, location, start_date,
+            end_date, incharge, contact_number, email, notes, drawing_filename
         ))
-        conn.commit()
+        mysql.connection.commit()
 
-        # Generate and update Enquiry ID
-        project_id = cur.lastrowid
-        enquiry_id = f"ENQ-{str(project_id).zfill(4)}"
-        cur.execute("UPDATE projects SET enquiry_id = ? WHERE id = ?", (enquiry_id, project_id))
-        conn.commit()
+        # Generate enquiry_id using last inserted ID
+        last_id = cur.lastrowid
+        enquiry_id = f"VE/ENQ/{str(last_id).zfill(4)}"
 
-        conn.close()
-        flash("✅ Project created successfully.", "success")
+        # Update with enquiry_id
+        cur.execute("UPDATE projects SET enquiry_id = %s WHERE id = %s", (enquiry_id, last_id))
+        mysql.connection.commit()
+        cur.close()
+
+        flash("Project created successfully!", "success")
         return redirect(url_for('projects'))
 
     except Exception as e:
-        print("❌ Error creating project:", e)
-        flash("❌ Failed to create project.", "danger")
+        print(f"❌ Error creating project: {e}")
+        flash("Something went wrong while creating the project.", "danger")
         return redirect(url_for('projects'))
 # ---------- ✅ Add Measurement Info to Project ----------
 
