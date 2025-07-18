@@ -370,8 +370,6 @@ def get_vendor_info(vendor_id):
 
 
 # ---------- ✅ View All Projects ----------
-
-
 @app.route('/projects')
 def projects():
     conn = get_db()
@@ -390,19 +388,21 @@ def projects():
     cur.execute("SELECT * FROM vendors ORDER BY id DESC")
     vendors = cur.fetchall()
 
+    # Generate unique enquiry ID like VE/TN/E001
+    cur.execute("SELECT MAX(id) FROM projects")
+    last_id = cur.fetchone()[0]
+    new_id = (last_id or 0) + 1
+    enquiry_id = f"VE/TN/E{str(new_id).zfill(3)}"
+
     conn.close()
 
     selected_project = projects[0] if projects else None
-
-    # Generate unique enquiry ID
-    enquiry_id = "ENQ" + datetime.now().strftime("%Y%m%d%H%M%S")
 
     return render_template('projects.html',
                            projects=projects,
                            vendors=vendors,
                            project=selected_project,
-                           new_enquiry_id=enquiry_id)  # used in popup form
-
+                           new_enquiry_id=enquiry_id)
 
 @app.route('/project/edit/<int:project_id>', methods=['GET', 'POST'])
 def edit_project(project_id):
