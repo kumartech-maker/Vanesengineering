@@ -90,26 +90,33 @@ def init_db():
         )
     ''')
 
+
+
+    # Create the projects table
     cur.execute('''
         CREATE TABLE IF NOT EXISTS projects (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             enquiry_id TEXT,
-            project_code TEXT,
+            project_name TEXT,
             vendor_id INTEGER,
+            vendor_gst TEXT,
+            vendor_address TEXT,
             quotation_ro TEXT,
             location TEXT,
-            contact_number TEXT,
-            email TEXT,
             start_date TEXT,
             end_date TEXT,
             incharge TEXT,
-            status TEXT DEFAULT 'new',
+            contact_number TEXT,
+            email TEXT,
             notes TEXT,
-            file_name TEXT,
-            total_sqm REAL DEFAULT 0,
+            drawing_file TEXT,
+            status TEXT,
+            created_at TEXT DEFAULT CURRENT_TIMESTAMP,
             FOREIGN KEY(vendor_id) REFERENCES vendors(id)
         )
     ''')
+
+    
 
 
     cur.execute('''
@@ -453,9 +460,12 @@ def create_project():
         return redirect(url_for('login'))
 
     try:
-        # Get form data
+        conn = get_db()
+        cur = conn.cursor()
+
+        # --- Form Data ---
         project_name = request.form.get('project_name')
-        vendor_id = request.form.get('vendor_id')
+        enquiry_id = request.form.get('enquiry_id')  # sent from form
         quotation_ro = request.form.get('quotation_ro')
         location = request.form.get('location')
         start_date = request.form.get('start_date')
@@ -464,44 +474,40 @@ def create_project():
         contact_number = request.form.get('contact_number')
         email = request.form.get('email')
         notes = request.form.get('notes')
-        status = "pending"
+        vendor_id = request.form.get('vendor_id')
+        vendor_gst = request.form.get('vendor_gst') or ''
+        vendor_address = request.form.get('vendor_address') or ''
 
-        # Handle drawing file upload
+        # File Handling
         drawing_file = request.files.get('drawing_file')
-        drawing_filename = None
-        if drawing_file and drawing_file.filename:
+        drawing_filename = ''
+        if drawing_file and drawing_file.filename != '':
             drawing_filename = drawing_file.filename
-            filepath = os.path.join('static/uploads', drawing_filename)
-            drawing_file.save(filepath)
+            drawing_path = os.path.join('static/uploads/', drawing_filename)
+            drawing_file.save(drawing_path)
 
-        # Insert into database
-        conn = get_db()
-        cur = conn.cursor()
+        # Insert into DB
         cur.execute('''
-            INSERT INTO projects 
-            (project_name, vendor_id, quotation_ro, location, start_date, end_date,
-             incharge, contact_number, email, notes, drawing_file, status)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            INSERT INTO projects (
+                enquiry_id, project_name, vendor_id, vendor_gst, vendor_address,
+                quotation_ro, location, start_date, end_date,
+                incharge, contact_number, email, notes, drawing_file, status
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         ''', (
-            project_name, vendor_id, quotation_ro, location, start_date, end_date,
-            incharge, contact_number, email, notes, drawing_filename, status
+            enquiry_id, project_name, vendor_id, vendor_gst, vendor_address,
+            quotation_ro, location, start_date, end_date,
+            incharge, contact_number, email, notes, drawing_filename, 'Pending'
         ))
+
         conn.commit()
-
-        # Generate Enquiry ID (based on last inserted row id)
-        project_id = cur.lastrowid
-        enquiry_id = f"ENQ-{str(project_id).zfill(4)}"
-        cur.execute("UPDATE projects SET enquiry_id = ? WHERE id = ?", (enquiry_id, project_id))
-        conn.commit()
-
-        conn.close()
-        flash("✅ Project created successfully.", "success")
-        return redirect(url_for('projects'))
-
+        flash('Project created successfully.', 'success')
     except Exception as e:
         print("❌ Error creating project:", e)
-        flash("❌ Failed to create project.", "danger")
-        return redirect(url_for('projects'))
+        flash(f"Error creating project: {str(e)}", 'danger')
+    finally:
+        conn.close()
+
+    return redirect(url_for('projects'))
 # ---------- ✅ Add Measurement Info to Project ----------
 
 @app.route('/add_measurement', methods=['POST'])
