@@ -10,14 +10,22 @@
       border: 1px solid #ccc;
       background-color: #fff;
     }
+    .toast-container {
+      position: fixed;
+      top: 1rem;
+      right: 1rem;
+      z-index: 1055;
+    }
   </style>
 </head>
 <body class="p-4">
+
   <div class="d-flex justify-content-between align-items-center mb-4">
     <h3>Projects</h3>
     <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#projectModal">+ Add Project</button>
   </div>
 
+  <!-- 🧾 Project Table -->
   <table class="table table-bordered table-striped">
     <thead>
       <tr>
@@ -58,7 +66,7 @@
     </tbody>
   </table>
 
-  <!-- Modal for New Project -->
+  <!-- Modal: Add Project -->
   <div class="modal fade" id="projectModal" tabindex="-1">
     <div class="modal-dialog modal-lg">
       <div class="modal-content">
@@ -70,19 +78,17 @@
           <div class="modal-body row g-3">
 
             <div class="col-md-6">
-  <label>Enquiry ID</label>
-  <input type="text" name="enquiry_id" class="form-control" value="{{ new_enquiry_id }}" readonly>
-</div>
+              <label>Enquiry ID</label>
+              <input type="text" name="enquiry_id" class="form-control" value="{{ new_enquiry_id }}" readonly>
+            </div>
             <div class="col-md-6">
               <label>Project Name</label>
               <input type="text" name="project_name" class="form-control" required>
             </div>
-
             <div class="col-md-6">
               <label>Quotation</label>
               <input type="text" name="quotation_ro" class="form-control">
             </div>
-
             <div class="col-md-6">
               <label>Vendor</label>
               <select class="form-select" id="vendorSelect" name="vendor_id" onchange="fillVendorDetails()" required>
@@ -92,57 +98,46 @@
                 {% endfor %}
               </select>
             </div>
-
             <div class="col-md-6">
               <label>Vendor GST</label>
               <input type="text" id="vendorGST" name="vendor_gst" class="form-control" readonly>
             </div>
-
             <div class="col-md-12">
               <label>Vendor Address</label>
               <textarea class="form-control" id="vendorAddress" name="vendor_address" rows="2" readonly></textarea>
             </div>
-
             <div class="col-md-6">
               <label>Location</label>
               <input type="text" name="location" class="form-control">
             </div>
-
             <div class="col-md-6">
               <label>Start Date</label>
               <input type="date" name="start_date" class="form-control">
             </div>
-
             <div class="col-md-6">
               <label>End Date</label>
               <input type="date" name="end_date" class="form-control">
             </div>
-
             <div class="col-md-6">
               <label>Incharge</label>
               <input type="text" name="incharge" class="form-control">
             </div>
-
             <div class="col-md-6">
               <label>Contact Number</label>
               <input type="text" name="contact_number" class="form-control">
             </div>
-
             <div class="col-md-6">
               <label>Email</label>
               <input type="email" name="email" class="form-control">
             </div>
-
             <div class="col-md-6">
               <label>Drawing File</label>
               <input type="file" name="drawing_file" class="form-control">
             </div>
-
             <div class="col-md-12">
               <label>Notes</label>
               <textarea name="notes" class="form-control" rows="2"></textarea>
             </div>
-
           </div>
           <div class="modal-footer">
             <button type="submit" class="btn btn-primary">Save Project</button>
@@ -153,12 +148,21 @@
     </div>
   </div>
 
+  <!-- ✅ Toast Container -->
+  <div class="toast-container position-fixed top-0 end-0 p-3">
+    <div id="projectToast" class="toast text-bg-success align-items-center" role="alert" aria-live="assertive" aria-atomic="true">
+      <div class="d-flex">
+        <div class="toast-body">Project Saved Successfully!</div>
+        <button type="button" class="btn-close me-2 m-auto" data-bs-dismiss="toast"></button>
+      </div>
+    </div>
+  </div>
+
   <script>
     function fillVendorDetails() {
       const select = document.getElementById("vendorSelect");
       const gstField = document.getElementById("vendorGST");
       const addrField = document.getElementById("vendorAddress");
-
       const selectedOption = select.options[select.selectedIndex];
       gstField.value = selectedOption.getAttribute("data-gst") || '';
       addrField.value = selectedOption.getAttribute("data-address") || '';
@@ -167,7 +171,6 @@
     $('form').on('submit', function(e) {
       e.preventDefault();
       const formData = new FormData(this);
-
       $.ajax({
         url: '/create_project',
         method: 'POST',
@@ -177,6 +180,8 @@
         success: function() {
           $('#projectModal').modal('hide');
           loadTable();
+          const toast = new bootstrap.Toast(document.getElementById('projectToast'));
+          toast.show();
         },
         error: function(xhr) {
           alert("Error saving project: " + xhr.statusText);
