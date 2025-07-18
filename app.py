@@ -615,6 +615,19 @@ def open_project(project_id):
                            total_weight=round(total_weight, 2),
                            gauge_area_totals=gauge_area_totals)
 
+@app.route('/project/<int:project_id>/measurement_sheet')
+def measurement_sheet(project_id):
+    conn = get_db()
+    cur = conn.cursor()
+
+    # Optional: You can check if the project exists
+    cur.execute("SELECT * FROM projects WHERE id = ?", (project_id,))
+    project = cur.fetchone()
+    if not project:
+        return "Project not found", 404
+
+    return render_template('measurement_sheet.html', project=project)
+
 # ---------- ✅ Add Duct Entry ----------
 
 @app.route('/add_duct', methods=['POST'])
