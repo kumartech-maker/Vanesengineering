@@ -450,58 +450,61 @@ def edit_project(project_id):
 # ---------- ✅ Save New Project ----------
 @app.route('/create_project', methods=['POST'])
 def create_project():
-    conn = get_db()
-    conn.row_factory = sqlite3.Row
-    cur = conn.cursor()
+    if 'user' not in session:
+        return redirect(url_for('login'))
 
     data = request.form
 
-    cur.execute("""
-        INSERT INTO projects (enquiry_id, project_name, quotation_ro, vendor_id, location, contact_number, email, incharge, start_date, end_date)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-    """, (
-        data['enquiry_id'],
-        data['project_name'],
-        data['quotation_ro'],
-        data['vendor_id'],
-        data['location'],
-        data['contact_number'],
-        data['email'],
-        data['incharge'],
-        data['start_date'],
-        data['end_date']
-    ))
-    conn.commit()
+    # Insert into DB
+    stmt = text("""
+        INSERT INTO project (
+            enquiry_id, project_name, quotation_ro, vendor_id, location,
+            start_date, end_date, incharge, contact_number, email
+        ) VALUES (
+            :enquiry_id, :project_name, :quotation_ro, :vendor_id, :location,
+            :start_date, :end_date, :incharge, :contact_number, :email
+        )
+    """)
+    db.session.execute(stmt, {
+        "enquiry_id": data['enquiry_id'],
+        "project_name": data['project_name'],
+        "quotation_ro": data['quotation_ro'],
+        "vendor_id": data['vendor_id'],
+        "location": data['location'],
+        "start_date": data['start_date'],
+        "end_date": data['end_date'],
+        "incharge": data['incharge'],
+        "contact_number": data['contact_number'],
+        "email": data['email']
+    })
+    db.session.commit()
 
-    last_id = cur.lastrowid
-    cur.execute("""
-        SELECT p.*, v.name AS vendor_name
-        FROM projects p
-        LEFT JOIN vendors v ON p.vendor_id = v.id
-        WHERE p.id = ?
-    """, (last_id,))
-    p = cur.fetchone()
+    # Get latest project back for AJAX
+    p = db.session.execute(text("""
+        SELECT project.*, vendor.name AS vendor_name
+        FROM project
+        LEFT JOIN vendor ON project.vendor_id = vendor.id
+        ORDER BY project.id DESC LIMIT 1
+    """)).mappings().first()
 
-    cur.execute("SELECT MAX(id) FROM projects")
-    next_id = (cur.fetchone()[0] or 0) + 1
-    next_enquiry_id = f"VE/TN/E{str(next_id).zfill(3)}"
-
-    conn.close()
+    # Generate next enquiry ID (for refresh in modal)
+    next_id = int(p.id) + 1
+    next_enquiry_id = f"VE/ENQ/{str(next_id).zfill(4)}"
 
     return jsonify({
-        'status': 'success',
-        'project': {
-            'enquiry_id': p['enquiry_id'],
-            'project_name': p['project_name'],
-            'quotation_ro': p['quotation_ro'],
-            'vendor_name': p['vendor_name'],
-            'location': p['location'],
-            'contact_number': p['contact_number'],
-            'email': p['email'],
-            'incharge': p['incharge'],
-            'start_date': p['start_date'],
-            'end_date': p['end_date'],
-            'next_enquiry_id': next_enquiry_id
+        "status": "success",
+        "project": {
+            "id": p.id,
+            "enquiry_id": p.enquiry_id,
+            "project_name": p.project_name,
+            "vendor_name": p.vendor_name,
+            "location": p.location,
+            "start_date": str(p.start_date),
+            "end_date": str(p.end_date),
+            "incharge": p.incharge,
+            "contact_number": p.contact_number,
+            "email": p.email,
+            "next_enquiry_id": next_enquiry_id
         }
     })
 # ---------- ✅ Add Measurement Info to Project ----------
