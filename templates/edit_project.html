@@ -8,28 +8,39 @@
 <body>
 <div class="container mt-4">
   <h2>Edit Project - {{ project.project_name }}</h2>
-  <form method="POST" action="{{ url_for('edit_project', project_id=project.id) }}">
+
+  <form method="POST" action="{{ url_for('edit_project', project_id=project.id) }}" enctype="multipart/form-data">
     <div class="row">
       <div class="col-md-6 mb-3">
         <label>Project Code</label>
         <input type="text" name="project_code" class="form-control" value="{{ project.project_code }}">
       </div>
+
+      <div class="col-md-6 mb-3">
+        <label>Project Name</label>
+        <input type="text" name="project_name" class="form-control" value="{{ project.project_name }}">
+      </div>
+
       <div class="col-md-6 mb-3">
         <label>Enquiry ID</label>
         <input type="text" name="enquiry_id" class="form-control" value="{{ project.enquiry_id }}">
       </div>
+
       <div class="col-md-6 mb-3">
         <label>Client Name</label>
         <input type="text" name="client_name" class="form-control" value="{{ project.client_name }}">
       </div>
+
       <div class="col-md-6 mb-3">
         <label>Site Location</label>
         <input type="text" name="site_location" class="form-control" value="{{ project.site_location }}">
       </div>
+
       <div class="col-md-6 mb-3">
         <label>Engineer Name</label>
         <input type="text" name="engineer_name" class="form-control" value="{{ project.engineer_name }}">
       </div>
+
       <div class="col-md-6 mb-3">
         <label>Vendor</label>
         <select name="vendor_id" class="form-select">
@@ -40,34 +51,44 @@
           {% endfor %}
         </select>
       </div>
+
       <div class="col-md-6 mb-3">
         <label>Location</label>
         <input type="text" name="location" class="form-control" value="{{ project.location }}">
       </div>
+
       <div class="col-md-6 mb-3">
         <label>Start Date</label>
-        <input type="date" name="start_date" class="form-control" value="{{ project.start_date }}">
+        <input type="date" name="start_date" class="form-control"
+               value="{{ project.start_date.strftime('%Y-%m-%d') if project.start_date else '' }}">
       </div>
+
       <div class="col-md-6 mb-3">
         <label>End Date</label>
-        <input type="date" name="end_date" class="form-control" value="{{ project.end_date }}">
+        <input type="date" name="end_date" class="form-control"
+               value="{{ project.end_date.strftime('%Y-%m-%d') if project.end_date else '' }}">
       </div>
+
       <div class="col-md-6 mb-3">
         <label>Total Sqm</label>
         <input type="number" name="total_sqm" class="form-control" value="{{ project.total_sqm or '' }}">
       </div>
+
       <div class="col-md-6 mb-3">
         <label>Incharge</label>
         <input type="text" name="incharge" class="form-control" value="{{ project.incharge }}">
       </div>
+
       <div class="col-md-6 mb-3">
         <label>Mobile</label>
         <input type="text" name="mobile" class="form-control" value="{{ project.mobile }}">
       </div>
+
       <div class="col-md-6 mb-3">
         <label>Email</label>
         <input type="email" name="email" class="form-control" value="{{ project.email }}">
       </div>
+
       <div class="col-md-6 mb-3">
         <label>Status</label>
         <select name="status" class="form-select">
@@ -76,11 +97,13 @@
           <option value="On Hold" {% if project.status == 'On Hold' %}selected{% endif %}>On Hold</option>
         </select>
       </div>
+
       <div class="col-md-12 mb-3">
         <label>Notes</label>
         <textarea name="notes" class="form-control" rows="3">{{ project.notes }}</textarea>
       </div>
     </div>
+
     <button type="submit" class="btn btn-primary">Save Changes</button>
     <a href="{{ url_for('projects') }}" class="btn btn-secondary">Cancel</a>
   </form>
