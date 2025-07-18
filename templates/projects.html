@@ -4,184 +4,215 @@
   <meta charset="UTF-8">
   <title>Projects</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
-  <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
-  <link href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css" rel="stylesheet" />
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
   <style>
-    .readonly-input {
-      background-color: #f9f9f9;
+    .edit-mode input {
+      border: 1px solid #ccc;
+      background-color: #fff;
     }
   </style>
 </head>
-<body class="bg-light">
-
-<div class="container mt-4">
-  <div class="d-flex justify-content-between align-items-center mb-3">
+<body class="p-4">
+  <div class="d-flex justify-content-between align-items-center mb-4">
     <h3>Projects</h3>
     <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#projectModal">+ Add Project</button>
   </div>
 
-  <table id="projectTable" class="table table-bordered table-striped">
-    <thead class="table-dark">
-  <tr>
-    <th>Enquiry ID</th>
-    <th>Project Name</th>
-    <th>Quotation</th>
-    <th>Vendor</th>
-    <th>Location</th>
-    <th>Start</th>
-    <th>End</th>
-    <th>Incharge</th>
-    <th>Contact</th>
-    <th>Email</th>
-    <th>Actions</th>
-  </tr>
-</thead>
-<tbody>
-  {% for proj in projects %}
-  <tr>
-    <td>{{ proj.enquiry_id }}</td>
-    <td>{{ proj.project_name }}</td>
-    <td>{{ proj.quotation_ro }}</td>
-    <td>{{ proj.vendor_name }}</td>
-    <td>{{ proj.location }}</td>
-    <td>{{ proj.start_date }}</td>
-    <td>{{ proj.end_date }}</td>
-    <td>{{ proj.incharge }}</td>
-    <td>{{ proj.contact_number }}</td>
-    <td>{{ proj.email }}</td>
-    <td>
-      <a href="/edit_project/{{ proj.id }}" class="btn btn-sm btn-warning">Edit</a>
-      <a href="/delete_project/{{ proj.id }}" class="btn btn-sm btn-danger" onclick="return confirm('Are you sure?')">Delete</a>
-      <a href="/measurement_sheet/{{ proj.id }}" class="btn btn-sm btn-info">Add Sheet</a>
-    </td>
-  </tr>
-  {% endfor %}
-</tbody>
+  <table class="table table-bordered table-striped">
+    <thead>
+      <tr>
+        <th>Enquiry ID</th>
+        <th>Project Name</th>
+        <th>Quotation</th>
+        <th>Vendor</th>
+        <th>Location</th>
+        <th>Start</th>
+        <th>End</th>
+        <th>Incharge</th>
+        <th>Contact</th>
+        <th>Email</th>
+        <th>Actions</th>
+      </tr>
+    </thead>
+    <tbody id="projectTable">
+      {% for proj in projects %}
+      <tr id="row-{{ proj.id }}">
+        <td>{{ proj.enquiry_id }}</td>
+        <td class="editable">{{ proj.project_name }}</td>
+        <td class="editable">{{ proj.quotation_ro }}</td>
+        <td>{{ proj.vendor_name }}</td>
+        <td class="editable">{{ proj.location }}</td>
+        <td>{{ proj.start_date }}</td>
+        <td>{{ proj.end_date }}</td>
+        <td class="editable">{{ proj.incharge }}</td>
+        <td>{{ proj.contact_number }}</td>
+        <td>{{ proj.email }}</td>
+        <td>
+          <button class="btn btn-sm btn-outline-primary" id="edit-{{ proj.id }}" onclick="enableEdit('{{ proj.id }}')">Edit</button>
+          <button class="btn btn-sm btn-success d-none" id="save-{{ proj.id }}" onclick="saveEdit('{{ proj.id }}')">Save</button>
+          <a href="/delete_project/{{ proj.id }}" class="btn btn-sm btn-danger">Del</a>
+          <a href="/measurement_sheet/{{ proj.id }}" class="btn btn-sm btn-info">Sheet</a>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
   </table>
-</div>
 
-<!-- Modal -->
-<div class="modal fade" id="projectModal" tabindex="-1" aria-hidden="true">
-  <div class="modal-dialog modal-xl">
-    <form class="modal-content" action="{{ url_for('create_project') }}" method="POST" enctype="multipart/form-data">
-      <div class="modal-header">
-        <h5 class="modal-title">Add Project</h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+  <!-- Modal for New Project -->
+  <div class="modal fade" id="projectModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+      <div class="modal-content">
+        <form id="projectForm" enctype="multipart/form-data">
+          <div class="modal-header">
+            <h5 class="modal-title">Create Project</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+          </div>
+          <div class="modal-body row g-3">
+
+            <input type="hidden" name="enquiry_id" value="{{ new_enquiry_id }}">
+            <div class="col-md-6">
+              <label>Project Name</label>
+              <input type="text" name="project_name" class="form-control" required>
+            </div>
+
+            <div class="col-md-6">
+              <label>Quotation</label>
+              <input type="text" name="quotation_ro" class="form-control">
+            </div>
+
+            <div class="col-md-6">
+              <label>Vendor</label>
+              <select class="form-select" id="vendorSelect" name="vendor_id" onchange="fillVendorDetails()" required>
+                <option value="">-- Select Vendor --</option>
+                {% for v in vendors %}
+                <option value="{{ v.id }}" data-gst="{{ v.gst }}" data-address="{{ v.address }}">{{ v.name }}</option>
+                {% endfor %}
+              </select>
+            </div>
+
+            <div class="col-md-6">
+              <label>Vendor GST</label>
+              <input type="text" id="vendorGST" name="vendor_gst" class="form-control" readonly>
+            </div>
+
+            <div class="col-md-12">
+              <label>Vendor Address</label>
+              <textarea class="form-control" id="vendorAddress" name="vendor_address" rows="2" readonly></textarea>
+            </div>
+
+            <div class="col-md-6">
+              <label>Location</label>
+              <input type="text" name="location" class="form-control">
+            </div>
+
+            <div class="col-md-6">
+              <label>Start Date</label>
+              <input type="date" name="start_date" class="form-control">
+            </div>
+
+            <div class="col-md-6">
+              <label>End Date</label>
+              <input type="date" name="end_date" class="form-control">
+            </div>
+
+            <div class="col-md-6">
+              <label>Incharge</label>
+              <input type="text" name="incharge" class="form-control">
+            </div>
+
+            <div class="col-md-6">
+              <label>Contact Number</label>
+              <input type="text" name="contact_number" class="form-control">
+            </div>
+
+            <div class="col-md-6">
+              <label>Email</label>
+              <input type="email" name="email" class="form-control">
+            </div>
+
+            <div class="col-md-6">
+              <label>Drawing File</label>
+              <input type="file" name="drawing_file" class="form-control">
+            </div>
+
+            <div class="col-md-12">
+              <label>Notes</label>
+              <textarea name="notes" class="form-control" rows="2"></textarea>
+            </div>
+
+          </div>
+          <div class="modal-footer">
+            <button type="submit" class="btn btn-primary">Save Project</button>
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+          </div>
+        </form>
       </div>
-      <div class="modal-body row g-3 p-3">
-
-        <div class="col-md-4">
-          <label class="form-label">Enquiry ID</label>
-          <input type="text" class="form-control readonly-input" name="enquiry_id" value="{{ new_enquiry_id }}" readonly>
-        </div>
-
-        <div class="col-md-4">
-          <label class="form-label">Project Name</label>
-          <input type="text" class="form-control" name="project_name" required>
-        </div>
-
-        <div class="col-md-4">
-          <label class="form-label">Quotation/RO</label>
-          <input type="text" class="form-control" name="quotation_ro">
-        </div>
-
-        <div class="col-md-4">
-          <label class="form-label">Vendor</label>
-          <select class="form-select" name="vendor_id" id="vendorDropdown" required>
-            <option value="" disabled selected>Select vendor</option>
-            {% for vendor in vendors %}
-              <option value="{{ vendor.id }}"
-                      data-gst="{{ vendor.gst }}"
-                      data-address="{{ vendor.address }}">
-                {{ vendor.name }}
-              </option>
-            {% endfor %}
-          </select>
-        </div>
-
-        <div class="col-md-4">
-          <label class="form-label">Vendor GST</label>
-          <input type="text" class="form-control readonly-input" name="vendor_gst" id="vendorGst" readonly>
-        </div>
-
-        <div class="col-md-4">
-          <label class="form-label">Vendor Address</label>
-          <input type="text" class="form-control readonly-input" name="vendor_address" id="vendorAddress" readonly>
-        </div>
-
-        <div class="col-md-4">
-          <label class="form-label">Location</label>
-          <input type="text" class="form-control" name="location">
-        </div>
-
-        <div class="col-md-4">
-          <label class="form-label">Start Date</label>
-          <input type="date" class="form-control" name="start_date">
-        </div>
-
-        <div class="col-md-4">
-          <label class="form-label">End Date</label>
-          <input type="date" class="form-control" name="end_date">
-        </div>
-
-        <div class="col-md-4">
-          <label class="form-label">Incharge</label>
-          <input type="text" class="form-control" name="incharge">
-        </div>
-
-        <div class="col-md-4">
-          <label class="form-label">Contact Number</label>
-          <input type="text" class="form-control" name="contact_number">
-        </div>
-
-        <div class="col-md-4">
-          <label class="form-label">Email</label>
-          <input type="email" class="form-control" name="email">
-        </div>
-
-        <div class="col-md-6">
-          <label class="form-label">Drawing File</label>
-          <input type="file" class="form-control" name="drawing_file">
-        </div>
-
-        <div class="col-md-6">
-          <label class="form-label">Notes</label>
-          <textarea class="form-control" name="notes" rows="2"></textarea>
-        </div>
-      </div>
-
-      <div class="modal-footer">
-        <button type="submit" class="btn btn-success">Save Project</button>
-        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-      </div>
-    </form>
+    </div>
   </div>
-</div>
 
-<!-- Scripts -->
-<script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
-<script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
-<script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+  <script>
+    function fillVendorDetails() {
+      const select = document.getElementById("vendorSelect");
+      const gstField = document.getElementById("vendorGST");
+      const addrField = document.getElementById("vendorAddress");
 
-<script>
-  $(document).ready(function () {
-    $('#projectTable').DataTable();
+      const selectedOption = select.options[select.selectedIndex];
+      gstField.value = selectedOption.getAttribute("data-gst") || '';
+      addrField.value = selectedOption.getAttribute("data-address") || '';
+    }
 
-    // Enable Select2 inside modal
-    $('#vendorDropdown').select2({
-      dropdownParent: $('#projectModal'),
-      placeholder: "Select vendor"
+    $('form').on('submit', function(e) {
+      e.preventDefault();
+      const formData = new FormData(this);
+
+      $.ajax({
+        url: '/create_project',
+        method: 'POST',
+        data: formData,
+        contentType: false,
+        processData: false,
+        success: function() {
+          $('#projectModal').modal('hide');
+          loadTable();
+        },
+        error: function(xhr) {
+          alert("Error saving project: " + xhr.statusText);
+        }
+      });
     });
 
-    // Auto-fill GST and address
-    $('#vendorDropdown').on('change', function () {
-      let selected = $(this).find(':selected');
-      $('#vendorGst').val(selected.data('gst'));
-      $('#vendorAddress').val(selected.data('address'));
-    });
-  });
-</script>
+    function loadTable() {
+      $.get('/project_table', function(data) {
+        $('#projectTable').html(data);
+      });
+    }
+
+    function enableEdit(rowId) {
+      $(`#row-${rowId}`).addClass('edit-mode').find('.editable').each(function() {
+        const text = $(this).text();
+        $(this).html(`<input class="form-control form-control-sm" value="${text}">`);
+      });
+      $(`#save-${rowId}`).removeClass('d-none');
+      $(`#edit-${rowId}`).addClass('d-none');
+    }
+
+    function saveEdit(rowId) {
+      const row = $(`#row-${rowId}`);
+      const inputs = row.find('.editable input');
+      const updatedData = {
+        id: rowId,
+        project_name: $(inputs[0]).val(),
+        quotation_ro: $(inputs[1]).val(),
+        location: $(inputs[2]).val(),
+        incharge: $(inputs[3]).val()
+      };
+
+      $.post('/update_project_inline', updatedData, function(res) {
+        loadTable();
+      });
+    }
+  </script>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
