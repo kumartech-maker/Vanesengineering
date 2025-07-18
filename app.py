@@ -372,29 +372,27 @@ def get_vendor_info(vendor_id):
 # ---------- ✅ View All Projects ----------
 @app.route('/projects')
 def projects():
-    conn = get_db()
-    conn.row_factory = sqlite3.Row
-    cur = conn.cursor()
+    if 'user' not in session:
+        return redirect(url_for('login'))
 
-    cur.execute("""
-        SELECT p.*, v.name AS vendor_name
-        FROM projects p
-        LEFT JOIN vendors v ON p.vendor_id = v.id
-        ORDER BY p.id DESC
-    """)
-    projects = cur.fetchall()
+    vendors = db.session.execute(text("SELECT * FROM vendor ORDER BY id DESC")).mappings().all()
+    projects = db.session.execute(text("""
+        SELECT project.*, vendor.name AS vendor_name
+        FROM project
+        LEFT JOIN vendor ON project.vendor_id = vendor.id
+        ORDER BY project.id DESC
+    """)).mappings().all()
 
-    cur.execute("SELECT * FROM vendors ORDER BY id DESC")
-    vendors = cur.fetchall()
+    # Generate new enquiry ID
+    last = db.session.execute(text("SELECT MAX(id) FROM project")).scalar()
+    new_id = (last or 0) + 1
+    enquiry_id = f"VE/ENQ/{str(new_id).zfill(4)}"
 
-    cur.execute("SELECT MAX(id) FROM projects")
-    last_id = cur.fetchone()[0]
-    new_id = (last_id or 0) + 1
-    enquiry_id = f"VE/TN/E{str(new_id).zfill(3)}"
+    return render_template("projects.html",
+                           vendors=vendors,
+                           projects=projects,
+                           new_enquiry_id=enquiry_id)
 
-    conn.close()
-
-    return render_template('projects.html', projects=projects, vendors=vendors, new_enquiry_id=enquiry_id)
 
 @app.route('/project/edit/<int:project_id>', methods=['GET', 'POST'])
 def edit_project(project_id):
@@ -448,65 +446,28 @@ def edit_project(project_id):
 
 # ---------- ✅ Create Project ----------
 # ---------- ✅ Save New Project ----------
-@app.route('/create_project', methods=['POST'])
-def create_project():
+@app.route('/projects')
+def projects():
     if 'user' not in session:
         return redirect(url_for('login'))
 
-    data = request.form
-
-    # Insert into DB
-    stmt = text("""
-        INSERT INTO project (
-            enquiry_id, project_name, quotation_ro, vendor_id, location,
-            start_date, end_date, incharge, contact_number, email
-        ) VALUES (
-            :enquiry_id, :project_name, :quotation_ro, :vendor_id, :location,
-            :start_date, :end_date, :incharge, :contact_number, :email
-        )
-    """)
-    db.session.execute(stmt, {
-        "enquiry_id": data['enquiry_id'],
-        "project_name": data['project_name'],
-        "quotation_ro": data['quotation_ro'],
-        "vendor_id": data['vendor_id'],
-        "location": data['location'],
-        "start_date": data['start_date'],
-        "end_date": data['end_date'],
-        "incharge": data['incharge'],
-        "contact_number": data['contact_number'],
-        "email": data['email']
-    })
-    db.session.commit()
-
-    # Get latest project back for AJAX
-    p = db.session.execute(text("""
+    vendors = db.session.execute(text("SELECT * FROM vendor ORDER BY id DESC")).mappings().all()
+    projects = db.session.execute(text("""
         SELECT project.*, vendor.name AS vendor_name
         FROM project
         LEFT JOIN vendor ON project.vendor_id = vendor.id
-        ORDER BY project.id DESC LIMIT 1
-    """)).mappings().first()
+        ORDER BY project.id DESC
+    """)).mappings().all()
 
-    # Generate next enquiry ID (for refresh in modal)
-    next_id = int(p.id) + 1
-    next_enquiry_id = f"VE/ENQ/{str(next_id).zfill(4)}"
+    # Generate new enquiry ID
+    last = db.session.execute(text("SELECT MAX(id) FROM project")).scalar()
+    new_id = (last or 0) + 1
+    enquiry_id = f"VE/ENQ/{str(new_id).zfill(4)}"
 
-    return jsonify({
-        "status": "success",
-        "project": {
-            "id": p.id,
-            "enquiry_id": p.enquiry_id,
-            "project_name": p.project_name,
-            "vendor_name": p.vendor_name,
-            "location": p.location,
-            "start_date": str(p.start_date),
-            "end_date": str(p.end_date),
-            "incharge": p.incharge,
-            "contact_number": p.contact_number,
-            "email": p.email,
-            "next_enquiry_id": next_enquiry_id
-        }
-    })
+    return render_template("projects.html",
+                           vendors=vendors,
+                           projects=projects,
+                           new_enquiry_id=enquiry_id)
 # ---------- ✅ Add Measurement Info to Project ----------
 
 @app.route('/add_measurement', methods=['POST'])
