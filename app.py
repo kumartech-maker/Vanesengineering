@@ -478,7 +478,7 @@ def create_project():
         cur = conn.cursor()
         cur.execute('''
             INSERT INTO projects 
-            (client_name, vendor_id, quotation_ro, location, start_date, end_date,
+            (project_name, vendor_id, quotation_ro, location, start_date, end_date,
              incharge, contact_number, email, notes, drawing_file, status)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         ''', (
