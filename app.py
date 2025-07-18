@@ -370,26 +370,35 @@ def get_vendor_info(vendor_id):
 
 
 # ---------- ✅ View All Projects ----------
+
 @app.route('/projects')
 def projects():
-    conn = get_db()
-    cur = conn.cursor()
-    cur.execute("""
-      SELECT p.*, v.name AS vendor_name FROM projects p
-      LEFT JOIN vendors v ON p.vendor_id = v.id
-      ORDER BY p.id DESC
-    """)
-    projects = cur.fetchall()
-    cur.execute("SELECT * FROM vendors ORDER BY id DESC")
-    vendors = cur.fetchall()
-    cur.execute("SELECT MAX(id) FROM projects")
-    new_id = (cur.fetchone()[0] or 0) + 1
-    enquiry_id = f"VE/TN/E{str(new_id).zfill(3)}"
-    conn.close()
-    return render_template('projects.html',
-      projects=projects, vendors=vendors, new_enquiry_id=enquiry_id)
+    try:
+        conn = get_db()
+        cur = conn.cursor()
+        cur.execute("""
+          SELECT p.*, v.name AS vendor_name FROM projects p
+          LEFT JOIN vendors v ON p.vendor_id = v.id
+          ORDER BY p.id DESC
+        """)
+        projects = cur.fetchall()
 
+        cur.execute("SELECT * FROM vendors ORDER BY id DESC")
+        vendors = cur.fetchall()
 
+        cur.execute("SELECT MAX(id) FROM projects")
+        new_id = (cur.fetchone()[0] or 0) + 1
+        enquiry_id = f"VE/TN/E{str(new_id).zfill(3)}"
+
+        conn.close()
+        return render_template('projects.html',
+            projects=projects,
+            vendors=vendors,
+            new_enquiry_id=enquiry_id
+        )
+    except Exception as e:
+        print("🔴 Error in /projects route:", e)
+        return f"<h3>Internal Server Error:</h3><pre>{e}</pre>", 500
 @app.route('/project/edit/<int:project_id>', methods=['GET', 'POST'])
 def edit_project(project_id):
     conn = get_db_connection()
