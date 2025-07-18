@@ -370,12 +370,14 @@ def get_vendor_info(vendor_id):
 
 
 # ---------- ✅ View All Projects ----------
+
+
 @app.route('/projects')
 def projects():
     conn = get_db()
     cur = conn.cursor()
 
-    # Fetch all projects with their associated vendor names
+    # Fetch all projects with vendor name
     cur.execute("""
         SELECT p.*, v.name AS vendor_name
         FROM projects p
@@ -384,23 +386,22 @@ def projects():
     """)
     projects = cur.fetchall()
 
-    # Fetch all vendors to populate dropdowns
+    # All vendors for dropdown
     cur.execute("SELECT * FROM vendors ORDER BY id DESC")
     vendors = cur.fetchall()
 
     conn.close()
 
-    # Default selected project (first one in list, if available)
     selected_project = projects[0] if projects else None
 
-    # Generate unique enquiry ID using timestamp
+    # Generate unique enquiry ID
     enquiry_id = "ENQ" + datetime.now().strftime("%Y%m%d%H%M%S")
 
     return render_template('projects.html',
                            projects=projects,
                            vendors=vendors,
                            project=selected_project,
-                           enquiry_id=enquiry_id)
+                           new_enquiry_id=enquiry_id)  # used in popup form
 
 
 @app.route('/project/edit/<int:project_id>', methods=['GET', 'POST'])
