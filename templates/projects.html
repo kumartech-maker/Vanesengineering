@@ -69,7 +69,10 @@
           </div>
           <div class="modal-body row g-3">
 
-            <input type="hidden" name="enquiry_id" value="{{ new_enquiry_id }}">
+            <div class="col-md-6">
+  <label>Enquiry ID</label>
+  <input type="text" name="enquiry_id" class="form-control" value="{{ new_enquiry_id }}" readonly>
+</div>
             <div class="col-md-6">
               <label>Project Name</label>
               <input type="text" name="project_name" class="form-control" required>
