@@ -388,46 +388,58 @@ def projects():
     conn.close()
     return render_template('projects.html',
       projects=projects, vendors=vendors, new_enquiry_id=enquiry_id)
+
+
 @app.route('/project/edit/<int:project_id>', methods=['GET', 'POST'])
 def edit_project(project_id):
     conn = get_db_connection()
     cur = conn.cursor()
 
     if request.method == 'POST':
-        project_code = request.form['project_code']
-        vendor_id = request.form['vendor_id']
-        start_date = request.form['start_date']
-        end_date = request.form['end_date']
-        location = request.form['location']
-        incharge = request.form['incharge']
-        notes = request.form['notes']
-        enquiry_id = request.form['enquiry_id']
-        client_name = request.form['client_name']
-        site_location = request.form['site_location']
-        engineer_name = request.form['engineer_name']
-        mobile = request.form['mobile']
-        email = request.form.get('email')  # Optional
-        status = request.form['status']
-        total_sqm = request.form.get('total_sqm', 0)
+        try:
+            project_code = request.form.get('project_code', '')
+            vendor_id = request.form.get('vendor_id', None)
+            start_date = request.form.get('start_date', None)
+            end_date = request.form.get('end_date', None)
+            location = request.form.get('location', '')
+            incharge = request.form.get('incharge', '')
+            notes = request.form.get('notes', '')
+            enquiry_id = request.form.get('enquiry_id', '')
+            client_name = request.form.get('client_name', '')
+            site_location = request.form.get('site_location', '')
+            engineer_name = request.form.get('engineer_name', '')
+            mobile = request.form.get('mobile', '')
+            email = request.form.get('email', '')
+            status = request.form.get('status', 'Ongoing')
+            total_sqm = request.form.get('total_sqm')
+            total_sqm = float(total_sqm) if total_sqm else 0.0
 
-        cur.execute('''
-            UPDATE projects SET
-                project_code = ?, vendor_id = ?, start_date = ?, end_date = ?,
-                location = ?, incharge = ?, notes = ?, enquiry_id = ?,
-                client_name = ?, site_location = ?, engineer_name = ?, mobile = ?,
-                email = ?, status = ?, total_sqm = ?
-            WHERE id = ?
-        ''', (
-            project_code, vendor_id, start_date, end_date, location, incharge,
-            notes, enquiry_id, client_name, site_location, engineer_name, mobile,
-            email, status, total_sqm, project_id
-        ))
+            cur.execute('''
+                UPDATE projects SET
+                    project_code = ?, vendor_id = ?, start_date = ?, end_date = ?,
+                    location = ?, incharge = ?, notes = ?, enquiry_id = ?,
+                    client_name = ?, site_location = ?, engineer_name = ?, mobile = ?,
+                    email = ?, status = ?, total_sqm = ?
+                WHERE id = ?
+            ''', (
+                project_code, vendor_id, start_date, end_date, location, incharge,
+                notes, enquiry_id, client_name, site_location, engineer_name, mobile,
+                email, status, total_sqm, project_id
+            ))
 
-        conn.commit()
-        conn.close()
-        return redirect(url_for('projects'))
+            conn.commit()
+            flash('Project updated successfully!', 'success')
+            return redirect(url_for('projects'))
 
-    # GET: Load current project + vendor list
+        except Exception as e:
+            conn.rollback()
+            flash(f"Error updating project: {str(e)}", 'danger')
+            return redirect(url_for('edit_project', project_id=project_id))
+
+        finally:
+            conn.close()
+
+    # GET: Load project and vendors
     cur.execute('SELECT * FROM projects WHERE id = ?', (project_id,))
     project = cur.fetchone()
 
@@ -436,7 +448,6 @@ def edit_project(project_id):
 
     conn.close()
     return render_template('edit_project.html', project=project, vendors=vendors)
-
 
 # ---------- ✅ Create Project ----------
 # ---------- ✅ Save New Project ----------
