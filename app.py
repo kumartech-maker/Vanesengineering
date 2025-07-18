@@ -455,60 +455,68 @@ def edit_project(project_id):
 
 
 # ---------- ✅ Create Project ----------
+# ---------- ✅ Save New Project ----------
 @app.route('/create_project', methods=['POST'])
 def create_project():
     if 'user' not in session:
-        return redirect(url_for('login'))
+        return jsonify({'status': 'unauthorized'})
+
+    conn = get_db()
+    cur = conn.cursor()
 
     try:
-        conn = get_db()
-        cur = conn.cursor()
-
-        # Get latest project ID and generate Enquiry ID
-        cur.execute("SELECT MAX(id) FROM projects")
-        last_id = cur.fetchone()[0]
-        new_id = (last_id or 0) + 1
-        enquiry_id = f"ENQ{str(new_id).zfill(4)}"
-
-        # Get form fields
+        # Get form data
         project_name = request.form['project_name']
-        quotation_ro = request.form['quotation_ro']
+        quotation = request.form['quotation_ro']
         vendor_id = request.form['vendor_id']
-        vendor_gst = request.form['vendor_gst']
-        vendor_address = request.form['vendor_address']
         location = request.form['location']
         start_date = request.form['start_date']
         end_date = request.form['end_date']
         incharge = request.form['incharge']
         contact = request.form['contact_number']
         email = request.form['email']
-        notes = request.form['notes']
 
-        # Handle file upload
-        drawing_file = request.files['drawing_file']
-        drawing_filename = ''
-        if drawing_file and drawing_file.filename != '':
-            drawing_filename = f"uploads/{datetime.now().strftime('%Y%m%d%H%M%S')}_{drawing_file.filename}"
-            os.makedirs("uploads", exist_ok=True)
-            drawing_file.save(drawing_filename)
+        # Generate Enquiry ID (VE/TN/E001)
+        cur.execute("SELECT MAX(id) FROM projects")
+        last_id = cur.fetchone()[0]
+        new_id = (last_id or 0) + 1
+        enquiry_id = f"VE/TN/E{str(new_id).zfill(3)}"
 
-        # Insert project into DB
+        # Insert into DB
         cur.execute("""
-            INSERT INTO projects (
-                enquiry_id, project_name, quotation_ro, vendor_id, vendor_gst, vendor_address,
-                location, start_date, end_date, incharge, contact_number, email, drawing_file, notes
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-        """, (
-            enquiry_id, project_name, quotation_ro, vendor_id, vendor_gst, vendor_address,
-            location, start_date, end_date, incharge, contact, email, drawing_filename, notes
-        ))
-
+            INSERT INTO projects (enquiry_id, project_name, quotation_ro, vendor_id, location, start_date, end_date, incharge, contact_number, email)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        """, (enquiry_id, project_name, quotation, vendor_id, location, start_date, end_date, incharge, contact, email))
         conn.commit()
-        flash("Project created successfully!", "success")
-    except Exception as e:
-        flash(f"Error: {str(e)}", "danger")
 
-    return redirect(url_for('projects'))
+        # Get vendor name
+        cur.execute("SELECT name FROM vendors WHERE id = ?", (vendor_id,))
+        vendor_name = cur.fetchone()[0] if cur.fetchone() else ""
+
+        # Response JSON
+        return jsonify({
+            'status': 'success',
+            'project': {
+                'id': new_id,
+                'enquiry_id': enquiry_id,
+                'project_name': project_name,
+                'quotation_ro': quotation,
+                'vendor_name': vendor_name,
+                'location': location,
+                'start_date': start_date,
+                'end_date': end_date,
+                'incharge': incharge,
+                'contact_number': contact,
+                'email': email
+            }
+        })
+
+    except Exception as e:
+        conn.rollback()
+        return jsonify({'status': 'error', 'message': str(e)})
+
+    finally:
+        conn.close()
 # ---------- ✅ Add Measurement Info to Project ----------
 
 @app.route('/add_measurement', methods=['POST'])
