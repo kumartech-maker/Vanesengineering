@@ -460,54 +460,52 @@ def create_project():
         return redirect(url_for('login'))
 
     try:
-        conn = get_db()
+        conn = get_db_connection()
         cur = conn.cursor()
 
-        # --- Form Data ---
-        project_name = request.form.get('project_name')
-        enquiry_id = request.form.get('enquiry_id')  # sent from form
-        quotation_ro = request.form.get('quotation_ro')
-        location = request.form.get('location')
-        start_date = request.form.get('start_date')
-        end_date = request.form.get('end_date')
-        incharge = request.form.get('incharge')
-        contact_number = request.form.get('contact_number')
-        email = request.form.get('email')
-        notes = request.form.get('notes')
-        vendor_id = request.form.get('vendor_id')
-        vendor_gst = request.form.get('vendor_gst') or ''
-        vendor_address = request.form.get('vendor_address') or ''
+        # Generate enquiry_id automatically like ENQ/0001
+        cur.execute("SELECT id FROM projects ORDER BY id DESC LIMIT 1")
+        last_project = cur.fetchone()
+        if last_project:
+            next_id = last_project['id'] + 1
+        else:
+            next_id = 1
+        enquiry_id = f"ENQ/{str(next_id).zfill(4)}"
 
-        # File Handling
-        drawing_file = request.files.get('drawing_file')
-        drawing_filename = ''
-        if drawing_file and drawing_file.filename != '':
-            drawing_filename = drawing_file.filename
-            drawing_path = os.path.join('static/uploads/', drawing_filename)
-            drawing_file.save(drawing_path)
+        # Get data from form
+        project_name = request.form['project_name']
+        project_location = request.form['project_location']
+        quotation_ref = request.form['quotation']
+        vendor_id = request.form['vendor_id']
+        contact_person = request.form['contact']
+        contact_email = request.form['email']
+        incharge = request.form['incharge']
+        start_date = request.form['start_date']
+        end_date = request.form['end_date']
 
-        # Insert into DB
-        cur.execute('''
+        # Insert into database
+        cur.execute("""
             INSERT INTO projects (
-                enquiry_id, project_name, vendor_id, vendor_gst, vendor_address,
-                quotation_ro, location, start_date, end_date,
-                incharge, contact_number, email, notes, drawing_file, status
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-        ''', (
-            enquiry_id, project_name, vendor_id, vendor_gst, vendor_address,
-            quotation_ro, location, start_date, end_date,
-            incharge, contact_number, email, notes, drawing_filename, 'Pending'
+                enquiry_id, project_name, project_location, quotation_ref,
+                vendor_id, contact_person, contact_email, incharge,
+                start_date, end_date
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        """, (
+            enquiry_id, project_name, project_location, quotation_ref,
+            vendor_id, contact_person, contact_email, incharge,
+            start_date, end_date
         ))
 
         conn.commit()
-        flash('Project created successfully.', 'success')
-    except Exception as e:
-        print("❌ Error creating project:", e)
-        flash(f"Error creating project: {str(e)}", 'danger')
-    finally:
         conn.close()
 
-    return redirect(url_for('projects'))
+        flash('Project created successfully!', 'success')
+        return redirect(url_for('projects'))
+
+    except Exception as e:
+        print("❌ Error creating project:", e)
+        flash('Error creating project', 'danger')
+        return redirect(url_for('projects'))
 # ---------- ✅ Add Measurement Info to Project ----------
 
 @app.route('/add_measurement', methods=['POST'])
