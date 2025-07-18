@@ -6,105 +6,95 @@
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
 </head>
 <body>
-<div class="container mt-4">
-  <h2>Edit Project - {{ project.project_name }}</h2>
-
-  <form method="POST" action="{{ url_for('edit_project', project_id=project.id) }}" enctype="multipart/form-data">
-    <div class="row">
-      <div class="col-md-6 mb-3">
-        <label>Project Code</label>
-        <input type="text" name="project_code" class="form-control" value="{{ project.project_code }}">
-      </div>
-
-      <div class="col-md-6 mb-3">
-        <label>Project Name</label>
-        <input type="text" name="project_name" class="form-control" value="{{ project.project_name }}">
-      </div>
-
-      <div class="col-md-6 mb-3">
-        <label>Enquiry ID</label>
-        <input type="text" name="enquiry_id" class="form-control" value="{{ project.enquiry_id }}">
-      </div>
-
-      <div class="col-md-6 mb-3">
-        <label>Client Name</label>
-        <input type="text" name="client_name" class="form-control" value="{{ project.client_name }}">
-      </div>
-
-      <div class="col-md-6 mb-3">
-        <label>Site Location</label>
-        <input type="text" name="site_location" class="form-control" value="{{ project.site_location }}">
-      </div>
-
-      <div class="col-md-6 mb-3">
-        <label>Engineer Name</label>
-        <input type="text" name="engineer_name" class="form-control" value="{{ project.engineer_name }}">
-      </div>
-
-      <div class="col-md-6 mb-3">
-        <label>Vendor</label>
-        <select name="vendor_id" class="form-select">
-          {% for vendor in vendors %}
-            <option value="{{ vendor.id }}" {% if vendor.id == project.vendor_id %}selected{% endif %}>
-              {{ vendor.name }}
-            </option>
-          {% endfor %}
-        </select>
-      </div>
-
-      <div class="col-md-6 mb-3">
-        <label>Location</label>
-        <input type="text" name="location" class="form-control" value="{{ project.location }}">
-      </div>
-
-      <div class="col-md-6 mb-3">
-        <label>Start Date</label>
-        <input type="date" name="start_date" class="form-control"
-               value="{{ project.start_date.strftime('%Y-%m-%d') if project.start_date else '' }}">
-      </div>
-
-      <div class="col-md-6 mb-3">
-        <label>End Date</label>
-        <input type="date" name="end_date" class="form-control"
-               value="{{ project.end_date.strftime('%Y-%m-%d') if project.end_date else '' }}">
-      </div>
-
-      <div class="col-md-6 mb-3">
-        <label>Total Sqm</label>
-        <input type="number" name="total_sqm" class="form-control" value="{{ project.total_sqm or '' }}">
-      </div>
-
-      <div class="col-md-6 mb-3">
-        <label>Incharge</label>
-        <input type="text" name="incharge" class="form-control" value="{{ project.incharge }}">
-      </div>
-
-      <div class="col-md-6 mb-3">
-        <label>Mobile</label>
-        <input type="text" name="mobile" class="form-control" value="{{ project.mobile }}">
-      </div>
-
-      <div class="col-md-6 mb-3">
-        <label>Email</label>
-        <input type="email" name="email" class="form-control" value="{{ project.email }}">
-      </div>
-
-      <div class="col-md-6 mb-3">
-        <label>Status</label>
-        <select name="status" class="form-select">
-          <option value="Ongoing" {% if project.status == 'Ongoing' %}selected{% endif %}>Ongoing</option>
-          <option value="Completed" {% if project.status == 'Completed' %}selected{% endif %}>Completed</option>
-          <option value="On Hold" {% if project.status == 'On Hold' %}selected{% endif %}>On Hold</option>
-        </select>
-      </div>
-
-      <div class="col-md-12 mb-3">
-        <label>Notes</label>
-        <textarea name="notes" class="form-control" rows="3">{{ project.notes }}</textarea>
-      </div>
+<div class="container mt-5">
+  <h2>Edit Project</h2>
+  <form action="" method="post">
+    <div class="mb-3">
+      <label for="project_code" class="form-label">Project Code</label>
+      <input type="text" class="form-control" name="project_code" id="project_code" value="{{ project.project_code or '' }}" required>
     </div>
 
-    <button type="submit" class="btn btn-primary">Save Changes</button>
+    <div class="mb-3">
+      <label for="vendor_id" class="form-label">Vendor</label>
+      <select name="vendor_id" class="form-select" required>
+        {% for vendor in vendors %}
+          <option value="{{ vendor.id }}" {% if vendor.id == project.vendor_id %}selected{% endif %}>
+            {{ vendor.vendor_name }}
+          </option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <div class="mb-3">
+      <label for="start_date" class="form-label">Start Date</label>
+      <input type="date" class="form-control" name="start_date" id="start_date" value="{{ project.start_date or '' }}">
+    </div>
+
+    <div class="mb-3">
+      <label for="end_date" class="form-label">End Date</label>
+      <input type="date" class="form-control" name="end_date" id="end_date" value="{{ project.end_date or '' }}">
+    </div>
+
+    <div class="mb-3">
+      <label for="location" class="form-label">Location</label>
+      <input type="text" class="form-control" name="location" id="location" value="{{ project.location or '' }}">
+    </div>
+
+    <div class="mb-3">
+      <label for="incharge" class="form-label">Incharge</label>
+      <input type="text" class="form-control" name="incharge" id="incharge" value="{{ project.incharge or '' }}">
+    </div>
+
+    <div class="mb-3">
+      <label for="notes" class="form-label">Notes</label>
+      <textarea class="form-control" name="notes" id="notes">{{ project.notes or '' }}</textarea>
+    </div>
+
+    <div class="mb-3">
+      <label for="enquiry_id" class="form-label">Enquiry ID</label>
+      <input type="text" class="form-control" name="enquiry_id" id="enquiry_id" value="{{ project.enquiry_id or '' }}">
+    </div>
+
+    <div class="mb-3">
+      <label for="client_name" class="form-label">Client Name</label>
+      <input type="text" class="form-control" name="client_name" id="client_name" value="{{ project.client_name or '' }}">
+    </div>
+
+    <div class="mb-3">
+      <label for="site_location" class="form-label">Site Location</label>
+      <input type="text" class="form-control" name="site_location" id="site_location" value="{{ project.site_location or '' }}">
+    </div>
+
+    <div class="mb-3">
+      <label for="engineer_name" class="form-label">Engineer Name</label>
+      <input type="text" class="form-control" name="engineer_name" id="engineer_name" value="{{ project.engineer_name or '' }}">
+    </div>
+
+    <div class="mb-3">
+      <label for="mobile" class="form-label">Mobile</label>
+      <input type="text" class="form-control" name="mobile" id="mobile" value="{{ project.mobile or '' }}">
+    </div>
+
+    <div class="mb-3">
+      <label for="email" class="form-label">Email</label>
+      <input type="email" class="form-control" name="email" id="email" value="{{ project.email or '' }}">
+    </div>
+
+    <div class="mb-3">
+      <label for="status" class="form-label">Status</label>
+      <select class="form-select" name="status" id="status">
+        <option value="Not Started" {% if project.status == 'Not Started' %}selected{% endif %}>Not Started</option>
+        <option value="In Progress" {% if project.status == 'In Progress' %}selected{% endif %}>In Progress</option>
+        <option value="Completed" {% if project.status == 'Completed' %}selected{% endif %}>Completed</option>
+      </select>
+    </div>
+
+    <div class="mb-3">
+      <label for="total_sqm" class="form-label">Total Sqm</label>
+      <input type="number" class="form-control" name="total_sqm" id="total_sqm" step="0.01" value="{{ project.total_sqm or 0 }}">
+    </div>
+
+    <button type="submit" class="btn btn-primary">Update Project</button>
     <a href="{{ url_for('projects') }}" class="btn btn-secondary">Cancel</a>
   </form>
 </div>
