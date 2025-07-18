@@ -460,52 +460,54 @@ def create_project():
         return redirect(url_for('login'))
 
     try:
-        conn = get_db_connection()
+        conn = get_db()
         cur = conn.cursor()
 
-        # Generate enquiry_id automatically like ENQ/0001
-        cur.execute("SELECT id FROM projects ORDER BY id DESC LIMIT 1")
-        last_project = cur.fetchone()
-        if last_project:
-            next_id = last_project['id'] + 1
-        else:
-            next_id = 1
-        enquiry_id = f"ENQ/{str(next_id).zfill(4)}"
+        # Get latest project ID and generate Enquiry ID
+        cur.execute("SELECT MAX(id) FROM projects")
+        last_id = cur.fetchone()[0]
+        new_id = (last_id or 0) + 1
+        enquiry_id = f"ENQ{str(new_id).zfill(4)}"
 
-        # Get data from form
+        # Get form fields
         project_name = request.form['project_name']
-        project_location = request.form['project_location']
-        quotation_ref = request.form['quotation']
+        quotation_ro = request.form['quotation_ro']
         vendor_id = request.form['vendor_id']
-        contact_person = request.form['contact']
-        contact_email = request.form['email']
-        incharge = request.form['incharge']
+        vendor_gst = request.form['vendor_gst']
+        vendor_address = request.form['vendor_address']
+        location = request.form['location']
         start_date = request.form['start_date']
         end_date = request.form['end_date']
+        incharge = request.form['incharge']
+        contact = request.form['contact_number']
+        email = request.form['email']
+        notes = request.form['notes']
 
-        # Insert into database
+        # Handle file upload
+        drawing_file = request.files['drawing_file']
+        drawing_filename = ''
+        if drawing_file and drawing_file.filename != '':
+            drawing_filename = f"uploads/{datetime.now().strftime('%Y%m%d%H%M%S')}_{drawing_file.filename}"
+            os.makedirs("uploads", exist_ok=True)
+            drawing_file.save(drawing_filename)
+
+        # Insert project into DB
         cur.execute("""
             INSERT INTO projects (
-                enquiry_id, project_name, project_location, quotation_ref,
-                vendor_id, contact_person, contact_email, incharge,
-                start_date, end_date
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                enquiry_id, project_name, quotation_ro, vendor_id, vendor_gst, vendor_address,
+                location, start_date, end_date, incharge, contact_number, email, drawing_file, notes
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         """, (
-            enquiry_id, project_name, project_location, quotation_ref,
-            vendor_id, contact_person, contact_email, incharge,
-            start_date, end_date
+            enquiry_id, project_name, quotation_ro, vendor_id, vendor_gst, vendor_address,
+            location, start_date, end_date, incharge, contact, email, drawing_filename, notes
         ))
 
         conn.commit()
-        conn.close()
-
-        flash('Project created successfully!', 'success')
-        return redirect(url_for('projects'))
-
+        flash("Project created successfully!", "success")
     except Exception as e:
-        print("❌ Error creating project:", e)
-        flash('Error creating project', 'danger')
-        return redirect(url_for('projects'))
+        flash(f"Error: {str(e)}", "danger")
+
+    return redirect(url_for('projects'))
 # ---------- ✅ Add Measurement Info to Project ----------
 
 @app.route('/add_measurement', methods=['POST'])
