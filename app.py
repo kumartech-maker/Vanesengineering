@@ -370,7 +370,6 @@ def get_vendor_info(vendor_id):
 
 
 # ---------- ✅ View All Projects ----------
-
 @app.route('/projects')
 def projects():
     try:
@@ -385,6 +384,7 @@ def projects():
 
         cur.execute("SELECT * FROM vendors ORDER BY id DESC")
         vendors = cur.fetchall()
+        vendors = [dict(row) for row in vendors]  # ✅ fix
 
         cur.execute("SELECT MAX(id) FROM projects")
         new_id = (cur.fetchone()[0] or 0) + 1
@@ -399,6 +399,7 @@ def projects():
     except Exception as e:
         print("🔴 Error in /projects route:", e)
         return f"<h3>Internal Server Error:</h3><pre>{e}</pre>", 500
+
 @app.route('/project/edit/<int:project_id>', methods=['GET', 'POST'])
 def edit_project(project_id):
     conn = get_db_connection()
