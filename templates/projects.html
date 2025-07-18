@@ -4,158 +4,178 @@
   <meta charset="UTF-8">
   <title>Projects</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
-  <link href="https://cdn.datatables.net/1.13.4/css/dataTables.bootstrap5.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+  <link href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css" rel="stylesheet" />
   <style>
-    .modal-lg { max-width: 90%; }
-    .form-control:disabled { background-color: #f8f9fa; }
+    .readonly-input {
+      background-color: #f9f9f9;
+    }
   </style>
 </head>
-<body>
-  <div class="container mt-4">
-    {% with messages = get_flashed_messages(with_categories=true) %}
-      {% if messages %}
-        {% for category, message in messages %}
-          <div class="alert alert-{{ category }}">{{ message }}</div>
-        {% endfor %}
-      {% endif %}
-    {% endwith %}
+<body class="bg-light">
 
-    <h2 class="mb-3">Projects</h2>
-    <button class="btn btn-primary mb-3" data-bs-toggle="modal" data-bs-target="#projectModal">+ Add Project</button>
-
-    <table class="table table-bordered table-striped" id="projectTable">
-      <thead>
-        <tr>
-          <th>Enquiry ID</th>
-          <th>Project Name</th>
-          <th>Vendor</th>
-          <th>Start Date</th>
-          <th>End Date</th>
-          <th>Location</th>
-          <th>Actions</th>
-        </tr>
-      </thead>
-      <tbody>
-        {% for p in projects %}
-        <tr>
-          <td>{{ p.enquiry_id }}</td>
-          <td>{{ p.project_name }}</td>
-          <td>{{ p.vendor_name }}</td>
-          <td>{{ p.start_date }}</td>
-          <td>{{ p.end_date }}</td>
-          <td>{{ p.location }}</td>
-          <td>
-            <!-- Edit/Delete/Measurement Sheet buttons (optional) -->
-          </td>
-        </tr>
-        {% endfor %}
-      </tbody>
-    </table>
+<div class="container mt-4">
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <h3>Projects</h3>
+    <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#projectModal">+ Add Project</button>
   </div>
 
-  <!-- Project Modal -->
-  <div class="modal fade" id="projectModal" tabindex="-1">
-    <div class="modal-dialog modal-lg">
-      <div class="modal-content">
-        <form method="POST" action="{{ url_for('create_project') }}" enctype="multipart/form-data">
-          <div class="modal-header">
-            <h5 class="modal-title">Create New Project</h5>
-            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-          </div>
-          <div class="modal-body">
-            <div class="row g-3">
-              <div class="col-md-4">
-                <label>Enquiry ID</label>
-                <input type="text" name="enquiry_id" class="form-control" value="{{ enquiry_id }}" readonly>
-              </div>
-              <div class="col-md-4">
-                <label>Project Name</label>
-                <input type="text" name="project_name" class="form-control" required>
-              </div>
-              <div class="col-md-4">
-                <label>Quotation / RO</label>
-                <input type="text" name="quotation_ro" class="form-control">
-              </div>
+  <table id="projectTable" class="table table-bordered table-striped">
+    <thead class="table-dark">
+      <tr>
+        <th>Enquiry ID</th>
+        <th>Project Name</th>
+        <th>Quotation</th>
+        <th>Vendor</th>
+        <th>Location</th>
+        <th>Start</th>
+        <th>End</th>
+        <th>Incharge</th>
+        <th>Contact</th>
+        <th>Email</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for proj in projects %}
+      <tr>
+        <td>{{ proj.enquiry_id }}</td>
+        <td>{{ proj.project_name }}</td>
+        <td>{{ proj.quotation_ro }}</td>
+        <td>{{ proj.vendor_name }}</td>
+        <td>{{ proj.location }}</td>
+        <td>{{ proj.start_date }}</td>
+        <td>{{ proj.end_date }}</td>
+        <td>{{ proj.incharge }}</td>
+        <td>{{ proj.contact_number }}</td>
+        <td>{{ proj.email }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
 
-              <div class="col-md-4">
-                <label>Select Vendor</label>
-                <select name="vendor_id" id="vendor_id" class="form-select" required>
-                  <option value="">-- Select Vendor --</option>
-                  {% for v in vendors %}
-                    <option value="{{ v.id }}" data-gst="{{ v.gst }}" data-address="{{ v.address }}">{{ v.name }}</option>
-                  {% endfor %}
-                </select>
-              </div>
-              <div class="col-md-4">
-                <label>Vendor GST</label>
-                <input type="text" name="vendor_gst" id="vendor_gst" class="form-control" readonly>
-              </div>
-              <div class="col-md-4">
-                <label>Vendor Address</label>
-                <input type="text" name="vendor_address" id="vendor_address" class="form-control" readonly>
-              </div>
-
-              <div class="col-md-4">
-                <label>Project Location</label>
-                <input type="text" name="location" class="form-control">
-              </div>
-              <div class="col-md-4">
-                <label>Start Date</label>
-                <input type="date" name="start_date" class="form-control">
-              </div>
-              <div class="col-md-4">
-                <label>End Date</label>
-                <input type="date" name="end_date" class="form-control">
-              </div>
-
-              <div class="col-md-4">
-                <label>Incharge</label>
-                <input type="text" name="incharge" class="form-control">
-              </div>
-              <div class="col-md-4">
-                <label>Contact</label>
-                <input type="text" name="contact_number" class="form-control">
-              </div>
-              <div class="col-md-4">
-                <label>Email</label>
-                <input type="email" name="email" class="form-control">
-              </div>
-
-              <div class="col-md-6">
-                <label>Drawing Upload</label>
-                <input type="file" name="drawing_file" class="form-control">
-              </div>
-              <div class="col-md-6">
-                <label>Notes</label>
-                <textarea name="notes" class="form-control" rows="2"></textarea>
-              </div>
-            </div>
-          </div>
-          <div class="modal-footer">
-            <button type="submit" class="btn btn-success">Save Project</button>
-            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-          </div>
-        </form>
+<!-- Modal -->
+<div class="modal fade" id="projectModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-xl">
+    <form class="modal-content" action="{{ url_for('create_project') }}" method="POST" enctype="multipart/form-data">
+      <div class="modal-header">
+        <h5 class="modal-title">Add Project</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
       </div>
-    </div>
+      <div class="modal-body row g-3 p-3">
+
+        <div class="col-md-4">
+          <label class="form-label">Enquiry ID</label>
+          <input type="text" class="form-control readonly-input" name="enquiry_id" value="{{ new_enquiry_id }}" readonly>
+        </div>
+
+        <div class="col-md-4">
+          <label class="form-label">Project Name</label>
+          <input type="text" class="form-control" name="project_name" required>
+        </div>
+
+        <div class="col-md-4">
+          <label class="form-label">Quotation/RO</label>
+          <input type="text" class="form-control" name="quotation_ro">
+        </div>
+
+        <div class="col-md-4">
+          <label class="form-label">Vendor</label>
+          <select class="form-select" name="vendor_id" id="vendorDropdown" required>
+            <option value="" disabled selected>Select vendor</option>
+            {% for vendor in vendors %}
+              <option value="{{ vendor.id }}"
+                      data-gst="{{ vendor.gst }}"
+                      data-address="{{ vendor.address }}">
+                {{ vendor.name }}
+              </option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <div class="col-md-4">
+          <label class="form-label">Vendor GST</label>
+          <input type="text" class="form-control readonly-input" name="vendor_gst" id="vendorGst" readonly>
+        </div>
+
+        <div class="col-md-4">
+          <label class="form-label">Vendor Address</label>
+          <input type="text" class="form-control readonly-input" name="vendor_address" id="vendorAddress" readonly>
+        </div>
+
+        <div class="col-md-4">
+          <label class="form-label">Location</label>
+          <input type="text" class="form-control" name="location">
+        </div>
+
+        <div class="col-md-4">
+          <label class="form-label">Start Date</label>
+          <input type="date" class="form-control" name="start_date">
+        </div>
+
+        <div class="col-md-4">
+          <label class="form-label">End Date</label>
+          <input type="date" class="form-control" name="end_date">
+        </div>
+
+        <div class="col-md-4">
+          <label class="form-label">Incharge</label>
+          <input type="text" class="form-control" name="incharge">
+        </div>
+
+        <div class="col-md-4">
+          <label class="form-label">Contact Number</label>
+          <input type="text" class="form-control" name="contact_number">
+        </div>
+
+        <div class="col-md-4">
+          <label class="form-label">Email</label>
+          <input type="email" class="form-control" name="email">
+        </div>
+
+        <div class="col-md-6">
+          <label class="form-label">Drawing File</label>
+          <input type="file" class="form-control" name="drawing_file">
+        </div>
+
+        <div class="col-md-6">
+          <label class="form-label">Notes</label>
+          <textarea class="form-control" name="notes" rows="2"></textarea>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button type="submit" class="btn btn-success">Save Project</button>
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+      </div>
+    </form>
   </div>
+</div>
 
-  <!-- Scripts -->
-  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
-  <script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
-  <script src="https://cdn.datatables.net/1.13.4/js/jquery.dataTables.min.js"></script>
-  <script src="https://cdn.datatables.net/1.13.4/js/dataTables.bootstrap5.min.js"></script>
-  <script>
-    $(document).ready(function () {
-      $('#projectTable').DataTable();
+<!-- Scripts -->
+<script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+<script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
 
-      $('#vendor_id').on('change', function () {
-        var gst = $('option:selected', this).data('gst') || '';
-        var address = $('option:selected', this).data('address') || '';
-        $('#vendor_gst').val(gst);
-        $('#vendor_address').val(address);
-      });
+<script>
+  $(document).ready(function () {
+    $('#projectTable').DataTable();
+
+    // Enable Select2 inside modal
+    $('#vendorDropdown').select2({
+      dropdownParent: $('#projectModal'),
+      placeholder: "Select vendor"
     });
-  </script>
+
+    // Auto-fill GST and address
+    $('#vendorDropdown').on('change', function () {
+      let selected = $(this).find(':selected');
+      $('#vendorGst').val(selected.data('gst'));
+      $('#vendorAddress').val(selected.data('address'));
+    });
+  });
+</script>
 </body>
 </html>
