@@ -507,6 +507,13 @@ def add_measurement():
     conn.close()
     return '', 200
 
+@app.route('/measurement_sheet/<int:project_id>')
+def measurement_sheet(project_id):
+    # Fetch project and sheet data by project_id from DB
+    project = Project.query.get(project_id)
+    measurements = Measurement.query.filter_by(project_id=project_id).all()
+    return render_template("measurement_sheet.html", project=project, measurements=measurements)
+
 # ---------- ✅ Open Specific Project and Duct Entries ----------
 @app.route('/project/<int:project_id>')
 def open_project(project_id):
