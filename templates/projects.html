@@ -61,7 +61,7 @@
   <div class="modal fade" id="createModal" tabindex="-1">
     <div class="modal-dialog modal-lg">
       <div class="modal-content">
-        <form id="projectForm" method="POST">
+        <form id="projectForm" method="POST" action="{{ url_for('create_project') }}">
           <div class="modal-header">
             <h5 class="modal-title">Add New Project</h5>
             <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
