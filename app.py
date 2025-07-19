@@ -510,7 +510,7 @@ def add_measurement():
 
 
 @app.route('/measurement_sheet/<int:project_id>', methods=['GET', 'POST'])
-def measurement_sheet(project_id):
+def show_measurement_sheet(project_id):
     project = Project.query.get(project_id)
 
     if request.method == 'POST':
@@ -534,7 +534,6 @@ def measurement_sheet(project_id):
         return redirect(f'/measurement_sheet/{project_id}')
 
     return render_template('measurement_sheet.html', project=project)
-
 
 # ---------- ✅ Open Specific Project and Duct Entries ----------
 @app.route('/project/<int:project_id>')
