@@ -37,25 +37,23 @@
         </tr>
       </thead>
       <tbody id="projectTable">
-        {% for p in projects %}
-        <tr>
-          <td>{{ p.enquiry_id }}</td>
-          <td>{{ p.project_name }}</td>
-          <td>{{ p.vendor_name }}</td>
-          <td>{{ p.location }}</td>
-          <td>{{ p.start_date }}</td>
-          <td>{{ p.end_date }}</td>
-          <td>{{ p.incharge }}</td>
-          <td>
-            <button class="btn btn-sm btn-info">Edit</button>
-            <a href="{{ url_for('measurement_sheet', project_id=project.id) }}" class="btn btn-sm btn-secondary">Sheet</a>
-            <button class="btn btn-sm btn-danger">Delete</button>
-          </td>
-        </tr>
-        {% endfor %}
+  {% for p in projects %}
+  <tr>
+    <td>{{ p.enquiry_id }}</td>
+    <td>{{ p.project_name }}</td>
+    <td>{{ p.vendor_name }}</td>
+    <td>{{ p.location }}</td>
+    <td>{{ p.start_date }}</td>
+    <td>{{ p.end_date }}</td>
+    <td>{{ p.incharge }}</td>
+    <td>
+      <button class="btn btn-sm btn-info">Edit</button>
+      <a href="{{ url_for('measurement_sheet', project_id=p.id) }}" class="btn btn-sm btn-secondary">Sheet</a>
+      <button class="btn btn-sm btn-danger">Delete</button>
+    </td>
+  </tr>
+  {% endfor %}
       </tbody>
-    </table>
-  </div>
 
   <!-- Create Project Modal -->
   <div class="modal fade" id="createModal" tabindex="-1">
