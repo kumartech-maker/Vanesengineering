@@ -355,147 +355,104 @@ def vendor_registration():
 
 # ---------- ✅ API: Get Vendor Info (For Auto-Fill) ----------
 
-@app.route('/api/vendor/<int:vendor_id>')
-def get_vendor_info(vendor_id):
-    conn = get_db()
-    cur = conn.cursor()
-    cur.execute("SELECT gst, address FROM vendors WHERE id = ?", (vendor_id,))
-    vendor = cur.fetchone()
-
-    if vendor:
-        return jsonify({'gst': vendor['gst'], 'address': vendor['address']})
-    else:
-        return jsonify({}), 404
-
-
-
-# ---------- ✅ View All Projects ----------
 @app.route('/projects')
 def projects():
     try:
         conn = get_db()
         cur = conn.cursor()
+
+        # Fetch all projects with vendor name
         cur.execute("""
-          SELECT p.*, v.name AS vendor_name FROM projects p
-          LEFT JOIN vendors v ON p.vendor_id = v.id
-          ORDER BY p.id DESC
+            SELECT p.*, v.name AS vendor_name 
+            FROM projects p
+            LEFT JOIN vendors v ON p.vendor_id = v.id
+            ORDER BY p.id DESC
         """)
         projects = cur.fetchall()
 
+        # Fetch vendors
         cur.execute("SELECT * FROM vendors ORDER BY id DESC")
         vendors = cur.fetchall()
-        vendors = [dict(row) for row in vendors]  # ✅ fix
 
+        # Generate next Enquiry ID
         cur.execute("SELECT MAX(id) FROM projects")
         new_id = (cur.fetchone()[0] or 0) + 1
         enquiry_id = f"VE/TN/E{str(new_id).zfill(3)}"
 
-        conn.close()
         return render_template('projects.html',
             projects=projects,
-            vendors=vendors,
+            vendors=[dict(v) for v in vendors],
             new_enquiry_id=enquiry_id
         )
     except Exception as e:
-        print("🔴 Error in /projects route:", e)
-        return f"<h3>Internal Server Error:</h3><pre>{e}</pre>", 500
+        print("Error loading /projects:", e)
+        return f"<h3>Internal Error:</h3><pre>{e}</pre>", 500
 
-@app.route('/project/edit/<int:project_id>', methods=['GET', 'POST'])
+
+@app.route('/project/delete/<int:project_id>', methods=['POST'])
+def delete_project(project_id):
+    try:
+        conn = get_db()
+        cur = conn.cursor()
+        cur.execute("DELETE FROM projects WHERE id = ?", (project_id,))
+        conn.commit()
+        return jsonify(status="success")
+    except Exception as e:
+        print("Delete error:", e)
+        return jsonify(status="error", message=str(e))
+
+
+@app.route('/project/edit/<int:project_id>', methods=['POST'])
 def edit_project(project_id):
-    conn = get_db_connection()
+    try:
+        conn = get_db()
+        cur = conn.cursor()
+
+        cur.execute("""
+            UPDATE projects SET
+                project_name = ?, quotation_ro = ?, vendor_id = ?, location = ?,
+                start_date = ?, end_date = ?, incharge = ?, contact_number = ?, email = ?
+            WHERE id = ?
+        """, (
+            request.form['project_name'],
+            request.form.get('quotation_ro'),
+            request.form['vendor_id'],
+            request.form['location'],
+            request.form.get('start_date'),
+            request.form.get('end_date'),
+            request.form.get('incharge'),
+            request.form.get('contact_number'),
+            request.form.get('email'),
+            project_id
+        ))
+        conn.commit()
+        return jsonify(status="success")
+
+    except Exception as e:
+        print("Edit error:", e)
+        return jsonify(status="error", message=str(e))
+
+@app.route('/vendor/<int:vendor_id>')
+def get_vendor_details(vendor_id):
+    conn = get_db()
     cur = conn.cursor()
+    cur.execute("SELECT gst, address FROM vendors WHERE id = ?", (vendor_id,))
+    vendor = cur.fetchone()
+    if vendor:
+        return jsonify(gst=vendor['gst'], address=vendor['address'])
+    return jsonify(error="Vendor not found"), 404
 
-    if request.method == 'POST':
-        try:
-            project_code = request.form.get('project_code', '')
-            vendor_id = request.form.get('vendor_id', None)
-            start_date = request.form.get('start_date', None)
-            end_date = request.form.get('end_date', None)
-            location = request.form.get('location', '')
-            incharge = request.form.get('incharge', '')
-            notes = request.form.get('notes', '')
-            enquiry_id = request.form.get('enquiry_id', '')
-            client_name = request.form.get('client_name', '')
-            site_location = request.form.get('site_location', '')
-            engineer_name = request.form.get('engineer_name', '')
-            mobile = request.form.get('mobile', '')
-            email = request.form.get('email', '')
-            status = request.form.get('status', 'Ongoing')
-            total_sqm = request.form.get('total_sqm')
-            total_sqm = float(total_sqm) if total_sqm else 0.0
 
-            cur.execute('''
-                UPDATE projects SET
-                    project_code = ?, vendor_id = ?, start_date = ?, end_date = ?,
-                    location = ?, incharge = ?, notes = ?, enquiry_id = ?,
-                    client_name = ?, site_location = ?, engineer_name = ?, mobile = ?,
-                    email = ?, status = ?, total_sqm = ?
-                WHERE id = ?
-            ''', (
-                project_code, vendor_id, start_date, end_date, location, incharge,
-                notes, enquiry_id, client_name, site_location, engineer_name, mobile,
-                email, status, total_sqm, project_id
-            ))
+@app.route('/vendor/<int:vendor_id>')
+def get_vendor_details(vendor_id):
+    conn = get_db()
+    cur = conn.cursor()
+    cur.execute("SELECT gst, address FROM vendors WHERE id = ?", (vendor_id,))
+    vendor = cur.fetchone()
+    if vendor:
+        return jsonify(gst=vendor['gst'], address=vendor['address'])
+    return jsonify(error="Vendor not found"), 404
 
-            conn.commit()
-            flash('Project updated successfully!', 'success')
-            return redirect(url_for('projects'))
-
-        except Exception as e:
-            conn.rollback()
-            flash(f"Error updating project: {str(e)}", 'danger')
-            return redirect(url_for('edit_project', project_id=project_id))
-
-        finally:
-            conn.close()
-
-    # GET: Load project and vendors
-    cur.execute('SELECT * FROM projects WHERE id = ?', (project_id,))
-    project = cur.fetchone()
-
-    cur.execute('SELECT * FROM vendors ORDER BY id DESC')
-    vendors = cur.fetchall()
-
-    conn.close()
-    return render_template('edit_project.html', project=project, vendors=vendors)
-
-# ---------- ✅ Create Project ----------
-# ---------- ✅ Save New Project ----------
-@app.route('/create_project', methods=['POST'])
-def create_project():
-    conn = get_db(); cur = conn.cursor()
-    # generate Enquiry ID server-side for consistency
-    cur.execute("SELECT MAX(id) FROM projects")
-    new_id = (cur.fetchone()[0] or 0) + 1
-    enquiry_id = f"VE/TN/E{str(new_id).zfill(3)}"
-    cur.execute("""
-      INSERT INTO projects (enquiry_id, project_name, quotation_ro, vendor_id, location,
-      start_date, end_date, incharge, contact_number, email)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-    """, (
-      enquiry_id, request.form['project_name'], request.form.get('quotation_ro'),
-      request.form['vendor_id'], request.form['location'],
-      request.form.get('start_date'), request.form.get('end_date'),
-      request.form.get('incharge'), request.form.get('contact_number'),
-      request.form.get('email')
-    ))
-    conn.commit()
-    pid = cur.lastrowid
-    cur.execute("SELECT name FROM vendors WHERE id = ?", (request.form['vendor_id'],))
-    vendor_name = cur.fetchone()[0]
-    conn.close()
-    return jsonify(status='success', project={
-      'id': pid, 'enquiry_id': enquiry_id,
-      'project_name': request.form['project_name'],
-      'quotation_ro': request.form.get('quotation_ro'),
-      'vendor_name': vendor_name,
-      'location': request.form['location'],
-      'start_date': request.form.get('start_date'),
-      'end_date': request.form.get('end_date'),
-      'incharge': request.form.get('incharge'),
-      'contact_number': request.form.get('contact_number'),
-      'email': request.form.get('email'),
-    })
 
 # ---------- ✅ Add Measurement Info to Project ----------
 
