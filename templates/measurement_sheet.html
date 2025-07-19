@@ -9,45 +9,33 @@
     input[type=number] {
       width: 80px;
     }
-    .table thead th, .table tbody td {
+    .table th, .table td {
       vertical-align: middle;
-    }
-    .table input {
-      text-align: center;
-    }
-    .summary-table th, .summary-table td {
       text-align: center;
     }
   </style>
 </head>
 <body class="bg-light">
-  <div class="container mt-4">
-    <h3 class="text-center mb-4">Measurement Sheet</h3>
+<div class="container mt-4">
+  <h3 class="text-center mb-4">Measurement Sheet - {{ project.project_name }}</h3>
+  <form method="POST" action="/measurement_sheet/{{ project.id }}">
+    <input type="hidden" name="project_id" value="{{ project.id }}">
     <div class="row">
 
-      <!-- Left Side: Duct Entry Form -->
+      <!-- Left: Entry Table -->
       <div class="col-md-8">
-        <table class="table table-bordered" id="ductTable">
+        <table class="table table-bordered" id="sheet_table">
           <thead class="table-secondary">
             <tr>
-              <th>Duct No</th>
-              <th>Type</th>
-              <th>W1</th>
-              <th>H1</th>
-              <th>W2</th>
-              <th>H2</th>
-              <th>Qty</th>
-              <th>Len/Radius</th>
-              <th>Deg/Offset</th>
-              <th>Factor</th>
-              <th>Action</th>
+              <th>Duct No</th><th>Type</th><th>W1</th><th>H1</th><th>W2</th><th>H2</th>
+              <th>Qty</th><th>Length</th><th>Deg</th><th>Factor</th><th>Action</th>
             </tr>
           </thead>
-          <tbody id="ductTableBody">
+          <tbody id="tableBody">
             <tr>
-              <td><input type="text" class="form-control" name="duct_no[]"></td>
+              <td><input type="text" name="duct_no[]" class="form-control"></td>
               <td>
-                <select class="form-select" name="duct_type[]">
+                <select name="duct_type[]" class="form-select type">
                   <option value="ST">Straight</option>
                   <option value="ELB">Elbow</option>
                   <option value="OFFSET">Offset</option>
@@ -57,156 +45,120 @@
                   <option value="VANES">Vanes</option>
                 </select>
               </td>
-              <td><input type="number" class="form-control" name="w1[]" step="0.01"></td>
-              <td><input type="number" class="form-control" name="h1[]" step="0.01"></td>
-              <td><input type="number" class="form-control" name="w2[]" step="0.01"></td>
-              <td><input type="number" class="form-control" name="h2[]" step="0.01"></td>
-              <td><input type="number" class="form-control" name="qty[]" step="1" value="1"></td>
-              <td><input type="number" class="form-control" name="length[]" step="0.01"></td>
-              <td><input type="number" class="form-control" name="deg[]" step="0.01"></td>
-              <td><input type="number" class="form-control" name="factor[]" value="1" step="0.01"></td>
-              <td><button type="button" class="btn btn-sm btn-danger" onclick="removeRow(this)">Delete</button></td>
+              <td><input type="number" name="w1[]" class="form-control w1" step="0.01"></td>
+              <td><input type="number" name="h1[]" class="form-control h1" step="0.01"></td>
+              <td><input type="number" name="w2[]" class="form-control w2" step="0.01"></td>
+              <td><input type="number" name="h2[]" class="form-control h2" step="0.01"></td>
+              <td><input type="number" name="qty[]" class="form-control qty" value="1"></td>
+              <td><input type="number" name="length[]" class="form-control len" step="0.01"></td>
+              <td><input type="number" name="deg[]" class="form-control deg" step="0.01"></td>
+              <td><input type="number" name="factor[]" class="form-control factor" value="1"></td>
+              <td><button type="button" class="btn btn-sm btn-danger" onclick="removeRow(this)">X</button></td>
             </tr>
           </tbody>
         </table>
-        <button type="button" class="btn btn-primary" onclick="addRow()">Add Row</button>
+        <button type="button" class="btn btn-secondary" onclick="addRow()">+ Add Row</button>
+        <button type="submit" class="btn btn-primary float-end">Save Sheet</button>
       </div>
 
-      <!-- Right Side: Totals -->
+      <!-- Right: Totals -->
       <div class="col-md-4">
         <table class="table table-bordered text-center">
           <thead class="table-dark">
             <tr><th colspan="2">Total Area by Gauge</th></tr>
           </thead>
           <tbody>
-            <tr>
-              <th>24G</th>
-              <td id="total_24g_area">0.00</td>
-            </tr>
-            <tr>
-              <th>22G</th>
-              <td id="total_22g_area">0.00</td>
-            </tr>
-            <tr>
-              <th>20G</th>
-              <td id="total_20g_area">0.00</td>
-            </tr>
-            <tr>
-              <th>18G</th>
-              <td id="total_18g_area">0.00</td>
-            </tr>
+            <tr><th>24G</th><td id="total_24g_area">0.00</td></tr>
+            <tr><th>22G</th><td id="total_22g_area">0.00</td></tr>
+            <tr><th>20G</th><td id="total_20g_area">0.00</td></tr>
+            <tr><th>18G</th><td id="total_18g_area">0.00</td></tr>
           </tbody>
         </table>
-
         <table class="table table-bordered text-center mt-3">
-          <thead class="table-dark">
-            <tr><th colspan="2">Materials Summary</th></tr>
-          </thead>
+          <thead class="table-dark"><tr><th colspan="2">Materials Summary</th></tr></thead>
           <tbody>
-            <tr>
-              <th>Nuts & Bolts</th>
-              <td id="total_nuts">0</td>
-            </tr>
-            <tr>
-              <th>Cleats</th>
-              <td id="total_cleat">0</td>
-            </tr>
-            <tr>
-              <th>Gasket (m)</th>
-              <td id="total_gasket">0.00</td>
-            </tr>
-            <tr>
-              <th>Corner Pieces</th>
-              <td id="total_corner">0</td>
-            </tr>
+            <tr><th>Nuts & Bolts</th><td id="total_nuts">0</td></tr>
+            <tr><th>Cleats</th><td id="total_cleat">0</td></tr>
+            <tr><th>Gasket (m)</th><td id="total_gasket">0.00</td></tr>
+            <tr><th>Corner Pieces</th><td id="total_corner">0</td></tr>
           </tbody>
         </table>
       </div>
+    </div>
+  </form>
+</div>
 
-      <!-- Scripts -->
-      <script>
-        function calculateRow(row) {
-          const ductType = row.querySelector('.type').value;
-          const w1 = parseFloat(row.querySelector('.w1').value) || 0;
-          const h1 = parseFloat(row.querySelector('.h1').value) || 0;
-          const w2 = parseFloat(row.querySelector('.w2').value) || 0;
-          const h2 = parseFloat(row.querySelector('.h2').value) || 0;
-          const qty = parseFloat(row.querySelector('.qty').value) || 0;
-          const len = parseFloat(row.querySelector('.len').value) || 0;
-          const deg = parseFloat(row.querySelector('.deg').value) || 0;
-          const factor = parseFloat(row.querySelector('.factor').value) || 1;
+<!-- Scripts -->
+<script>
+function addRow() {
+  const row = document.querySelector('#tableBody tr').cloneNode(true);
+  row.querySelectorAll('input').forEach(input => input.value = '');
+  document.querySelector('#tableBody').appendChild(row);
+}
 
-          let area = 0;
+function removeRow(btn) {
+  const rows = document.querySelectorAll('#tableBody tr');
+  if (rows.length > 1) btn.closest('tr').remove();
+}
 
-          if (ductType === 'ST') {
-            area = 2 * (w1 + h1) / 1000 * (len / 1000) * qty;
-          } else if (ductType === 'RED') {
-            area = (w1 + h1 + w2 + h2) / 1000 * (len / 1000) * qty * factor;
-          } else if (ductType === 'DUM') {
-            area = (w1 * h1) / 1000000 * qty;
-          } else if (ductType === 'OFFSET') {
-            area = (w1 + h1 + w2 + h2) / 1000 * ((len + deg) / 1000) * qty * factor;
-          } else if (ductType === 'SHOE') {
-            area = (w1 + h1) * 2 / 1000 * (len / 1000) * qty * factor;
-          } else if (ductType === 'VANES') {
-            area = w1 / 1000 * (2 * Math.PI * (w1 / 1000) / 4) * qty;
-          } else if (ductType === 'ELB') {
-            area = 2 * (w1 + h1) / 1000 * ((h1 / 2 / 1000) + (len / 1000) * (Math.PI * (deg / 180))) * qty * factor;
-          }
+function calculateRow(row) {
+  const get = cls => parseFloat(row.querySelector('.' + cls)?.value) || 0;
+  const type = row.querySelector('.type')?.value;
+  const w1 = get('w1'), h1 = get('h1'), w2 = get('w2'), h2 = get('h2');
+  const qty = get('qty'), len = get('len'), deg = get('deg'), factor = get('factor');
+  let area = 0;
 
-          // Determine gauge
-          let gauge = '18g';
-          if (w1 <= 751 && h1 <= 751) gauge = '24g';
-          else if (w1 <= 1201 && h1 <= 1201) gauge = '22g';
-          else if (w1 <= 1800 && h1 <= 1800) gauge = '20g';
+  if (type === 'ST') area = 2 * (w1 + h1) * len * qty;
+  else if (type === 'RED') area = (w1 + h1 + w2 + h2) * len * qty * factor;
+  else if (type === 'DUM') area = (w1 * h1) * qty;
+  else if (type === 'OFFSET') area = (w1 + h1 + w2 + h2) * (len + deg) * qty * factor;
+  else if (type === 'SHOE') area = (w1 + h1) * 2 * len * qty * factor;
+  else if (type === 'VANES') area = w1 * (2 * Math.PI * (w1 / 4)) * qty;
+  else if (type === 'ELB') area = 2 * (w1 + h1) * ((h1 / 2) + (len * (Math.PI * (deg / 180)))) * qty * factor;
 
-          // Material calculations
-          const nuts = qty * 4;
-          const cleatFactor = { '24g': 4, '22g': 8, '20g': 10 }[gauge] || 12;
-          const cleat = qty * cleatFactor;
-          const gasket = (w1 + h1 + w2 + h2) / 1000 * qty;
-          const corner = ductType === 'DUM' ? 0 : qty * 8;
+  area = area / 1000000; // convert to m²
 
-          return { gauge, area, nuts, cleat, gasket, corner };
-        }
+  let gauge = '18g';
+  if (w1 <= 751 && h1 <= 751) gauge = '24g';
+  else if (w1 <= 1201 && h1 <= 1201) gauge = '22g';
+  else if (w1 <= 1800 && h1 <= 1800) gauge = '20g';
 
-        function updateTotals() {
-          const rows = document.querySelectorAll('#sheet_table tbody tr');
-          const areaByGauge = { '24g': 0, '22g': 0, '20g': 0, '18g': 0 };
-          let totalNuts = 0, totalCleat = 0, totalGasket = 0, totalCorner = 0;
+  const nuts = qty * 4;
+  const cleat = qty * { '24g': 4, '22g': 8, '20g': 10 }[gauge] || 12;
+  const gasket = (w1 + h1 + w2 + h2) / 1000 * qty;
+  const corner = type === 'DUM' ? 0 : qty * 8;
 
-          rows.forEach(row => {
-            const data = calculateRow(row);
-            areaByGauge[data.gauge] += data.area;
-            totalNuts += data.nuts;
-            totalCleat += data.cleat;
-            totalGasket += data.gasket;
-            totalCorner += data.corner;
-          });
+  return { gauge, area, nuts, cleat, gasket, corner };
+}
 
-          document.getElementById('total_24g_area').textContent = areaByGauge['24g'].toFixed(2);
-          document.getElementById('total_22g_area').textContent = areaByGauge['22g'].toFixed(2);
-          document.getElementById('total_20g_area').textContent = areaByGauge['20g'].toFixed(2);
-          document.getElementById('total_18g_area').textContent = areaByGauge['18g'].toFixed(2);
+function updateTotals() {
+  const rows = document.querySelectorAll('#tableBody tr');
+  const gauges = { '24g': 0, '22g': 0, '20g': 0, '18g': 0 };
+  let nuts = 0, cleat = 0, gasket = 0, corner = 0;
 
-          document.getElementById('total_nuts').textContent = totalNuts;
-          document.getElementById('total_cleat').textContent = totalCleat;
-          document.getElementById('total_gasket').textContent = totalGasket.toFixed(2);
-          document.getElementById('total_corner').textContent = totalCorner;
-        }
+  rows.forEach(row => {
+    const data = calculateRow(row);
+    gauges[data.gauge] += data.area;
+    nuts += data.nuts;
+    cleat += data.cleat;
+    gasket += data.gasket;
+    corner += data.corner;
+  });
 
-        // Recalculate on any input change
-        document.addEventListener('input', function (e) {
-          if (e.target.closest('tr')) updateTotals();
-        });
+  document.getElementById('total_24g_area').textContent = gauges['24g'].toFixed(2);
+  document.getElementById('total_22g_area').textContent = gauges['22g'].toFixed(2);
+  document.getElementById('total_20g_area').textContent = gauges['20g'].toFixed(2);
+  document.getElementById('total_18g_area').textContent = gauges['18g'].toFixed(2);
+  document.getElementById('total_nuts').textContent = nuts;
+  document.getElementById('total_cleat').textContent = cleat;
+  document.getElementById('total_gasket').textContent = gasket.toFixed(2);
+  document.getElementById('total_corner').textContent = corner;
+}
 
-        // Initial calculation on page load
-        window.onload = updateTotals;
-      </script>
-
-      </div> <!-- End of row -->
-  </div> <!-- End of container -->
+document.addEventListener('input', function (e) {
+  if (e.target.closest('tr')) updateTotals();
+});
+window.onload = updateTotals;
+</script>
 </body>
-</html>
-
-      
+  </html>
