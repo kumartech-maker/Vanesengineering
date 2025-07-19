@@ -507,12 +507,34 @@ def add_measurement():
     conn.close()
     return '', 200
 
-@app.route('/measurement_sheet/<int:project_id>')
+
+
+@app.route('/measurement_sheet/<int:project_id>', methods=['GET', 'POST'])
 def measurement_sheet(project_id):
-    # Fetch project and sheet data by project_id from DB
     project = Project.query.get(project_id)
-    measurements = Measurement.query.filter_by(project_id=project_id).all()
-    return render_template("measurement_sheet.html", project=project, measurements=measurements)
+
+    if request.method == 'POST':
+        # Loop over the posted arrays
+        for i in range(len(request.form.getlist('duct_no[]'))):
+            entry = Measurement(
+                project_id=project_id,
+                duct_no=request.form.getlist('duct_no[]')[i],
+                duct_type=request.form.getlist('duct_type[]')[i],
+                w1=request.form.getlist('w1[]')[i],
+                h1=request.form.getlist('h1[]')[i],
+                w2=request.form.getlist('w2[]')[i],
+                h2=request.form.getlist('h2[]')[i],
+                qty=request.form.getlist('qty[]')[i],
+                length=request.form.getlist('length[]')[i],
+                deg=request.form.getlist('deg[]')[i],
+                factor=request.form.getlist('factor[]')[i]
+            )
+            db.session.add(entry)
+        db.session.commit()
+        return redirect(f'/measurement_sheet/{project_id}')
+
+    return render_template('measurement_sheet.html', project=project)
+
 
 # ---------- ✅ Open Specific Project and Duct Entries ----------
 @app.route('/project/<int:project_id>')
