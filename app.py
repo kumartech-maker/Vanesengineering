@@ -1154,7 +1154,7 @@ def summary():
     conn = get_db()
     cur = conn.cursor()
 
-    cur.execute("SELECT id, project_code FROM projects")
+    cur.execute("SELECT id, project_name FROM projects")
     projects = cur.fetchall()
 
     if request.method == "POST":
