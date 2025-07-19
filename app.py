@@ -1271,20 +1271,6 @@ def submit_all(project_id):
 
 # ---------- ✅ Delete Project and Related Ducts ----------
 
-@app.route('/project/<int:project_id>/delete', methods=['POST'])
-def delete_project(project_id):
-    conn = get_db()
-    cur = conn.cursor()
-
-    cur.execute("DELETE FROM duct_entries WHERE project_id = ?", (project_id,))
-    cur.execute("DELETE FROM production_progress WHERE project_id = ?", (project_id,))
-    cur.execute("DELETE FROM projects WHERE id = ?", (project_id,))
-
-    conn.commit()
-    conn.close()
-
-    flash("🗑️ Project deleted successfully!", "success")
-    return redirect(url_for('projects'))
 
 
 
