@@ -432,15 +432,6 @@ def edit_project(project_id):
         print("Edit error:", e)
         return jsonify(status="error", message=str(e))
 
-@app.route('/vendor/<int:vendor_id>')
-def get_vendor_details(vendor_id):
-    conn = get_db()
-    cur = conn.cursor()
-    cur.execute("SELECT gst, address FROM vendors WHERE id = ?", (vendor_id,))
-    vendor = cur.fetchone()
-    if vendor:
-        return jsonify(gst=vendor['gst'], address=vendor['address'])
-    return jsonify(error="Vendor not found"), 404
 
 
 @app.route('/vendor/<int:vendor_id>')
