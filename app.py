@@ -434,6 +434,37 @@ def edit_project(project_id):
         return jsonify(status="error", message=str(e))
 
 
+@app.route('/create_project', methods=['POST'])
+def create_project():
+    if 'user' not in session:
+        return redirect(url_for('login'))
+
+    try:
+        enquiry_id = request.form['enquiry_id']
+        project_name = request.form['project_name']
+        quotation_ro = request.form.get('quotation_ro', '')
+        vendor_id = request.form['vendor_id']
+        location = request.form['location']
+        start_date = request.form.get('start_date', '')
+        end_date = request.form.get('end_date', '')
+        incharge = request.form.get('incharge', '')
+        contact_number = request.form.get('contact_number', '')
+        email = request.form.get('email', '')
+
+        conn = get_db()
+        cur = conn.cursor()
+        cur.execute("""
+            INSERT INTO projects 
+            (enquiry_id, project_name, quotation_ro, vendor_id, location, start_date, end_date, incharge, contact_number, email)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        """, (enquiry_id, project_name, quotation_ro, vendor_id, location, start_date, end_date, incharge, contact_number, email))
+        conn.commit()
+        return redirect(url_for('projects'))
+
+    except Exception as e:
+        return f"An error occurred: {e}", 500
+
+
 
 @app.route('/vendor/<int:vendor_id>')
 def get_vendor_details(vendor_id):
