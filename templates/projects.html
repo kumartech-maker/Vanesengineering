@@ -1,18 +1,20 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>Projects</title>
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
-  <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet">
+  <meta charset="UTF-8" />
+  <title>Project Management</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet" />
+  <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
   <style>
-    .form-section { background: #f8f9fa; padding: 20px; border-radius: 10px; }
-    .table-section { padding: 20px; }
-    .modal-lg { max-width: 85%; }
-    .select2-container--bootstrap5 .select2-selection { height: 38px; }
+    .select2-container .select2-selection--single {
+      height: 38px;
+      padding: 6px 12px;
+    }
   </style>
 </head>
 <body>
+
 <div class="container-fluid p-3">
   <div class="d-flex justify-content-between mb-3">
     <h2>Projects</h2>
@@ -62,7 +64,7 @@
         <form id="projectForm" method="POST">
           <div class="modal-header">
             <h5 class="modal-title">Add New Project</h5>
-            <button class="btn-close" data-bs-dismiss="modal"></button>
+            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
           </div>
           <div class="modal-body row g-3 form-section">
             <div class="col-md-4">
@@ -78,24 +80,22 @@
               <input type="text" name="quotation_ro" class="form-control">
             </div>
             <div class="col-md-4">
-  <label>Vendor</label>
-  <select name="vendor_id" id="vendorDropdown" class="form-control" required>
-    <option value="">-- Select Vendor --</option>
-    {% for v in vendors %}
-      <option value="{{ v.id }}" data-gst="{{ v.gst }}" data-address="{{ v.address }}">{{ v.name }}</option>
-    {% endfor %}
-  </select>
-</div>
-
-<div class="col-md-4">
-  <label>GST</label>
-  <input type="text" id="vendor_gst" class="form-control" readonly>
-</div>
-
-<div class="col-md-4">
-  <label>Address</label>
-  <input type="text" id="vendor_address" class="form-control" readonly>
-</div>
+              <label>Vendor</label>
+              <select name="vendor_id" id="vendorDropdown" class="form-control" required>
+                <option value="">-- Select Vendor --</option>
+                {% for v in vendors %}
+                  <option value="{{ v.id }}" data-gst="{{ v.gst }}" data-address="{{ v.address }}">{{ v.name }}</option>
+                {% endfor %}
+              </select>
+            </div>
+            <div class="col-md-4">
+              <label>GST</label>
+              <input type="text" id="vendor_gst" class="form-control" readonly>
+            </div>
+            <div class="col-md-4">
+              <label>Address</label>
+              <input type="text" id="vendor_address" class="form-control" readonly>
+            </div>
             <div class="col-md-4">
               <label>Location</label>
               <input type="text" name="location" class="form-control" required>
@@ -128,72 +128,34 @@
       </div>
     </div>
   </div>
-
-  <!-- Sheet Modal -->
-  <div class="modal fade" id="sheetModal" tabindex="-1">
-    <div class="modal-dialog modal-xl">
-      <div class="modal-content">
-        <div class="modal-header">
-          <h5 class="modal-title">Measurement Sheet</h5>
-          <button class="btn-close" data-bs-dismiss="modal"></button>
-        </div>
-        <div class="modal-body">
-          <p>Project ID: <span id="sheetProjectId"></span></p>
-        </div>
-      </div>
-    </div>
-  </div>
 </div>
 
-<!-- Scripts -->
+<!-- Scripts (jQuery → Bootstrap → Select2) -->
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+
 <script>
   $(document).ready(function () {
-    $('#vendorDropdown').select2({ theme: 'bootstrap5', width: '100%' });
-
-    // Autofill on vendor selection
-    $('#vendorDropdown').on('change', function () {
-      const selected = $(this).find('option:selected');
-      const gst = selected.data('gst') || '';
-      const address = selected.data('address') || '';
-      $('#vendorGST').val(gst);
-      $('#vendorAddress').val(address);
+    // Enable searchable vendor dropdown
+    $('#vendorDropdown').select2({
+      dropdownParent: $('#createModal'),
+      width: '100%'
     });
 
-    // Submit project form via AJAX
-    $('#projectForm').on('submit', function (e) {
-      e.preventDefault();
-      const form = $(this);
-      $.post('/create_project', form.serialize(), function (response) {
-        if (response.status === 'success') {
-          const p = response.project;
-          const row = `<tr>
-            <td>${p.enquiry_id}</td>
-            <td>${p.project_name}</td>
-            <td>${p.vendor_name}</td>
-            <td>${p.location}</td>
-            <td>${p.start_date}</td>
-            <td>${p.end_date}</td>
-            <td>${p.incharge}</td>
-            <td>
-              <button class="btn btn-sm btn-info">Edit</button>
-              <button class="btn btn-sm btn-success" onclick="openSheet(${p.id})">Sheet</button>
-              <button class="btn btn-sm btn-danger">Delete</button>
-            </td>
-          </tr>`;
-          $('#projectTable').prepend(row);
-          bootstrap.Modal.getInstance(document.getElementById('createModal')).hide();
-          form[0].reset();
-          $('#vendorGST, #vendorAddress').val('');
-          $('#vendorDropdown').val('').trigger('change');
-        }
-      });
+    // Auto-fill GST and Address on vendor change
+    $('#vendorDropdown').on('change', function () {
+      const selected = $(this).find(':selected');
+      $('#vendor_gst').val(selected.data('gst') || '');
+      $('#vendor_address').val(selected.data('address') || '');
     });
   });
 
-  function openSheet(id) {
-    $('#sheetProjectId').text(id);
-    new bootstrap.Modal(document.getElementById('sheetModal')).show();
+  function openSheet(projectId) {
+    alert('Opening sheet for project ID: ' + projectId);
+    // Replace with actual logic
   }
 </script>
+
 </body>
 </html>
