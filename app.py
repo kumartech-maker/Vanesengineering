@@ -1,4 +1,5 @@
 from flask import Flask, render_template, request, redirect, url_for, flash, session, send_file, jsonify
+from werkzeug.security import generate_password_hash
 from datetime import datetime
 import sqlite3
 import os
