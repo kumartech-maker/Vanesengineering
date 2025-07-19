@@ -78,22 +78,24 @@
               <input type="text" name="quotation_ro" class="form-control">
             </div>
             <div class="col-md-4">
-              <label>Vendor</label>
-              <select name="vendor_id" id="vendorDropdown" class="form-control" required>
-                <option value="">-- Select Vendor --</option>
-                {% for v in vendors %}
-                <option value="{{ v.id }}" data-gst="{{ v.gst }}" data-address="{{ v.address }}">{{ v.name }}</option>
-                {% endfor %}
-              </select>
-            </div>
-            <div class="col-md-4">
-              <label>Vendor GST</label>
-              <input type="text" id="vendorGST" class="form-control" readonly>
-            </div>
-            <div class="col-md-4">
-              <label>Vendor Address</label>
-              <input type="text" id="vendorAddress" class="form-control" readonly>
-            </div>
+  <label>Vendor</label>
+  <select name="vendor_id" id="vendorDropdown" class="form-control" required>
+    <option value="">-- Select Vendor --</option>
+    {% for v in vendors %}
+      <option value="{{ v.id }}" data-gst="{{ v.gst }}" data-address="{{ v.address }}">{{ v.name }}</option>
+    {% endfor %}
+  </select>
+</div>
+
+<div class="col-md-4">
+  <label>GST</label>
+  <input type="text" id="vendor_gst" class="form-control" readonly>
+</div>
+
+<div class="col-md-4">
+  <label>Address</label>
+  <input type="text" id="vendor_address" class="form-control" readonly>
+</div>
             <div class="col-md-4">
               <label>Location</label>
               <input type="text" name="location" class="form-control" required>
