@@ -81,6 +81,10 @@
               <label class="form-label">Degree (if ELB)</label>
               <input type="number" class="form-control" id="degree">
             </div>
+            <div class="col-md-6 mb-3">
+  <label for="factor" class="form-label">Factor</label>
+  <input type="number" class="form-control" id="factor" placeholder="Enter Factor" step="any">
+            </div>
             <div class="d-grid">
               <button type="submit" id="addBtn" class="btn btn-primary">Add Entry</button>
             </div>
@@ -169,7 +173,7 @@
     const len = +document.getElementById("length").value;
     const qty = +document.getElementById("quantity").value;
     const degree = +document.getElementById("degree").value || 0;
-
+    const factor = +document.getElementById("factor").value || 0;
     let area = 0;
     let factor = 1;
 
