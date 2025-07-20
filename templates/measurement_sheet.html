@@ -348,6 +348,59 @@
       console.log("Submitted entries:", entries);
       alert("Data submitted successfully!");
     };
+
+    <script>
+  let entries = [];
+  let editingIndex = -1;
+
+  function addEntry() {
+    const type = document.getElementById("type").value;
+    const w1 = +document.getElementById("w1").value;
+    const h1 = +document.getElementById("h1").value;
+    const w2 = +document.getElementById("w2").value || 0;
+    const h2 = +document.getElementById("h2").value || 0;
+    const len = +document.getElementById("length").value;
+    const qty = +document.getElementById("quantity").value;
+    const degree = +document.getElementById("degree").value || 0;
+    const factor = +document.getElementById("factor").value || 1;
+
+    const gauge = getGauge(w1, h1);
+    const material = calculateMaterials(type, w1, h1, w2, h2, len, qty, degree, factor, gauge);
+
+    const entry = {
+      type,
+      w1,
+      h1,
+      w2,
+      h2,
+      len,
+      qty,
+      degree,
+      factor,
+      gauge: material.gauge,
+      area: material.area,
+      '24g': material['24g'],
+      '22g': material['22g'],
+      '20g': material['20g'],
+      '18g': material['18g'],
+      nutsAndBolts: material.nutsAndBolts,
+      cleat: material.cleat,
+      gasket: material.gasket,
+      corner: material.corner
+    };
+
+    if (editingIndex >= 0) {
+      entries[editingIndex] = entry;
+      editingIndex = -1;
+      document.getElementById("addEntryBtn").textContent = "Add Entry";
+    } else {
+      entries.push(entry);
+    }
+
+    updateTable();
+    document.getElementById("ductForm").reset();
+  }
+</script>
   </script>
 </body>
 </html>
