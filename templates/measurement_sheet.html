@@ -135,116 +135,114 @@
   </div>
 
   <script>
-    const form = document.getElementById("ductForm");
-    const tableBody = document.getElementById("tableBody");
+  const form = document.getElementById("ductForm");
+  const tableBody = document.getElementById("tableBody");
 
-    form.addEventListener("submit", function (e) {
-      e.preventDefault();
+  form.addEventListener("submit", function (e) {
+    e.preventDefault();
 
-      const formData = new FormData(form);
-      const data = Object.fromEntries(formData);
+    const formData = new FormData(form);
+    const data = Object.fromEntries(formData);
 
-      const w1 = parseFloat(data.w1) || 0;
-      const h1 = parseFloat(data.h1) || 0;
-      const w2 = parseFloat(data.w2) || 0;
-      const h2 = parseFloat(data.h2) || 0;
-      const qty = parseInt(data.qty) || 0;
-      const factor = parseFloat(data.factor) || 1;
-      const type = data.duct_type;
+    const w1 = parseFloat(data.w1) || 0;
+    const h1 = parseFloat(data.h1) || 0;
+    const w2 = parseFloat(data.w2) || 0;
+    const h2 = parseFloat(data.h2) || 0;
+    const qty = parseInt(data.qty) || 0;
+    const factor = parseFloat(data.factor) || 1;
+    const type = data.duct_type;
 
-      // Gauge logic
-      let gauge = "24G";
-      const maxWH = Math.max(w1, h1);
-      if (maxWH > 1000) gauge = "22G";
-      if (maxWH > 1500) gauge = "20G";
-      if (maxWH > 2000) gauge = "18G";
+    let gauge = "24G";
+    const maxWH = Math.max(w1, h1);
+    if (maxWH > 1000) gauge = "22G";
+    if (maxWH > 1500) gauge = "20G";
+    if (maxWH > 2000) gauge = "18G";
 
-      // Area logic (basic, customizable per type)
-      let area = 0;
-      if (type === "Straight" || type === "Square") {
-        area = ((w1 + h1) * 2 * (data.length || 1)) / 1e6;
-      } else if (type === "Elbow") {
-        area = ((w1 + h1) * 2 * 0.785 * (data.deg || 90)) / 1e6;
-      } else {
-        area = ((w1 + h1 + w2 + h2) * (data.length || 1)) / 2e6;
-      }
-      area = (area * qty).toFixed(2);
+    let area = 0;
+    if (type === "Straight" || type === "Square") {
+      area = ((w1 + h1) * 2 * (data.length || 1)) / 1e6;
+    } else if (type === "Elbow") {
+      area = ((w1 + h1) * 2 * 0.785 * (data.deg || 90)) / 1e6;
+    } else {
+      area = ((w1 + h1 + w2 + h2) * (data.length || 1)) / 2e6;
+    }
+    area = (area * qty).toFixed(2);
 
-      // Material breakdown
-      const nuts = qty * 4;
-      const cleat = Math.round(qty * (gauge === "18G" ? 2.5 : 1.5));
-      const gasket = (((w1 + h1 + w2 + h2) / 1000) * qty).toFixed(2);
-      const corner = type === "Round" ? 0 : qty * 8;
+    const nuts = qty * 4;
+    const cleat = Math.round(qty * (gauge === "18G" ? 2.5 : 1.5));
+    const gasket = (((w1 + h1 + w2 + h2) / 1000) * qty).toFixed(2);
+    const corner = type === "Round" ? 0 : qty * 8;
 
-      const row = document.createElement("tr");
-      row.innerHTML = `
-        <td>${data.duct_no}</td>
-        <td>${data.duct_type}</td>
-        <td>${w1}</td>
-        <td>${h1}</td>
-        <td>${w2}</td>
-        <td>${h2}</td>
-        <td>${qty}</td>
-        <td>${data.length || ""}</td>
-        <td>${data.deg || ""}</td>
-        <td>${factor}</td>
-        <td>${gauge}</td>
-        <td>${area}</td>
-        <td>${gauge === "24G" ? area : ""}</td>
-        <td>${gauge === "22G" ? area : ""}</td>
-        <td>${gauge === "20G" ? area : ""}</td>
-        <td>${gauge === "18G" ? area : ""}</td>
-        <td>${nuts}</td>
-        <td>${cleat}</td>
-        <td>${gasket}</td>
-        <td>${corner}</td>
-        <td><button class="btn btn-danger btn-sm" onclick="this.closest('tr').remove()">🗑</button></td>
-      `;
-      tableBody.appendChild(row);
-      form.reset();
-      updateTotals();
-    });
-
-    function exportTableToExcel() {
-      const table = document.getElementById("ductTable");
-      const tableHTML = table.outerHTML.replace(/ /g, '%20');
-      const filename = 'measurement_sheet.xls';
-      const dataType = 'application/vnd.ms-excel';
-
-      const downloadLink = document.createElement("a");
-      document.body.appendChild(downloadLink);
-      downloadLink.href = 'data:' + dataType + ', ' + tableHTML;
-      downloadLink.download = filename;
-      downloadLink.click();
-      document.body.removeChild(downloadLink);
-
-      function updateTotals() {
-  let totalArea = 0, t24 = 0, t22 = 0, t20 = 0, t18 = 0;
-  let nuts = 0, cleat = 0, gasket = 0, corner = 0;
-
-  [...tableBody.rows].forEach(row => {
-    totalArea += parseFloat(row.cells[11].textContent) || 0;
-    t24 += parseFloat(row.cells[12].textContent) || 0;
-    t22 += parseFloat(row.cells[13].textContent) || 0;
-    t20 += parseFloat(row.cells[14].textContent) || 0;
-    t18 += parseFloat(row.cells[15].textContent) || 0;
-    nuts += parseFloat(row.cells[16].textContent) || 0;
-    cleat += parseFloat(row.cells[17].textContent) || 0;
-    gasket += parseFloat(row.cells[18].textContent) || 0;
-    corner += parseFloat(row.cells[19].textContent) || 0;
+    const row = document.createElement("tr");
+    row.innerHTML = `
+      <td>${data.duct_no}</td>
+      <td>${data.duct_type}</td>
+      <td>${w1}</td>
+      <td>${h1}</td>
+      <td>${w2}</td>
+      <td>${h2}</td>
+      <td>${qty}</td>
+      <td>${data.length || ""}</td>
+      <td>${data.deg || ""}</td>
+      <td>${factor}</td>
+      <td>${gauge}</td>
+      <td>${area}</td>
+      <td>${gauge === "24G" ? area : ""}</td>
+      <td>${gauge === "22G" ? area : ""}</td>
+      <td>${gauge === "20G" ? area : ""}</td>
+      <td>${gauge === "18G" ? area : ""}</td>
+      <td>${nuts}</td>
+      <td>${cleat}</td>
+      <td>${gasket}</td>
+      <td>${corner}</td>
+      <td><button class="btn btn-danger btn-sm" onclick="this.closest('tr').remove(); updateTotals();">🗑</button></td>
+    `;
+    tableBody.appendChild(row);
+    form.reset();
+    updateTotals();
   });
 
-  document.getElementById("totalArea").textContent = totalArea.toFixed(2);
-  document.getElementById("total24G").textContent = t24.toFixed(2);
-  document.getElementById("total22G").textContent = t22.toFixed(2);
-  document.getElementById("total20G").textContent = t20.toFixed(2);
-  document.getElementById("total18G").textContent = t18.toFixed(2);
-  document.getElementById("totalNuts").textContent = nuts;
-  document.getElementById("totalCleat").textContent = cleat;
-  document.getElementById("totalGasket").textContent = gasket;
-  document.getElementById("totalCorner").textContent = corner;
-      }
-    }
+  function exportTableToExcel() {
+    const table = document.getElementById("ductTable");
+    const tableHTML = table.outerHTML.replace(/ /g, '%20');
+    const filename = 'measurement_sheet.xls';
+    const dataType = 'application/vnd.ms-excel';
+
+    const downloadLink = document.createElement("a");
+    document.body.appendChild(downloadLink);
+    downloadLink.href = 'data:' + dataType + ', ' + tableHTML;
+    downloadLink.download = filename;
+    downloadLink.click();
+    document.body.removeChild(downloadLink);
+  }
+
+  // ✅ MOVE updateTotals OUTSIDE
+  function updateTotals() {
+    let totalArea = 0, t24 = 0, t22 = 0, t20 = 0, t18 = 0;
+    let nuts = 0, cleat = 0, gasket = 0, corner = 0;
+
+    [...tableBody.rows].forEach(row => {
+      totalArea += parseFloat(row.cells[11].textContent) || 0;
+      t24 += parseFloat(row.cells[12].textContent) || 0;
+      t22 += parseFloat(row.cells[13].textContent) || 0;
+      t20 += parseFloat(row.cells[14].textContent) || 0;
+      t18 += parseFloat(row.cells[15].textContent) || 0;
+      nuts += parseFloat(row.cells[16].textContent) || 0;
+      cleat += parseFloat(row.cells[17].textContent) || 0;
+      gasket += parseFloat(row.cells[18].textContent) || 0;
+      corner += parseFloat(row.cells[19].textContent) || 0;
+    });
+
+    document.getElementById("totalArea").textContent = totalArea.toFixed(2);
+    document.getElementById("total24G").textContent = t24.toFixed(2);
+    document.getElementById("total22G").textContent = t22.toFixed(2);
+    document.getElementById("total20G").textContent = t20.toFixed(2);
+    document.getElementById("total18G").textContent = t18.toFixed(2);
+    document.getElementById("totalNuts").textContent = nuts;
+    document.getElementById("totalCleat").textContent = cleat;
+    document.getElementById("totalGasket").textContent = gasket;
+    document.getElementById("totalCorner").textContent = corner;
+  }
   </script>
 </body>
 </html>
