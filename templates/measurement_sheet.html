@@ -158,16 +158,26 @@
     if (maxWH > 1500) gauge = "20G";
     if (maxWH > 2000) gauge = "18G";
 
-    let area = 0;
-    if (type === "Straight" || type === "Square") {
-      area = ((w1 + h1) * 2 * (data.length || 1)) / 1e6;
-    } else if (type === "Elbow") {
-      area = ((w1 + h1) * 2 * 0.785 * (data.deg || 90)) / 1e6;
-    } else {
-      area = ((w1 + h1 + w2 + h2) * (data.length || 1)) / 2e6;
-    }
-    area = (area * qty).toFixed(2);
+  
 
+  let area = 0;
+  if (ductType === 'Straight') {
+    area = 2 * (w1 + h1) / 1000 * (len / 1000) * qty;
+  } else if (ductType === 'Transition') {
+    area = (w1 + h1 + w2 + h2) / 1000 * (len / 1000) * qty * factor;
+  } else if (ductType === 'DUM') {
+    area = (w1 * h1) / 1000000 * qty;
+  } else if (ductType === 'Offset') {
+    area = (w1 + h1 + w2 + h2) / 1000 * ((len + deg) / 1000) * qty * factor;
+  } else if (ductType === 'Shoe') {
+    area = (w1 + h1) * 2 / 1000 * (len / 1000) * qty * factor;
+  } else if (ductType === 'Vanes') {
+    area = w1 / 1000 * (2 * Math.PI * (w1 / 1000) / 4) * qty;
+  } else if (ductType === 'Elbow') {
+    area = 2 * (w1 + h1) / 1000 * ((h1 / 2 / 1000) + (len / 1000) * (Math.PI * (deg / 180))) * qty * factor;
+  }
+  return area.toFixed(2);
+    }
     const nuts = qty * 4;
     const cleat = Math.round(qty * (gauge === "18G" ? 2.5 : 1.5));
     const gasket = (((w1 + h1 + w2 + h2) / 1000) * qty).toFixed(2);
