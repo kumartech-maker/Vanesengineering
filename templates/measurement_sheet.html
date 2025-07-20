@@ -82,7 +82,7 @@
               <input type="number" class="form-control" id="degree">
             </div>
             <div class="d-grid">
-              <button type="submit" class="btn btn-primary">Add Entry</button>
+              <button type="submit" id="addBtn" class="btn btn-primary">Add Entry</button>
             </div>
           </form>
         </div>
@@ -296,40 +296,8 @@
   }
       </script>
 
-      document.getElementById('resetBtn').addEventListener('click', function () {
-      localStorage.removeItem('entries');
-      document.getElementById('entry-body').innerHTML = '';
-      updateTotals();
-    });
-
-    // Export to Excel
-    document.getElementById('exportExcelBtn').addEventListener('click', function () {
-      const table = document.getElementById('entry-table');
-      const wb = XLSX.utils.table_to_book(table, { sheet: "MeasurementSheet" });
-      XLSX.writeFile(wb, 'MeasurementSheet.xlsx');
-    });
-
-    // Export to PDF
-    document.getElementById('exportPdfBtn').addEventListener('click', function () {
-      const { jsPDF } = window.jspdf;
-      const doc = new jsPDF('l', 'pt', 'a4');
-      doc.text("Measurement Sheet", 40, 40);
-      doc.autoTable({
-        html: '#entry-table',
-        startY: 60,
-        styles: { fontSize: 6 },
-        headStyles: { fillColor: [0, 0, 0] },
-        margin: { left: 20, right: 20 },
-      });
-      doc.save('MeasurementSheet.pdf');
-    });
-
-    // On Load
-    window.addEventListener('load', function () {
-      const saved = JSON.parse(localStorage.getItem('entries')) || [];
-      saved.forEach(data => addToTable(data));
-      updateTotals();
-    });
+    
+      
   </script>
 
   <!-- Scripts -->
