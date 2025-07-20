@@ -110,6 +110,21 @@
             </tr>
           </thead>
           <tbody id="tableBody"></tbody>
+          <tfoot>
+  <tr class="table-light fw-bold">
+    <td colspan="11" class="text-end">Totals:</td>
+    <td id="totalArea">0</td>
+    <td id="total24G">0</td>
+    <td id="total22G">0</td>
+    <td id="total20G">0</td>
+    <td id="total18G">0</td>
+    <td id="totalNuts">0</td>
+    <td id="totalCleat">0</td>
+    <td id="totalGasket">0</td>
+    <td id="totalCorner">0</td>
+    <td></td>
+  </tr>
+          </tfoot>
         </table>
         <div class="mt-3 d-flex gap-3">
           <button class="btn btn-success" onclick="exportTableToExcel()">Export to Excel</button>
@@ -187,6 +202,7 @@
       `;
       tableBody.appendChild(row);
       form.reset();
+      updateTotals();
     });
 
     function exportTableToExcel() {
@@ -201,6 +217,33 @@
       downloadLink.download = filename;
       downloadLink.click();
       document.body.removeChild(downloadLink);
+
+      function updateTotals() {
+  let totalArea = 0, t24 = 0, t22 = 0, t20 = 0, t18 = 0;
+  let nuts = 0, cleat = 0, gasket = 0, corner = 0;
+
+  [...tableBody.rows].forEach(row => {
+    totalArea += parseFloat(row.cells[11].textContent) || 0;
+    t24 += parseFloat(row.cells[12].textContent) || 0;
+    t22 += parseFloat(row.cells[13].textContent) || 0;
+    t20 += parseFloat(row.cells[14].textContent) || 0;
+    t18 += parseFloat(row.cells[15].textContent) || 0;
+    nuts += parseFloat(row.cells[16].textContent) || 0;
+    cleat += parseFloat(row.cells[17].textContent) || 0;
+    gasket += parseFloat(row.cells[18].textContent) || 0;
+    corner += parseFloat(row.cells[19].textContent) || 0;
+  });
+
+  document.getElementById("totalArea").textContent = totalArea.toFixed(2);
+  document.getElementById("total24G").textContent = t24.toFixed(2);
+  document.getElementById("total22G").textContent = t22.toFixed(2);
+  document.getElementById("total20G").textContent = t20.toFixed(2);
+  document.getElementById("total18G").textContent = t18.toFixed(2);
+  document.getElementById("totalNuts").textContent = nuts;
+  document.getElementById("totalCleat").textContent = cleat;
+  document.getElementById("totalGasket").textContent = gasket;
+  document.getElementById("totalCorner").textContent = corner;
+      }
     }
   </script>
 </body>
