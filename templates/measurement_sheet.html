@@ -31,6 +31,7 @@
 <body>
 <div class="container-fluid mt-4">
   <div class="row">
+
     <!-- Left Side Form -->
     <div class="col-md-4 form-section">
       <h4 class="mb-3">Duct Entry Form</h4>
@@ -75,7 +76,6 @@
           <label for="quantity" class="form-label">Quantity</label>
           <input type="number" class="form-control" id="quantity" required />
         </div>
-
         <div class="mb-2">
           <label for="degree" class="form-label">Degree</label>
           <input type="number" class="form-control" id="degree" required />
@@ -87,7 +87,6 @@
         <button type="button" class="btn btn-primary w-100" onclick="addEntry()">Add Entry</button>
       </form>
     </div>
-
     <!-- Right Side Table -->
     <div class="col-md-8 table-section">
       <div class="d-flex justify-content-between mb-3">
@@ -96,7 +95,7 @@
           <button class="btn btn-success btn-sm" onclick="exportToExcel()">Export Excel</button>
           <button class="btn btn-danger btn-sm" onclick="exportToPDF()">Export PDF</button>
           <button class="btn btn-secondary btn-sm" onclick="window.print()">Print</button>
-          <button class="btn btn-info btn-sm" onclick="submitData()">Submit</button>
+          <button class="btn btn-info btn-sm" onclick="submitSheet()">Submit</button>
         </div>
       </div>
       <div class="table-responsive">
@@ -136,62 +135,43 @@
   <!-- JavaScript Section -->
 <script>
   let tableData = [];
-  let editIndex = -1;
 
   function calculateGauge(w1, h1) {
-    const perimeter = 2 * (parseFloat(w1) + parseFloat(h1));
-    if (perimeter <= 1000) return '24g';
-    if (perimeter <= 1500) return '22g';
-    if (perimeter <= 2000) return '20g';
+    const maxSide = Math.max(parseFloat(w1), parseFloat(h1));
+    if (maxSide <= 750) return '24g';
+    if (maxSide <= 1000) return '22g';
+    if (maxSide <= 1250) return '20g';
     return '18g';
   }
 
   function calculateArea(type, w1, h1, w2, h2, length, qty, factor, degree) {
-    w1 = parseFloat(w1);
-    h1 = parseFloat(h1);
-    w2 = parseFloat(w2);
-    h2 = parseFloat(h2);
-    length = parseFloat(length);
-    qty = parseInt(qty);
-    factor = parseFloat(factor);
-    degree = parseFloat(degree);
+    w1 = parseFloat(w1); h1 = parseFloat(h1); w2 = parseFloat(w2); h2 = parseFloat(h2);
+    length = parseFloat(length); qty = parseInt(qty); factor = parseFloat(factor); degree = parseFloat(degree);
 
     let area = 0;
-
     switch (type) {
       case 'ST':
-        area = 2 * (w1 + h1) * length / 1000000;
+        area = ((w1 + h1) * 2 * length) / 1000000;
         break;
       case 'RED':
-        area = (w1 + h1 + w2 + h2) * length / 1000000;
+        area = (((w1 + w2) / 2 + (h1 + h2) / 2) * 2 * length) / 1000000;
         break;
       case 'DUM':
-        area = (w1 * h1) / 1000000;
+        area = ((w1 * h1) + (w2 * h2)) / 1000000;
         break;
       case 'OFFSET':
-        area = 2 * (w1 + h1) * length * factor / 1000000;
-        break;
       case 'SHOE':
-        area = ((w1 + h1 + w2 + h2) * length * factor) / 1000000;
-        break;
       case 'VANES':
-        area = ((w1 + h1) * factor) / 1000000;
+        area = ((w1 + h1) * 2 * length * factor) / 1000000;
         break;
       case 'ELB':
-        area = (2 * (w1 + h1) * factor * degree) / 1000000;
+        area = ((w1 + h1) * 2 * length * (degree / 90)) / 1000000;
         break;
-      default:
-        area = 0;
     }
-
     return area * qty;
   }
-</script>
 
-  <script>
-  function addEntry(event) {
-    event.preventDefault();
-
+  function addEntry() {
     const ductNo = document.getElementById('ductNo').value;
     const type = document.getElementById('ductType').value;
     const w1 = document.getElementById('w1').value;
@@ -199,7 +179,7 @@
     const w2 = document.getElementById('w2').value;
     const h2 = document.getElementById('h2').value;
     const length = document.getElementById('length').value;
-    const qty = document.getElementById('qty').value;
+    const qty = document.getElementById('quantity').value;
     const degree = document.getElementById('degree').value;
     const factor = document.getElementById('factor').value;
 
@@ -211,23 +191,26 @@
     const corner = type === 'DUM' ? 0 : parseInt(qty) * 8;
 
     const row = {
-      ductNo, type, w1, h1, w2, h2, length, qty, degree, factor, gauge, area: area.toFixed(3),
+      ductNo, type, w1, h1, w2, h2, length, qty, degree, factor, gauge,
+      area: area.toFixed(3),
       area24g: gauge === '24g' ? area.toFixed(3) : '',
       area22g: gauge === '22g' ? area.toFixed(3) : '',
       area20g: gauge === '20g' ? area.toFixed(3) : '',
       area18g: gauge === '18g' ? area.toFixed(3) : '',
-      nutsBolts, cleat: cleat.toFixed(2), gasket: gasket.toFixed(2), corner
+      nutsBolts,
+      cleat: cleat.toFixed(2),
+      gasket: gasket.toFixed(2),
+      corner
     };
 
     tableData.push(row);
     renderTable();
-    document.getElementById('entryForm').reset();
+    document.getElementById('ductForm').reset();
   }
 
   function renderTable() {
     const tbody = document.getElementById('tableBody');
     tbody.innerHTML = '';
-
     tableData.forEach((row, index) => {
       const tr = document.createElement('tr');
       tr.innerHTML = `
@@ -256,96 +239,40 @@
       tbody.appendChild(tr);
     });
   }
-  </script>
-
+</script>
   <script>
-  function calculateGauge(w1, h1) {
-    const maxSide = Math.max(parseFloat(w1), parseFloat(h1));
-    if (maxSide <= 750) return '24g';
-    if (maxSide <= 1000) return '22g';
-    if (maxSide <= 1250) return '20g';
-    return '18g';
+  function editRow(index) {
+    const row = tableData[index];
+
+    document.getElementById('ductNo').value = row.ductNo;
+    document.getElementById('ductType').value = row.type;
+    document.getElementById('w1').value = row.w1;
+    document.getElementById('h1').value = row.h1;
+    document.getElementById('w2').value = row.w2;
+    document.getElementById('h2').value = row.h2;
+    document.getElementById('length').value = row.length;
+    document.getElementById('quantity').value = row.qty;
+    document.getElementById('degree').value = row.degree;
+    document.getElementById('factor').value = row.factor;
+
+    tableData.splice(index, 1); // Remove for update
+    renderTable();
   }
 
-  function calculateArea(type, w1, h1, w2, h2, length, qty, factor, degree) {
-    w1 = parseFloat(w1);
-    h1 = parseFloat(h1);
-    w2 = parseFloat(w2);
-    h2 = parseFloat(h2);
-    length = parseFloat(length);
-    qty = parseInt(qty);
-    factor = parseFloat(factor);
-    degree = parseFloat(degree);
-
-    let area = 0;
-
-    switch (type) {
-      case 'ST':
-        area = ((w1 + h1) * 2 * length) / 1000000;
-        break;
-      case 'RED':
-        area = (((w1 + w2) / 2 + (h1 + h2) / 2) * 2 * length) / 1000000;
-        break;
-      case 'DUM':
-        area = ((w1 * h1) + (w2 * h2)) / 1000000;
-        break;
-      case 'OFFSET':
-        area = ((w1 + h1) * 2 * length * factor) / 1000000;
-        break;
-      case 'SHOE':
-        area = ((w1 + h1) * 2 * length * factor) / 1000000;
-        break;
-      case 'VANES':
-        area = ((w1 + h1) * 2 * length * factor) / 1000000;
-        break;
-      case 'ELB':
-        area = ((w1 + h1) * 2 * length * (degree / 90)) / 1000000;
-        break;
-      default:
-        area = 0;
-    }
-
-    return area * qty;
-  }
-
-  function exportTableToExcel() {
-    let table = document.getElementById("measurementTable");
-    let wb = XLSX.utils.table_to_book(table, {sheet:"Sheet1"});
+  function exportToExcel() {
+    const table = document.getElementById("measurementTable");
+    const wb = XLSX.utils.table_to_book(table, { sheet: "Sheet1" });
     XLSX.writeFile(wb, 'measurement_sheet.xlsx');
   }
 
-  function printTable() {
-    const printContents = document.querySelector('.table-section').innerHTML;
-    const originalContents = document.body.innerHTML;
-    document.body.innerHTML = printContents;
-    window.print();
-    document.body.innerHTML = originalContents;
-    location.reload();
-  }
-</script>
-
-<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-
-  <script>
   function exportToPDF() {
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF('l', 'mm', 'a4');
     const table = document.getElementById('measurementTable');
-    let rows = [];
-    let headers = [];
-
-    for (let th of table.querySelectorAll('thead th')) {
-      headers.push(th.innerText.trim());
-    }
-
-    for (let tr of table.querySelectorAll('tbody tr')) {
-      let row = [];
-      for (let td of tr.querySelectorAll('td')) {
-        row.push(td.innerText.trim());
-      }
-      rows.push(row);
-    }
+    const headers = Array.from(table.querySelectorAll('thead th')).map(th => th.innerText.trim());
+    const rows = Array.from(table.querySelectorAll('tbody tr')).map(tr =>
+      Array.from(tr.querySelectorAll('td')).map(td => td.innerText.trim())
+    );
 
     doc.autoTable({
       head: [headers],
@@ -357,33 +284,22 @@
     doc.save('measurement_sheet.pdf');
   }
 
-  function editRow(btn) {
-    const row = btn.closest('tr');
-    const cells = row.querySelectorAll('td');
-
-    document.getElementById('ductType').value = cells[1].innerText;
-    document.getElementById('w1').value = cells[2].innerText;
-    document.getElementById('h1').value = cells[3].innerText;
-    document.getElementById('w2').value = cells[4].innerText;
-    document.getElementById('h2').value = cells[5].innerText;
-    document.getElementById('length').value = cells[6].innerText;
-    document.getElementById('quantity').value = cells[7].innerText;
-    document.getElementById('degree').value = cells[8].innerText;
-    document.getElementById('factor').value = cells[9].innerText;
-    document.getElementById('ductNo').value = cells[0].innerText;
-
-    row.remove();
-  }
-
   function submitSheet() {
     alert("Measurement sheet submitted successfully!");
-    // Add actual backend submission logic here
+    // Add backend submission here if needed
   }
 </script>
+
+<!-- Libraries -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
 
 </body>
 </html>
 
-        
+  
 
-        
+    
+
+    
