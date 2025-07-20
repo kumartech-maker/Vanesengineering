@@ -7,408 +7,383 @@
   <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
   <style>
     body {
-      background-color: #f8f9fa;
+      background-color: #f1f1f1;
     }
     .form-section {
-      background: #fff;
+      background: #ffffff;
       border-radius: 10px;
       padding: 20px;
-      box-shadow: 0 0 10px rgba(0,0,0,0.1);
     }
     .table-section {
-      margin-top: 20px;
-      background: #fff;
+      background: #ffffff;
       border-radius: 10px;
       padding: 20px;
-      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+      overflow-x: auto;
     }
-    .btn-group {
-      margin-top: 15px;
+    table th, table td {
+      white-space: nowrap;
     }
-    .form-label {
-      font-weight: 500;
-    }
-    th, td {
-      vertical-align: middle !important;
+    .action-btns button {
+      margin-right: 5px;
     }
   </style>
 </head>
 <body>
-  <div class="container-fluid mt-4">
-    <div class="row">
-      <!-- Form Section -->
-      <div class="col-md-4">
-        <div class="form-section">
-          <h5 class="mb-3">Duct Entry</h5>
-          <form id="ductForm">
-            <div class="mb-2">
-              <label class="form-label">Type</label>
-              <select class="form-select" id="type" required>
-                <option value="">Select</option>
-                <option value="ST">ST</option>
-                <option value="RED">RED</option>
-                <option value="OFFSET">OFFSET</option>
-                <option value="DUM">DUM</option>
-                <option value="SHOE">SHOE</option>
-                <option value="ELB">ELB</option>
-                <option value="VANES">VANES</option>
-              </select>
-            </div>
-            <div class="row">
-              <div class="col mb-2">
-                <label class="form-label">W1</label>
-                <input type="number" class="form-control" id="w1" required />
-              </div>
-              <div class="col mb-2">
-                <label class="form-label">H1</label>
-                <input type="number" class="form-control" id="h1" required />
-              </div>
-            </div>
-
-            <div class="row">
-              <div class="col mb-2">
-                <label class="form-label">W2</label>
-                <input type="number" class="form-control" id="w2" />
-              </div>
-              <div class="col mb-2">
-                <label class="form-label">H2</label>
-                <input type="number" class="form-control" id="h2" />
-              </div>
-            </div>
-            <div class="row">
-              <div class="col mb-2">
-                <label class="form-label">Length (mm)</label>
-                <input type="number" class="form-control" id="length" required />
-              </div>
-              <div class="col mb-2">
-                <label class="form-label">Quantity</label>
-                <input type="number" class="form-control" id="qty" required />
-              </div>
-            </div>
-            <div class="mb-2">
-              <label class="form-label">Degree</label>
-              <input type="number" class="form-control" id="degree" />
-            </div>
-            <div class="mb-2">
-              <label class="form-label">Factor</label>
-              <input type="number" step="0.01" class="form-control" id="factor" value="1" />
-            </div>
-            <div class="btn-group w-100">
-              <button type="button" class="btn btn-primary w-100" onclick="addEntry()">Add Entry</button>
-            </div>
-          </form>
+<div class="container-fluid mt-4">
+  <div class="row">
+    <!-- Left Side Form -->
+    <div class="col-md-4 form-section">
+      <h4 class="mb-3">Duct Entry Form</h4>
+      <form id="ductForm">
+        <div class="mb-2">
+          <label for="ductNo" class="form-label">Duct No</label>
+          <input type="text" class="form-control" id="ductNo" required />
         </div>
-        <!-- Export and Action Buttons -->
-        <div class="btn-group w-100 mt-3">
-          <button class="btn btn-success me-1" onclick="exportToExcel()">Export to Excel</button>
-          <button class="btn btn-danger me-1" onclick="exportToPDF()">Export to PDF</button>
-          <button class="btn btn-secondary me-1" onclick="window.print()">Print</button>
-          <button class="btn btn-dark" onclick="submitData()">Submit</button>
+        <div class="mb-2">
+          <label for="ductType" class="form-label">Duct Type</label>
+          <select class="form-select" id="ductType" required>
+            <option value="ST">ST</option>
+            <option value="RED">RED</option>
+            <option value="DUM">DUM</option>
+            <option value="OFFSET">OFFSET</option>
+            <option value="SHOE">SHOE</option>
+            <option value="VANES">VANES</option>
+            <option value="ELB">ELB</option>
+          </select>
+        </div>
+        <div class="mb-2">
+          <label for="w1" class="form-label">W1 (mm)</label>
+          <input type="number" class="form-control" id="w1" required />
+        </div>
+        <div class="mb-2">
+          <label for="h1" class="form-label">H1 (mm)</label>
+          <input type="number" class="form-control" id="h1" required />
+        </div>
+        <div class="mb-2">
+          <label for="w2" class="form-label">W2 (mm)</label>
+          <input type="number" class="form-control" id="w2" required />
+        </div>
+        <div class="mb-2">
+          <label for="h2" class="form-label">H2 (mm)</label>
+          <input type="number" class="form-control" id="h2" required />
+        </div>
+        <div class="mb-2">
+          <label for="length" class="form-label">Length (mm)</label>
+          <input type="number" class="form-control" id="length" required />
+        </div>
+        <div class="mb-2">
+          <label for="quantity" class="form-label">Quantity</label>
+          <input type="number" class="form-control" id="quantity" required />
+        </div>
+
+        <div class="mb-2">
+          <label for="degree" class="form-label">Degree</label>
+          <input type="number" class="form-control" id="degree" required />
+        </div>
+        <div class="mb-2">
+          <label for="factor" class="form-label">Factor</label>
+          <input type="number" class="form-control" id="factor" required />
+        </div>
+        <button type="submit" class="btn btn-primary w-100">Add Entry</button>
+      </form>
+    </div>
+
+    <!-- Right Side Table -->
+    <div class="col-md-8 table-section">
+      <div class="d-flex justify-content-between mb-3">
+        <h4>Measurement Table</h4>
+        <div>
+          <button class="btn btn-success btn-sm" onclick="exportToExcel()">Export Excel</button>
+          <button class="btn btn-danger btn-sm" onclick="exportToPDF()">Export PDF</button>
+          <button class="btn btn-secondary btn-sm" onclick="window.print()">Print</button>
+          <button class="btn btn-info btn-sm" onclick="submitData()">Submit</button>
         </div>
       </div>
-
-      <!-- Table Section -->
-      <div class="col-md-8">
-        <div class="table-section">
-          <h5 class="mb-3">Measurement Sheet</h5>
-          <div class="table-responsive">
-            <table class="table table-bordered table-striped" id="entryTable">
-              <thead class="table-dark text-center">
-                <tr>
-                  <th>#</th>
-                  <th>Type</th>
-                  <th>W1</th>
-                  <th>H1</th>
-                  <th>W2</th>
-                  <th>H2</th>
-                  <th>Len</th>
-                  <th>Qty</th>
-                  <th>Deg</th>
-                  <th>Factor</th>
-                  <th>Gauge</th>
-                  <th>Area</th>
-                  <th>24g</th>
-                  <th>22g</th>
-                  <th>20g</th>
-                  <th>18g</th>
-                  <th>Bolts</th>
-                  <th>Cleat</th>
-                  <th>Gasket</th>
-                  <th>Corner</th>
-                  <th>Actions</th>
-                </tr>
-              </thead>
-              <tbody id="entryBody" class="text-center">
-                <!-- Entries will be added here -->
-              </tbody>
-            </table>
-          </div>
-        </div>
+      <div class="table-responsive">
+        <table class="table table-bordered table-striped" id="measurementTable">
+          <thead class="table-dark">
+            <tr>
+              <th>Duct No</th>
+              <th>Duct Type</th>
+              <th>W1</th>
+              <th>H1</th>
+              <th>W2</th>
+              <th>H2</th>
+              <th>Length</th>
+              <th>Qty</th>
+              <th>Degree</th>
+              <th>Factor</th>
+              <th>Gauge</th>
+              <th>Area</th>
+              <th>24g</th>
+              <th>22g</th>
+              <th>20g</th>
+              <th>18g</th>
+              <th>Nuts & Bolts</th>
+              <th>Cleat</th>
+              <th>Gasket</th>
+              <th>Corner</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="tableBody"></tbody>
+        </table>
       </div>
     </div>
   </div>
+</div>
 
-  <!-- Edit Modal -->
-  <div class="modal fade" id="editModal" tabindex="-1">
-    <div class="modal-dialog modal-dialog-centered">
-      <div class="modal-content">
-        <form id="editForm">
-          <div class="modal-header">
-            <h5 class="modal-title">Edit Entry</h5>
-            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-          </div>
-          <div class="modal-body row g-2">
-            <input type="hidden" id="editIndex" />
-            <div class="col-6">
-              <label class="form-label">Duct Type</label>
-              <input type="text" class="form-control" id="editDuctType" required />
-            </div>
-            <div class="col-6">
-              <label class="form-label">W1</label>
-              <input type="number" class="form-control" id="editW1" />
-            </div>
-            <div class="col-6">
-              <label class="form-label">H1</label>
-              <input type="number" class="form-control" id="editH1" />
-            </div>
-            <div class="col-6">
-              <label class="form-label">W2</label>
-              <input type="number" class="form-control" id="editW2" />
-            </div>
-            <div class="col-6">
-              <label class="form-label">H2</label>
-              <input type="number" class="form-control" id="editH2" />
-            </div>
-            <div class="col-6">
-              <label class="form-label">Length</label>
-              <input type="number" class="form-control" id="editLength" />
-            </div>
-            <div class="col-6">
-              <label class="form-label">Quantity</label>
-              <input type="number" class="form-control" id="editQuantity" />
-            </div>
-            <div class="col-6">
-              <label class="form-label">Degree</label>
-              <input type="number" class="form-control" id="editDegree" />
-            </div>
-            <div class="col-6">
-              <label class="form-label">Factor</label>
-              <input type="number" class="form-control" id="editFactor" />
-            </div>
-          </div>
-          <div class="modal-footer">
-            <button type="submit" class="btn btn-success">Save Changes</button>
-            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-          </div>
-        </form>
-      </div>
-    </div>
-  </div>
+  <!-- JavaScript Section -->
+<script>
+  let tableData = [];
+  let editIndex = -1;
 
-  <script>
-    const getGauge = (w1, h1) => {
-      if (w1 <= 751 && h1 <= 751) {
-        return '24g';
-      } else if (w1 <= 1201 && h1 <= 1201) {
-        return '22g';
-      } else if (w1 <= 1800 && h1 <= 1800) {
-        return '20g';
-      } else {
-        return '18g';
-      }
-    };
+  function calculateGauge(w1, h1) {
+    const perimeter = 2 * (parseFloat(w1) + parseFloat(h1));
+    if (perimeter <= 1000) return '24g';
+    if (perimeter <= 1500) return '22g';
+    if (perimeter <= 2000) return '20g';
+    return '18g';
+  }
 
-    const formatNumber = (num) => Math.round(num * 100) / 100;
+  function calculateArea(type, w1, h1, w2, h2, length, qty, factor, degree) {
+    w1 = parseFloat(w1);
+    h1 = parseFloat(h1);
+    w2 = parseFloat(w2);
+    h2 = parseFloat(h2);
+    length = parseFloat(length);
+    qty = parseInt(qty);
+    factor = parseFloat(factor);
+    degree = parseFloat(degree);
 
-    const calculateMaterials = (type, w1, h1, w2, h2, len, qty, degree, factor, gauge) => {
-      let area = 0;
-      if (type === "ST") {
-        area = 2 * ((w1 + h1) / 1000) * (len / 1000);
-      } else if (type === "RED") {
-        area = ((w1 + h1 + w2 + h2) / 2000) * (len / 1000) * 2;
-      } else if (type === "DUM") {
-        area = ((w1 + h1) / 1000) ** 2;
-      } else if (type === "OFFSET") {
-        area = ((w1 + h1 + w2 + h2) / 2000) * (len / 1000);
-      } else if (type === "SHOE" || type === "VANES") {
-        area = ((w1 + h1) / 1000) * (len / 1000);
-      } else if (type === "ELB") {
-        area = (Math.PI * degree * ((w1 + h1) / 1000)) / 360;
-      }
+    let area = 0;
 
-      const totalArea = area * qty;
-
-      const nutsAndBolts = qty * 4;
-      const cleatFactor = gauge === '24g' ? 0.07 : gauge === '22g' ? 0.08 : gauge === '20g' ? 0.09 : 0.1;
-      const cleat = qty * cleatFactor;
-      const gasket = ((w1 + h1 + w2 + h2) / 1000) * qty;
-      const corner = type === "DUM" ? 0 : qty * 8;
-
-      const areaByGauge = {
-        '24g': gauge === '24g' ? totalArea : 0,
-        '22g': gauge === '22g' ? totalArea : 0,
-        '20g': gauge === '20g' ? totalArea : 0,
-        '18g': gauge === '18g' ? totalArea : 0
-      };
-
-      return {
-        area: formatNumber(totalArea),
-        nutsAndBolts,
-        cleat: formatNumber(cleat),
-        gasket: formatNumber(gasket),
-        corner,
-        gauge,
-        ...areaByGauge
-      };
-    };
-
-    const updateTable = () => {
-      const tbody = document.querySelector("#measurementTable tbody");
-      tbody.innerHTML = "";
-      entries.forEach((entry, index) => {
-        const row = document.createElement("tr");
-
-        row.innerHTML = `
-          <td>${entry.type}</td>
-          <td>${entry.w1}</td>
-          <td>${entry.h1}</td>
-          <td>${entry.w2}</td>
-          <td>${entry.h2}</td>
-          <td>${entry.len}</td>
-          <td>${entry.qty}</td>
-          <td>${entry.degree}</td>
-          <td>${entry.factor}</td>
-          <td>${entry.gauge}</td>
-          <td>${entry.area}</td>
-          <td>${entry['24g']}</td>
-          <td>${entry['22g']}</td>
-          <td>${entry['20g']}</td>
-          <td>${entry['18g']}</td>
-          <td>${entry.nutsAndBolts}</td>
-          <td>${entry.cleat}</td>
-          <td>${entry.gasket}</td>
-          <td>${entry.corner}</td>
-          <td>
-            <button class="btn btn-sm btn-info" onclick="editEntry(${index})">Edit</button>
-            <button class="btn btn-sm btn-danger" onclick="deleteEntry(${index})">Delete</button>
-          </td>
-        `;
-        tbody.appendChild(row);
-      });
-    };
-
-    const editEntry = (index) => {
-      const entry = entries[index];
-      document.getElementById("type").value = entry.type;
-      document.getElementById("w1").value = entry.w1;
-      document.getElementById("h1").value = entry.h1;
-      document.getElementById("w2").value = entry.w2;
-      document.getElementById("h2").value = entry.h2;
-      document.getElementById("length").value = entry.len;
-      document.getElementById("quantity").value = entry.qty;
-      document.getElementById("degree").value = entry.degree;
-      document.getElementById("factor").value = entry.factor;
-
-      editingIndex = index;
-      document.getElementById("addEntryBtn").textContent = "Update Entry";
-    };
-
-    const deleteEntry = (index) => {
-      if (confirm("Are you sure you want to delete this entry?")) {
-        entries.splice(index, 1);
-        updateTable();
-        updateTotals();
-      }
-    };
-
-    const exportToExcel = () => {
-      const wb = XLSX.utils.book_new();
-      const ws = XLSX.utils.table_to_sheet(document.getElementById('measurementTable'));
-      XLSX.utils.book_append_sheet(wb, ws, 'Sheet1');
-      XLSX.writeFile(wb, 'measurement_sheet.xlsx');
-    };
-
-    const exportToPDF = () => {
-      const { jsPDF } = window.jspdf;
-      const doc = new jsPDF('l', 'pt', 'a4');
-      doc.autoTable({ html: '#measurementTable' });
-      doc.save('measurement_sheet.pdf');
-    };
-
-    const printTable = () => {
-      const printContents = document.getElementById("measurementTable").outerHTML;
-      const originalContents = document.body.innerHTML;
-      document.body.innerHTML = printContents;
-      window.print();
-      document.body.innerHTML = originalContents;
-      location.reload();
-    };
-
-    const submitData = () => {
-      console.log("Submitted entries:", entries);
-      alert("Data submitted successfully!");
-    };
-
-    <script>
-  let entries = [];
-  let editingIndex = -1;
-
-  function addEntry() {
-    const type = document.getElementById("type").value;
-    const w1 = +document.getElementById("w1").value;
-    const h1 = +document.getElementById("h1").value;
-    const w2 = +document.getElementById("w2").value || 0;
-    const h2 = +document.getElementById("h2").value || 0;
-    const len = +document.getElementById("length").value;
-    const qty = +document.getElementById("quantity").value;
-    const degree = +document.getElementById("degree").value || 0;
-    const factor = +document.getElementById("factor").value || 1;
-
-    const gauge = getGauge(w1, h1);
-    const material = calculateMaterials(type, w1, h1, w2, h2, len, qty, degree, factor, gauge);
-
-    const entry = {
-      type,
-      w1,
-      h1,
-      w2,
-      h2,
-      len,
-      qty,
-      degree,
-      factor,
-      gauge: material.gauge,
-      area: material.area,
-      '24g': material['24g'],
-      '22g': material['22g'],
-      '20g': material['20g'],
-      '18g': material['18g'],
-      nutsAndBolts: material.nutsAndBolts,
-      cleat: material.cleat,
-      gasket: material.gasket,
-      corner: material.corner
-    };
-
-    if (editingIndex >= 0) {
-      entries[editingIndex] = entry;
-      editingIndex = -1;
-      document.getElementById("addEntryBtn").textContent = "Add Entry";
-    } else {
-      entries.push(entry);
+    switch (type) {
+      case 'ST':
+        area = 2 * (w1 + h1) * length / 1000000;
+        break;
+      case 'RED':
+        area = (w1 + h1 + w2 + h2) * length / 1000000;
+        break;
+      case 'DUM':
+        area = (w1 * h1) / 1000000;
+        break;
+      case 'OFFSET':
+        area = 2 * (w1 + h1) * length * factor / 1000000;
+        break;
+      case 'SHOE':
+        area = ((w1 + h1 + w2 + h2) * length * factor) / 1000000;
+        break;
+      case 'VANES':
+        area = ((w1 + h1) * factor) / 1000000;
+        break;
+      case 'ELB':
+        area = (2 * (w1 + h1) * factor * degree) / 1000000;
+        break;
+      default:
+        area = 0;
     }
 
-    updateTable();
-    document.getElementById("ductForm").reset();
+    return area * qty;
   }
 </script>
+
+  <script>
+  function addEntry(event) {
+    event.preventDefault();
+
+    const ductNo = document.getElementById('ductNo').value;
+    const type = document.getElementById('ductType').value;
+    const w1 = document.getElementById('w1').value;
+    const h1 = document.getElementById('h1').value;
+    const w2 = document.getElementById('w2').value;
+    const h2 = document.getElementById('h2').value;
+    const length = document.getElementById('length').value;
+    const qty = document.getElementById('qty').value;
+    const degree = document.getElementById('degree').value;
+    const factor = document.getElementById('factor').value;
+
+    const gauge = calculateGauge(w1, h1);
+    const area = calculateArea(type, w1, h1, w2, h2, length, qty, factor, degree);
+    const nutsBolts = parseInt(qty) * 4;
+    const cleat = parseFloat(qty) * (gauge === '24g' ? 0.75 : gauge === '22g' ? 1.25 : gauge === '20g' ? 1.75 : 2.25);
+    const gasket = (parseFloat(w1) + parseFloat(h1) + parseFloat(w2) + parseFloat(h2)) / 1000 * parseInt(qty);
+    const corner = type === 'DUM' ? 0 : parseInt(qty) * 8;
+
+    const row = {
+      ductNo, type, w1, h1, w2, h2, length, qty, degree, factor, gauge, area: area.toFixed(3),
+      area24g: gauge === '24g' ? area.toFixed(3) : '',
+      area22g: gauge === '22g' ? area.toFixed(3) : '',
+      area20g: gauge === '20g' ? area.toFixed(3) : '',
+      area18g: gauge === '18g' ? area.toFixed(3) : '',
+      nutsBolts, cleat: cleat.toFixed(2), gasket: gasket.toFixed(2), corner
+    };
+
+    tableData.push(row);
+    renderTable();
+    document.getElementById('entryForm').reset();
+  }
+
+  function renderTable() {
+    const tbody = document.getElementById('tableBody');
+    tbody.innerHTML = '';
+
+    tableData.forEach((row, index) => {
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td>${row.ductNo}</td>
+        <td>${row.type}</td>
+        <td>${row.w1}</td>
+        <td>${row.h1}</td>
+        <td>${row.w2}</td>
+        <td>${row.h2}</td>
+        <td>${row.length}</td>
+        <td>${row.qty}</td>
+        <td>${row.degree}</td>
+        <td>${row.factor}</td>
+        <td>${row.gauge}</td>
+        <td>${row.area}</td>
+        <td>${row.area24g}</td>
+        <td>${row.area22g}</td>
+        <td>${row.area20g}</td>
+        <td>${row.area18g}</td>
+        <td>${row.nutsBolts}</td>
+        <td>${row.cleat}</td>
+        <td>${row.gasket}</td>
+        <td>${row.corner}</td>
+        <td><button class="btn btn-sm btn-warning" onclick="editRow(${index})">Edit</button></td>
+      `;
+      tbody.appendChild(tr);
+    });
+  }
   </script>
+
+  <script>
+  function calculateGauge(w1, h1) {
+    const maxSide = Math.max(parseFloat(w1), parseFloat(h1));
+    if (maxSide <= 750) return '24g';
+    if (maxSide <= 1000) return '22g';
+    if (maxSide <= 1250) return '20g';
+    return '18g';
+  }
+
+  function calculateArea(type, w1, h1, w2, h2, length, qty, factor, degree) {
+    w1 = parseFloat(w1);
+    h1 = parseFloat(h1);
+    w2 = parseFloat(w2);
+    h2 = parseFloat(h2);
+    length = parseFloat(length);
+    qty = parseInt(qty);
+    factor = parseFloat(factor);
+    degree = parseFloat(degree);
+
+    let area = 0;
+
+    switch (type) {
+      case 'ST':
+        area = ((w1 + h1) * 2 * length) / 1000000;
+        break;
+      case 'RED':
+        area = (((w1 + w2) / 2 + (h1 + h2) / 2) * 2 * length) / 1000000;
+        break;
+      case 'DUM':
+        area = ((w1 * h1) + (w2 * h2)) / 1000000;
+        break;
+      case 'OFFSET':
+        area = ((w1 + h1) * 2 * length * factor) / 1000000;
+        break;
+      case 'SHOE':
+        area = ((w1 + h1) * 2 * length * factor) / 1000000;
+        break;
+      case 'VANES':
+        area = ((w1 + h1) * 2 * length * factor) / 1000000;
+        break;
+      case 'ELB':
+        area = ((w1 + h1) * 2 * length * (degree / 90)) / 1000000;
+        break;
+      default:
+        area = 0;
+    }
+
+    return area * qty;
+  }
+
+  function exportTableToExcel() {
+    let table = document.getElementById("measurementTable");
+    let wb = XLSX.utils.table_to_book(table, {sheet:"Sheet1"});
+    XLSX.writeFile(wb, 'measurement_sheet.xlsx');
+  }
+
+  function printTable() {
+    const printContents = document.querySelector('.table-section').innerHTML;
+    const originalContents = document.body.innerHTML;
+    document.body.innerHTML = printContents;
+    window.print();
+    document.body.innerHTML = originalContents;
+    location.reload();
+  }
+</script>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
+  <script>
+  function exportToPDF() {
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF('l', 'mm', 'a4');
+    const table = document.getElementById('measurementTable');
+    let rows = [];
+    let headers = [];
+
+    for (let th of table.querySelectorAll('thead th')) {
+      headers.push(th.innerText.trim());
+    }
+
+    for (let tr of table.querySelectorAll('tbody tr')) {
+      let row = [];
+      for (let td of tr.querySelectorAll('td')) {
+        row.push(td.innerText.trim());
+      }
+      rows.push(row);
+    }
+
+    doc.autoTable({
+      head: [headers],
+      body: rows,
+      startY: 20,
+      styles: { fontSize: 6 }
+    });
+
+    doc.save('measurement_sheet.pdf');
+  }
+
+  function editRow(btn) {
+    const row = btn.closest('tr');
+    const cells = row.querySelectorAll('td');
+
+    document.getElementById('ductType').value = cells[1].innerText;
+    document.getElementById('w1').value = cells[2].innerText;
+    document.getElementById('h1').value = cells[3].innerText;
+    document.getElementById('w2').value = cells[4].innerText;
+    document.getElementById('h2').value = cells[5].innerText;
+    document.getElementById('length').value = cells[6].innerText;
+    document.getElementById('quantity').value = cells[7].innerText;
+    document.getElementById('degree').value = cells[8].innerText;
+    document.getElementById('factor').value = cells[9].innerText;
+    document.getElementById('ductNo').value = cells[0].innerText;
+
+    row.remove();
+  }
+
+  function submitSheet() {
+    alert("Measurement sheet submitted successfully!");
+    // Add actual backend submission logic here
+  }
+</script>
+
 </body>
 </html>
 
-      
+        
 
-            
-
-                  
-
-            
+        
