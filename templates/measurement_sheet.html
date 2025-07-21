@@ -32,22 +32,37 @@
 <div class="container-fluid p-3">
   <div class="row">
     <div class="col-md-4">
-      <div class="form-section">
-        <h4 class="mb-3">Duct Entry Form</h4>
-        <form id="entryForm">
-          <div class="mb-2"><label>Duct No</label><input type="text" class="form-control" id="ductNo" required /></div>
-          <div class="mb-2"><label>Duct Type</label><input type="text" class="form-control" id="ductType" required /></div>
-          <div class="mb-2"><label>W1</label><input type="number" class="form-control" id="w1" required /></div>
-          <div class="mb-2"><label>H1</label><input type="number" class="form-control" id="h1" required /></div>
-          <div class="mb-2"><label>W2</label><input type="number" class="form-control" id="w2" required /></div>
-          <div class="mb-2"><label>H2</label><input type="number" class="form-control" id="h2" required /></div>
-          <div class="mb-2"><label>Length</label><input type="number" class="form-control" id="length" required /></div>
-          <div class="mb-2"><label>Quantity</label><input type="number" class="form-control" id="quantity" required /></div>
-          <div class="mb-2"><label>Degree</label><input type="number" class="form-control" id="degree" /></div>
-          <div class="mb-2"><label>Factor</label><input type="number" class="form-control" id="factor" /></div>
-          <button type="button" class="btn btn-primary w-100" onclick="addEntry()">Add Entry</button>
-        </form>
+  <div class="form-section">
+    <h4 class="mb-3">Duct Entry Form</h4>
+    <form id="entryForm">
+      <div class="mb-2"><label>Duct No</label><input type="text" class="form-control" id="ductNo" required /></div>
+      
+      <!-- FIXED Duct Type Dropdown -->
+      <div class="mb-2">
+        <label for="ductType">Duct Type</label>
+        <select class="form-select" id="ductType" required>
+          <option value="">Select Type</option>
+          <option value="ST">ST</option>
+          <option value="RED">RED</option>
+          <option value="DUM">DUM</option>
+          <option value="OFFSET">OFFSET</option>
+          <option value="SHOE">SHOE</option>
+          <option value="VANES">VANES</option>
+          <option value="ELB">ELB</option>
+        </select>
       </div>
+      
+      <div class="mb-2"><label>W1</label><input type="number" class="form-control" id="w1" required /></div>
+      <div class="mb-2"><label>H1</label><input type="number" class="form-control" id="h1" required /></div>
+      <div class="mb-2"><label>W2</label><input type="number" class="form-control" id="w2" required /></div>
+      <div class="mb-2"><label>H2</label><input type="number" class="form-control" id="h2" required /></div>
+      <div class="mb-2"><label>Length</label><input type="number" class="form-control" id="length" required /></div>
+      <div class="mb-2"><label>Quantity</label><input type="number" class="form-control" id="quantity" required /></div>
+      <div class="mb-2"><label>Degree</label><input type="number" class="form-control" id="degree" /></div>
+      <div class="mb-2"><label>Factor</label><input type="number" class="form-control" id="factor" /></div>
+      <button type="button" class="btn btn-primary w-100" onclick="addEntry()">Add Entry</button>
+    </form>
+  </div>
     </div>
     <div class="col-md-8">
       <div class="table-section">
