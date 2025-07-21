@@ -2,40 +2,43 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Duct Measurement Sheet</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Measurement Sheet</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet" />
   <style>
+    body {
+      background-color: #f8f9fa;
+    }
     .form-section {
-      background: #f9f9f9;
+      background: #fff;
       border-radius: 10px;
       padding: 20px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
     }
     .table-section {
-      background: #ffffff;
-      border-radius: 10px;
-      padding: 20px;
-      margin-top: 20px;
       overflow-x: auto;
     }
-    .total-footer td {
-      font-weight: bold;
-      background-color: #e6e6e6;
+    th, td {
+      white-space: nowrap;
     }
   </style>
 </head>
-
-  <body>
-  <div class="container mt-4">
+<body>
+  <div class="container-fluid p-3">
     <div class="row">
-      <!-- Left Side Form -->
+      <!-- Left side: Input Form -->
       <div class="col-md-4">
         <div class="form-section">
-          <h4 class="mb-3">Duct Entry Form</h4>
-          <form id="entryForm">
-            <div class="mb-2"><label>Duct No</label><input type="text" class="form-control" id="ductNo" required /></div>
-            <div class="mb-2"><label>Duct Type</label>
-              <select class="form-control" id="ductType" required>
+          <h4 class="mb-3">Duct Entry</h4>
+          <form id="ductForm">
+            <div class="mb-2">
+              <label class="form-label">Duct No</label>
+              <input type="text" class="form-control" id="ductNo" required />
+            </div>
+            <div class="mb-2">
+              <label class="form-label">Type</label>
+              <select class="form-select" id="type" required>
+                <option value="">Select Type</option>
                 <option value="ST">ST</option>
                 <option value="RED">RED</option>
                 <option value="DUM">DUM</option>
@@ -45,228 +48,252 @@
                 <option value="ELB">ELB</option>
               </select>
             </div>
-            <div class="mb-2"><label>W1</label><input type="number" class="form-control" id="w1" required /></div>
-            <div class="mb-2"><label>H1</label><input type="number" class="form-control" id="h1" required /></div>
-            <div class="mb-2"><label>W2</label><input type="number" class="form-control" id="w2" required /></div>
-            <div class="mb-2"><label>H2</label><input type="number" class="form-control" id="h2" required /></div>
-            <div class="mb-2"><label>Length</label><input type="number" class="form-control" id="length" required /></div>
-            <div class="mb-2"><label>Quantity</label><input type="number" class="form-control" id="quantity" required /></div>
-            <div class="mb-2"><label>Degree</label><input type="number" class="form-control" id="degree" value="0" /></div>
-            <div class="mb-2"><label>Factor</label><input type="number" class="form-control" id="factor" value="1" /></div>
-            <button type="button" class="btn btn-primary w-100" onclick="addEntry()">Add Entry</button>
-          </form>
-        </div>
-      </div>
+            <div class="mb-2">
+              <label class="form-label">Width 1 (mm)</label>
+              <input type="number" class="form-control" id="width1" required />
+            </div>
+            <div class="mb-2">
+              <label class="form-label">Height 1 (mm)</label>
+              <input type="number" class="form-control" id="height1" required />
+            </div>
+            <div class="mb-2">
+              <label class="form-label">Width 2 (mm)</label>
+              <input type="number" class="form-control" id="width2" />
+            </div>
+            <div class="mb-2">
+              <label class="form-label">Height 2 (mm)</label>
+              <input type="number" class="form-control" id="height2" />
+            </div>
+            <div class="mb-2">
+              <label class="form-label">Length (mm)</label>
+              <input type="number" class="form-control" id="length" required />
+            </div>
+            <div class="mb-2">
+              <label class="form-label">Degree (°)</label>
+              <input type="number" class="form-control" id="degree" />
+            </div>
+            <div class="mb-2">
+              <label class="form-label">Quantity</label>
+              <input type="number" class="form-control" id="quantity" required />
+            </div>
+            <div class="mb-2">
+              <label class="form-label">Factor</label>
+              <input type="number" class="form-control" id="factor" value="1" />
+            </div>
 
-      <!-- Right Side Table -->
-      <div class="col-md-8">
+            <div class="mt-3 d-grid">
+            <button type="submit" class="btn btn-primary">Add Entry</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- Right side: Table -->
+    <div class="col-md-8">
+      <div class="form-section">
+        <h4 class="mb-3">Measurement Table</h4>
         <div class="table-section">
-          <h4 class="mb-3">Measurement Sheet</h4>
-          <table class="table table-bordered" id="entryTable">
-            <thead class="table-dark">
+          <table class="table table-bordered table-striped" id="measurementTable">
+            <thead class="table-dark text-center">
               <tr>
                 <th>Duct No</th>
                 <th>Type</th>
-                <th>W1</th>
-                <th>H1</th>
-                <th>W2</th>
-                <th>H2</th>
+                <th>Width1</th>
+                <th>Height1</th>
+                <th>Width2</th>
+                <th>Height2</th>
                 <th>Length</th>
+                <th>Degree</th>
                 <th>Qty</th>
-                <th>Deg</th>
                 <th>Factor</th>
                 <th>Gauge</th>
-                <th>Area</th>
-                <th>Nuts/Bolts</th>
+                <th>Area (m²)</th>
+                <th>24g</th>
+                <th>22g</th>
+                <th>20g</th>
+                <th>18g</th>
+                <th>Nuts & Bolts</th>
                 <th>Cleat</th>
-                <th>Gasket</th>
+                <th>Gasket (m)</th>
                 <th>Corner</th>
-                <th>Actions</th>
               </tr>
             </thead>
-            <tbody id="entryBody"></tbody>
-            <tfoot>
-              <tr class="table-info fw-bold">
-                <td colspan="11" class="text-end">Total Area (m²)</td>
+            <tbody id="tableBody">
+              <!-- Dynamic rows inserted here -->
+            </tbody>
+            <tfoot class="table-warning fw-bold text-center">
+              <tr>
+                <td colspan="11">Totals</td>
                 <td id="totalArea">0</td>
-                <td colspan="4"></td>
-              </tr>
-              <tr class="table-info fw-bold">
-                <td colspan="11" class="text-end">Total 24g</td>
-                <td id="total24g">0</td><td colspan="4"></td>
-              </tr>
-              <tr class="table-info fw-bold">
-                <td colspan="11" class="text-end">Total 22g</td>
-                <td id="total22g">0</td><td colspan="4"></td>
-              </tr>
-              <tr class="table-info fw-bold">
-                <td colspan="11" class="text-end">Total 20g</td>
-                <td id="total20g">0</td><td colspan="4"></td>
-              </tr>
-              <tr class="table-info fw-bold">
-                <td colspan="11" class="text-end">Total 18g</td>
-                <td id="total18g">0</td><td colspan="4"></td>
+                <td id="total24g">0</td>
+                <td id="total22g">0</td>
+                <td id="total20g">0</td>
+                <td id="total18g">0</td>
+                <td id="totalNutsBolts">0</td>
+                <td id="totalCleat">0</td>
+                <td id="totalGasket">0</td>
+                <td id="totalCorner">0</td>
               </tr>
             </tfoot>
           </table>
+        </div>
 
-          <div class="mt-3 d-flex justify-content-between">
-            <button class="btn btn-success" onclick="exportToExcel()">Export</button>
-            <button class="btn btn-warning" onclick="window.print()">Print</button>
-            <button class="btn btn-danger" onclick="resetTable()">Reset</button>
-          </div>
+        <div class="d-flex gap-2 justify-content-end mt-3">
+          <button class="btn btn-success" onclick="exportTable()">Export</button>
+          <button class="btn btn-secondary" onclick="window.print()">Print</button>
         </div>
       </div>
     </div>
   </div>
+  </div>
 
-    <script>
-  let ductCount = 1;
+  <script>
+  let ductCounter = 1;
 
-  function addEntry() {
-    const type = document.getElementById("type").value;
-    const w1 = parseFloat(document.getElementById("w1").value) || 0;
-    const h1 = parseFloat(document.getElementById("h1").value) || 0;
-    const w2 = parseFloat(document.getElementById("w2").value) || 0;
-    const h2 = parseFloat(document.getElementById("h2").value) || 0;
-    const length = parseFloat(document.getElementById("length").value) || 0;
-    const qty = parseInt(document.getElementById("qty").value) || 1;
-    const degree = parseFloat(document.getElementById("degree").value) || 0;
-    const factor = parseFloat(document.getElementById("factor").value) || 1;
+  function getGauge(width1, height1) {
+    if (width1 <= 751 && height1 <= 751) return '24g';
+    if (width1 <= 1201 && height1 <= 1201) return '22g';
+    if (width1 <= 1800 && height1 <= 1800) return '20g';
+    return '18g';
+  }
 
-    // Gauge Logic
-    let gauge = '18g';
-    if (w1 <= 751 && h1 <= 751) gauge = '24g';
-    else if (w1 <= 1201 && h1 <= 1201) gauge = '22g';
-    else if (w1 <= 1800 && h1 <= 1800) gauge = '20g';
-
-    // Area Logic
-    let area = 0;
-    if (type === 'ST') {
-      area = 2 * (w1 + h1) / 1000 * (length / 1000) * qty;
-    } else if (type === 'RED') {
-      area = (w1 + h1 + w2 + h2) / 1000 * (length / 1000) * qty * factor;
-    } else if (type === 'DUM') {
-      area = (w1 * h1) / 1_000_000 * qty;
-    } else if (type === 'OFFSET') {
-      area = (w1 + h1 + w2 + h2) / 1000 * ((length + degree) / 1000) * qty * factor;
-    } else if (type === 'SHOE') {
-      area = (w1 + h1) * 2 / 1000 * (length / 1000) * qty * factor;
-    } else if (type === 'VANES') {
-      area = w1 / 1000 * (2 * Math.PI * (w1 / 1000) / 4) * qty;
-    } else if (type === 'ELB') {
-      area = 2 * (w1 + h1) / 1000 * ((h1 / 2 / 1000) + (length / 1000) * (Math.PI * degree / 180)) * qty * factor;
+  function calculateArea(type, w1, h1, w2, h2, len, deg, qty, factor) {
+    switch (type) {
+      case 'ST':
+        return 2 * (w1 + h1) / 1000 * (len / 1000) * qty;
+      case 'RED':
+        return (w1 + h1 + w2 + h2) / 1000 * (len / 1000) * qty * factor;
+      case 'DUM':
+        return (w1 * h1) / 1_000_000 * qty;
+      case 'OFFSET':
+        return (w1 + h1 + w2 + h2) / 1000 * ((len + deg) / 1000) * qty * factor;
+      case 'SHOE':
+        return (w1 + h1) * 2 / 1000 * (len / 1000) * qty * factor;
+      case 'VANES':
+        return w1 / 1000 * (2 * Math.PI * (w1 / 1000) / 4) * qty;
+      case 'ELB':
+        return 2 * (w1 + h1) / 1000 * ((h1 / 2 / 1000) + (len / 1000) * (Math.PI * (deg / 180))) * qty * factor;
+      default:
+        return 0;
     }
+  }
 
-    const nuts = qty * 4;
-    const cleat = qty * (gauge === '24g' ? 4 : gauge === '22g' ? 8 : gauge === '20g' ? 10 : 12);
-    const gasket = (w1 + h1 + w2 + h2) / 1000 * qty;
-    const corner = type === 'DUM' ? 0 : qty * 8;
+  function addMeasurement(event) {
+    event.preventDefault();
 
-    const tableBody = document.getElementById("entryBody");
-    const row = document.createElement("tr");
+    const ductType = document.getElementById('ductType').value;
+    const width1 = +document.getElementById('width1').value;
+    const height1 = +document.getElementById('height1').value;
+    const width2 = +document.getElementById('width2').value || 0;
+    const height2 = +document.getElementById('height2').value || 0;
+    const length = +document.getElementById('length').value;
+    const degree = +document.getElementById('degree').value || 0;
+    const quantity = +document.getElementById('quantity').value;
+    const factor = +document.getElementById('factor').value || 1;
 
+    const gauge = getGauge(width1, height1);
+    const area = calculateArea(ductType, width1, height1, width2, height2, length, degree, quantity, factor);
+
+    const nutsBolts = quantity * 4;
+    const cleat = gauge === '24g' ? quantity * 4 : gauge === '22g' ? quantity * 8 : gauge === '20g' ? quantity * 10 : quantity * 12;
+    const gasket = (width1 + height1 + width2 + height2) / 1000 * quantity;
+    const corner = ductType === 'DUM' ? 0 : quantity * 8;
+
+    const row = document.createElement('tr');
     row.innerHTML = `
-      <td>${ductCount++}</td>
-      <td>${type}</td>
-      <td>${w1}</td>
-      <td>${h1}</td>
-      <td>${w2}</td>
-      <td>${h2}</td>
+      <td>${ductCounter++}</td>
+      <td>${ductType}</td>
+      <td>${width1}</td>
+      <td>${height1}</td>
+      <td>${width2}</td>
+      <td>${height2}</td>
       <td>${length}</td>
-      <td>${qty}</td>
       <td>${degree}</td>
+      <td>${quantity}</td>
       <td>${factor}</td>
       <td>${gauge}</td>
       <td>${area.toFixed(2)}</td>
-      <td>${nuts}</td>
+      <td>${gauge === '24g' ? area.toFixed(2) : '0'}</td>
+      <td>${gauge === '22g' ? area.toFixed(2) : '0'}</td>
+      <td>${gauge === '20g' ? area.toFixed(2) : '0'}</td>
+      <td>${gauge === '18g' ? area.toFixed(2) : '0'}</td>
+      <td>${nutsBolts}</td>
       <td>${cleat}</td>
       <td>${gasket.toFixed(2)}</td>
       <td>${corner}</td>
-      <td><button class="btn btn-sm btn-danger" onclick="this.closest('tr').remove(); updateTotals()">X</button></td>
     `;
 
-    tableBody.appendChild(row);
+    document.getElementById('tableBody').appendChild(row);
     updateTotals();
+    event.target.reset();
   }
 
   function updateTotals() {
-    const rows = document.querySelectorAll("#entryBody tr");
-    let total = 0;
-    let total24g = 0, total22g = 0, total20g = 0, total18g = 0;
-
-    rows.forEach(row => {
-      const area = parseFloat(row.children[11].innerText) || 0;
-      const gauge = row.children[10].innerText;
-      total += area;
-      if (gauge === "24g") total24g += area;
-      else if (gauge === "22g") total22g += area;
-      else if (gauge === "20g") total20g += area;
-      else if (gauge === "18g") total18g += area;
+    let totalArea = 0, t24g = 0, t22g = 0, t20g = 0, t18g = 0, tNB = 0, tCleat = 0, tGasket = 0, tCorner = 0;
+    document.querySelectorAll('#tableBody tr').forEach(row => {
+      const cells = row.querySelectorAll('td');
+      totalArea += parseFloat(cells[11].textContent);
+      t24g += parseFloat(cells[12].textContent);
+      t22g += parseFloat(cells[13].textContent);
+      t20g += parseFloat(cells[14].textContent);
+      t18g += parseFloat(cells[15].textContent);
+      tNB += parseFloat(cells[16].textContent);
+      tCleat += parseFloat(cells[17].textContent);
+      tGasket += parseFloat(cells[18].textContent);
+      tCorner += parseFloat(cells[19].textContent);
     });
 
-    document.getElementById("totalArea").innerText = total.toFixed(2);
-    document.getElementById("total24g").innerText = total24g.toFixed(2);
-    document.getElementById("total22g").innerText = total22g.toFixed(2);
-    document.getElementById("total20g").innerText = total20g.toFixed(2);
-    document.getElementById("total18g").innerText = total18g.toFixed(2);
+    document.getElementById('totalArea').textContent = totalArea.toFixed(2);
+    document.getElementById('total24g').textContent = t24g.toFixed(2);
+    document.getElementById('total22g').textContent = t22g.toFixed(2);
+    document.getElementById('total20g').textContent = t20g.toFixed(2);
+    document.getElementById('total18g').textContent = t18g.toFixed(2);
+    document.getElementById('totalNutsBolts').textContent = tNB;
+    document.getElementById('totalCleat').textContent = tCleat;
+    document.getElementById('totalGasket').textContent = tGasket.toFixed(2);
+    document.getElementById('totalCorner').textContent = tCorner;
   }
 
-  function exportToExcel() {
-    let table = document.getElementById("entryTable").outerHTML;
-    let dataType = 'application/vnd.ms-excel';
-    let blob = new Blob(['\ufeff', table], { type: dataType });
-
-    let link = document.createElement("a");
+  function exportTable() {
+    const table = document.getElementById('measurementTable').outerHTML;
+    const blob = new Blob(["\ufeff", table], { type: 'application/vnd.ms-excel' });
+    const link = document.createElement("a");
     link.href = URL.createObjectURL(blob);
-    link.download = "Measurement_Sheet.xls";
+    link.download = "measurement_sheet.xls";
     link.click();
   }
 
-  function resetTable() {
-    document.getElementById("entryBody").innerHTML = "";
-    updateTotals();
-    ductCount = 1;
-  }
-        </script>
-
-
-    </tbody>
+  document.querySelector('form').addEventListener('submit', addMeasurement);
+  </script>
+</tbody>
         <tfoot>
-          <tr class="fw-bold">
-            <td colspan="11" class="text-end">Total Area</td>
-            <td id="totalArea">0.00</td>
-            <td colspan="5"></td>
-          </tr>
-          <tr class="fw-bold">
-            <td colspan="11" class="text-end">Total 24g</td>
-            <td id="total24g">0.00</td>
-            <td colspan="5"></td>
-          </tr>
-          <tr class="fw-bold">
-            <td colspan="11" class="text-end">Total 22g</td>
-            <td id="total22g">0.00</td>
-            <td colspan="5"></td>
-          </tr>
-          <tr class="fw-bold">
-            <td colspan="11" class="text-end">Total 20g</td>
-            <td id="total20g">0.00</td>
-            <td colspan="5"></td>
-          </tr>
-          <tr class="fw-bold">
-            <td colspan="11" class="text-end">Total 18g</td>
-            <td id="total18g">0.00</td>
-            <td colspan="5"></td>
+          <tr>
+            <th colspan="11">TOTAL</th>
+            <th id="totalArea">0.00</th>
+            <th id="total24g">0.00</th>
+            <th id="total22g">0.00</th>
+            <th id="total20g">0.00</th>
+            <th id="total18g">0.00</th>
+            <th id="totalNutsBolts">0</th>
+            <th id="totalCleat">0</th>
+            <th id="totalGasket">0.00</th>
+            <th id="totalCorner">0</th>
           </tr>
         </tfoot>
       </table>
+
+      <div class="mt-3 d-flex gap-2">
+        <button onclick="exportTable()" class="btn btn-success">Export to Excel</button>
+        <button onclick="window.print()" class="btn btn-warning">Print</button>
+        <button onclick="alert('Submitted!')" class="btn btn-primary">Submit</button>
+      </div>
     </div>
   </div>
 </div>
-
 </body>
 </html>
-
-      
+  
 
   
+
+            
