@@ -82,7 +82,7 @@
             </div>
 
             <div class="mt-3 d-grid">
-            <button type="button" class="btn btn-primary w-100" onclick="addEntry()">Add Entry</button>
+            <button type="submit" class="btn btn-primary w-100">Add Entry</button>
           </div>
         </form>
       </div>
@@ -263,7 +263,7 @@
     link.click();
   }
 
-  document.querySelector('form').addEventListener('submit', addMeasurement);
+  document.getElementById('ductForm').addEventListener('submit', addMeasurement);
   </script>
 </tbody>
         <tfoot>
